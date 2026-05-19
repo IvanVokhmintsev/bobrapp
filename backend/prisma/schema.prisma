@@ -82,6 +82,7 @@ model RoadmapStep {
   order        Int      @unique
   content      String
   checklist    Json
+  quiz         Json     @default("[]")
   pointsReward Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

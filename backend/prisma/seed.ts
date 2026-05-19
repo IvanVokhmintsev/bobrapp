@@ -25,6 +25,18 @@ const roadmapSteps = [
       "Опиши текущий опыт",
       "Выбери ближайший практический шаг",
     ],
+    quiz: [
+      {
+        id: "goal",
+        question: "Что важно определить в начале музыкального пути?",
+        options: [
+          { id: "goal", text: "Цель и текущую точку старта" },
+          { id: "plugin", text: "Самый дорогой плагин" },
+          { id: "cover", text: "Обложку альбома" },
+        ],
+        correctOptionId: "goal",
+      },
+    ],
     pointsReward: 10,
   },
   {
@@ -37,6 +49,18 @@ const roadmapSteps = [
       "Создай новый проект",
       "Добавь аудио или MIDI-дорожку",
       "Сохрани проект",
+    ],
+    quiz: [
+      {
+        id: "daw",
+        question: "Для чего нужна DAW?",
+        options: [
+          { id: "record", text: "Для записи и сборки музыкальных идей" },
+          { id: "mail", text: "Для рассылки писем" },
+          { id: "poster", text: "Для печати афиш" },
+        ],
+        correctOptionId: "record",
+      },
     ],
     pointsReward: 15,
   },
@@ -51,6 +75,18 @@ const roadmapSteps = [
       "Создай 4-8 тактов идеи",
       "Экспортируй черновик",
     ],
+    quiz: [
+      {
+        id: "fragment",
+        question: "Каким может быть первый музыкальный фрагмент?",
+        options: [
+          { id: "simple", text: "Простой короткой идеей" },
+          { id: "album", text: "Только готовым альбомом" },
+          { id: "contract", text: "Только контрактом с лейблом" },
+        ],
+        correctOptionId: "simple",
+      },
+    ],
     pointsReward: 20,
   },
   {
@@ -63,6 +99,18 @@ const roadmapSteps = [
       "Разметь части будущего трека",
       "Сделай простую аранжировку",
       "Проверь переходы между частями",
+    ],
+    quiz: [
+      {
+        id: "structure",
+        question: "Зачем нужна структура трека?",
+        options: [
+          { id: "development", text: "Чтобы управлять развитием трека" },
+          { id: "volume", text: "Чтобы сделать все дорожки громче" },
+          { id: "password", text: "Чтобы защитить проект паролем" },
+        ],
+        correctOptionId: "development",
+      },
     ],
     pointsReward: 20,
   },
@@ -77,6 +125,18 @@ const roadmapSteps = [
       "Запиши несколько дублей",
       "Выбери лучший фрагмент",
     ],
+    quiz: [
+      {
+        id: "takes",
+        question: "Зачем записывать несколько дублей?",
+        options: [
+          { id: "choice", text: "Чтобы выбрать лучший фрагмент" },
+          { id: "delete", text: "Чтобы сразу все удалить" },
+          { id: "hide", text: "Чтобы скрыть проект" },
+        ],
+        correctOptionId: "choice",
+      },
+    ],
     pointsReward: 25,
   },
   {
@@ -89,6 +149,18 @@ const roadmapSteps = [
       "Выставь громкости дорожек",
       "Убери лишние частоты",
       "Добавь базовые эффекты",
+    ],
+    quiz: [
+      {
+        id: "mix",
+        question: "С чего начинается базовое сведение?",
+        options: [
+          { id: "balance", text: "С баланса громкости и частот" },
+          { id: "cover", text: "С выбора обложки" },
+          { id: "upload", text: "С загрузки видео" },
+        ],
+        correctOptionId: "balance",
+      },
     ],
     pointsReward: 25,
   },
@@ -103,6 +175,18 @@ const roadmapSteps = [
       "Подготовь название и описание",
       "Проверь качество перед публикацией",
     ],
+    quiz: [
+      {
+        id: "release",
+        question: "Что важно проверить перед релизом?",
+        options: [
+          { id: "quality", text: "Файл, название, описание и качество" },
+          { id: "random", text: "Случайный пароль" },
+          { id: "silence", text: "Только тишину в начале" },
+        ],
+        correctOptionId: "quality",
+      },
+    ],
     pointsReward: 30,
   },
   {
@@ -115,6 +199,18 @@ const roadmapSteps = [
       "Опиши достигнутый результат",
       "Добавь достижение в профиль",
       "Опубликуй roadmap-пост",
+    ],
+    quiz: [
+      {
+        id: "achievement",
+        question: "Зачем фиксировать достижение в профиле?",
+        options: [
+          { id: "progress", text: "Чтобы видеть и показывать прогресс" },
+          { id: "reset", text: "Чтобы сбросить roadmap" },
+          { id: "block", text: "Чтобы заблокировать следующий этап" },
+        ],
+        correctOptionId: "progress",
+      },
     ],
     pointsReward: 30,
   },
