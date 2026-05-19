@@ -15,8 +15,9 @@ coverage
 _docpress
 .DS_Store
 
-lib
-dist
+/lib
+/dist
+**/dist/
 tsconfig.tsbuildinfo
 tsconfig.lint.tsbuildinfo
 test.lib/
@@ -61,3 +62,4 @@ __fixtures__/custom-modules-dir/patches/
 /target
 /bench-work-env
 .pacquet
+
