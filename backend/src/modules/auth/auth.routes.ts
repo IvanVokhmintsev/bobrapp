@@ -2,27 +2,10 @@ import bcrypt from "bcrypt";
 import type { FastifyInstance } from "fastify";
 
 import { prisma } from "../../lib/prisma.js";
+import { toPublicUser } from "../users/user.presenter.js";
 import { authenticate } from "./auth.middleware.js";
 import { loginSchema, registerSchema } from "./auth.schemas.js";
 import type { LoginBody, RegisterBody } from "./auth.types.js";
-
-function toPublicUser(user: {
-  id: string;
-  name: string;
-  email: string;
-  role: "musician" | "label";
-  createdAt: Date;
-  updatedAt: Date;
-}) {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    createdAt: user.createdAt.toISOString(),
-    updatedAt: user.updatedAt.toISOString(),
-  };
-}
 
 export async function registerAuthRoutes(app: FastifyInstance) {
   app.post<{ Body: RegisterBody }>(
@@ -58,6 +41,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
                 }
               : undefined,
         },
+        include: {
+          musicianProfile: true,
+        },
       });
 
       const token = app.jwt.sign({
@@ -81,6 +67,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
       const user = await prisma.user.findUnique({
         where: { email: normalizedEmail },
+        include: {
+          musicianProfile: true,
+        },
       });
 
       if (!user) {
@@ -119,6 +108,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const user = await prisma.user.findUnique({
         where: { id: request.user.userId },
+        include: {
+          musicianProfile: true,
+        },
       });
 
       if (!user) {
