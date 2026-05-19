@@ -1,0 +1,76 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+  color: #1f1f1f;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  margin: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px;
+}
+
+textarea {
+  min-height: 80px;
+}
+
+label {
+  display: block;
+  margin: 10px 0;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #dddddd;
+}
+
+main {
+  padding: 16px;
+}
+
+.app-shell {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.panel {
+  margin: 12px 0;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #dddddd;
+  border-radius: 6px;
+}
+
+.error {
+  color: #b00020;
+}
+
+.message {
+  margin: 12px 16px;
+  color: #444444;
+}
