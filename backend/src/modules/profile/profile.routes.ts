@@ -15,6 +15,11 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         where: { id: request.user.userId },
         include: {
           musicianProfile: true,
+          achievements: {
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
         },
       });
 

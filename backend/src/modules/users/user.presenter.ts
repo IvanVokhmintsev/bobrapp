@@ -7,6 +7,14 @@ type PublicMusicianProfile = {
   roadmapProgress: number;
 };
 
+type PublicAchievement = {
+  id: string;
+  title: string;
+  description: string | null;
+  type: "roadmap" | "professional";
+  createdAt: Date;
+};
+
 type UserWithProfile = {
   id: string;
   name: string;
@@ -15,6 +23,7 @@ type UserWithProfile = {
   createdAt: Date;
   updatedAt: Date;
   musicianProfile?: PublicMusicianProfile | null;
+  achievements?: PublicAchievement[];
 };
 
 export function toPublicUser(user: UserWithProfile) {
@@ -35,5 +44,14 @@ export function toPublicUser(user: UserWithProfile) {
       : null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
+    achievements: user.achievements
+      ? user.achievements.map((achievement) => ({
+          id: achievement.id,
+          title: achievement.title,
+          description: achievement.description,
+          type: achievement.type,
+          createdAt: achievement.createdAt.toISOString(),
+        }))
+      : [],
   };
 }

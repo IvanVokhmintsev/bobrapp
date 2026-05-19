@@ -110,19 +110,6 @@ export async function completeRoadmapStep(userId: string, stepId: string) {
     };
   }
 
-  await prisma.userRoadmapProgress.update({
-    where: {
-      userId_stepId: {
-        userId,
-        stepId: step.id,
-      },
-    },
-    data: {
-      status: "completed",
-      completedAt: new Date(),
-    },
-  });
-
   const nextStep = await prisma.roadmapStep.findFirst({
     where: {
       order: {
@@ -134,7 +121,82 @@ export async function completeRoadmapStep(userId: string, stepId: string) {
     },
   });
 
-  if (nextStep) {
+  if (currentProgress.status !== "completed") {
+    const totalSteps = await prisma.roadmapStep.count();
+
+    await prisma.$transaction(async (transaction) => {
+      await transaction.userRoadmapProgress.update({
+        where: {
+          userId_stepId: {
+            userId,
+            stepId: step.id,
+          },
+        },
+        data: {
+          status: "completed",
+          completedAt: new Date(),
+        },
+      });
+
+      if (nextStep) {
+        await transaction.userRoadmapProgress.update({
+          where: {
+            userId_stepId: {
+              userId,
+              stepId: nextStep.id,
+            },
+          },
+          data: {
+            status: "available",
+          },
+        });
+      }
+
+      const completedCount = await transaction.userRoadmapProgress.count({
+        where: {
+          userId,
+          status: "completed",
+        },
+      });
+
+      const roadmapProgress =
+        totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
+
+      await transaction.musicianProfile.upsert({
+        where: {
+          userId,
+        },
+        create: {
+          userId,
+          points: step.pointsReward,
+          roadmapProgress,
+        },
+        update: {
+          points: {
+            increment: step.pointsReward,
+          },
+          roadmapProgress,
+        },
+      });
+
+      await transaction.achievement.create({
+        data: {
+          userId,
+          title: `Пройден этап "${step.title}"`,
+          description: step.description,
+          type: "roadmap",
+        },
+      });
+
+      await transaction.post.create({
+        data: {
+          authorId: userId,
+          text: `Я прошел этап roadmap: ${step.title}`,
+          type: "roadmap",
+        },
+      });
+    });
+  } else if (nextStep) {
     await prisma.userRoadmapProgress.update({
       where: {
         userId_stepId: {
