@@ -12,6 +12,10 @@ export function buildApp(): FastifyInstance {
     secret: env.jwtSecret,
   });
 
+  void app.register(import("@fastify/cors"), {
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  });
+
   app.setErrorHandler((error: FastifyError, request, reply) => {
     request.log.error(error);
 
