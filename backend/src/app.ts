@@ -1,10 +1,15 @@
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 
+import { env } from "./config/env.js";
 import { registerRoutes } from "./routes/index.js";
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({
     logger: true,
+  });
+
+  void app.register(import("@fastify/jwt"), {
+    secret: env.jwtSecret,
   });
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
