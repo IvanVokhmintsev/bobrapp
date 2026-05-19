@@ -224,7 +224,15 @@ function FeedScreen(props: { token: string; user: ApiUser }) {
   }
 
   async function likePost(id: string) {
-    await api.likePost(props.token, id);
+    const target = posts.find((post) => post.id === id);
+    if (!target) {
+      return;
+    }
+    if (target.likedByMe) {
+      await api.unlikePost(props.token, id);
+    } else {
+      await api.likePost(props.token, id);
+    }
     await loadPosts();
   }
 
@@ -245,7 +253,9 @@ function FeedScreen(props: { token: string; user: ApiUser }) {
         <article className="panel" key={post.id}>
           <strong>{post.author.name}</strong> <span>{post.type}</span>
           <p>{post.text}</p>
-          <button onClick={() => likePost(post.id)}>Like {post.likesCount}</button>
+          <button onClick={() => likePost(post.id)}>
+            {post.likedByMe ? "Unlike" : "Like"} {post.likesCount}
+          </button>
         </article>
       ))}
     </main>

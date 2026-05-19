@@ -29,6 +29,7 @@ export type ApiPost = {
   text: string;
   type: PostType;
   likesCount: number;
+  likedByMe: boolean;
   createdAt: string;
   author: {
     id: string;
@@ -153,6 +154,16 @@ export const api = {
       `/posts/${id}/like`,
       {
         method: "POST",
+        body: JSON.stringify({}),
+      },
+      token,
+    );
+  },
+  unlikePost(token: string, id: string) {
+    return request<{ post: ApiPost }>(
+      `/posts/${id}/like`,
+      {
+        method: "DELETE",
         body: JSON.stringify({}),
       },
       token,

@@ -45,6 +45,7 @@ model User {
 
   musicianProfile MusicianProfile?
   posts           Post[]
+  postLikes       PostLike[]
   roadmapProgress UserRoadmapProgress[]
   achievements    Achievement[]
 }
@@ -72,7 +73,20 @@ model Post {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  postLikes PostLike[]
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
 }
 
 model RoadmapStep {
