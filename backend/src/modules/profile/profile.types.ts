@@ -7,3 +7,8 @@ export type UpdateProfileBody = {
 export type PublicProfileParams = {
   userId: string;
 };
+
+export type FollowsQuery = {
+  cursor?: string;
+  limit?: number;
+};

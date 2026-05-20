@@ -20,3 +20,14 @@ export const publicProfileSchema = {
     },
   },
 } as const;
+
+export const followsQuerySchema = {
+  querystring: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      cursor: { type: "string", minLength: 1 },
+      limit: { type: "integer", minimum: 1, maximum: 100 },
+    },
+  },
+} as const;

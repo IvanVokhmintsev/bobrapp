@@ -12,3 +12,8 @@ export type PostIdParams = {
 export type CreateCommentBody = {
   text: string;
 };
+
+export type FeedQuery = {
+  cursor?: string;
+  limit?: number;
+};

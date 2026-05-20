@@ -3,8 +3,16 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma.js";
 import { authenticate } from "../auth/auth.middleware.js";
 import { toPublicUser } from "../users/user.presenter.js";
-import { publicProfileSchema, updateProfileSchema } from "./profile.schemas.js";
-import type { PublicProfileParams, UpdateProfileBody } from "./profile.types.js";
+import {
+  followsQuerySchema,
+  publicProfileSchema,
+  updateProfileSchema,
+} from "./profile.schemas.js";
+import type {
+  FollowsQuery,
+  PublicProfileParams,
+  UpdateProfileBody,
+} from "./profile.types.js";
 
 const profileInclude = {
   musicianProfile: true,
@@ -133,6 +141,119 @@ export async function registerProfileRoutes(app: FastifyInstance) {
           followingCount: user._count.following,
         },
       });
+    },
+  );
+
+  app.get<{ Querystring: FollowsQuery }>(
+    "/profile/me/following",
+    {
+      preHandler: authenticate,
+      schema: followsQuerySchema,
+    },
+    async (request) => {
+      const limit = request.query.limit ?? 20;
+      const cursor = request.query.cursor;
+
+      const relations = await prisma.follow.findMany({
+        where: {
+          followerId: request.user.userId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        ...(cursor
+          ? {
+              cursor: { id: cursor },
+              skip: 1,
+            }
+          : {}),
+        include: {
+          following: {
+            include: profileInclude,
+          },
+        },
+        take: limit + 1,
+      });
+
+      const hasNextPage = relations.length > limit;
+      const pageItems = hasNextPage ? relations.slice(0, limit) : relations;
+      const nextCursor = hasNextPage ? pageItems[pageItems.length - 1]?.id : null;
+
+      return {
+        users: pageItems.map((relation) => ({
+          ...toPublicUser(relation.following),
+          followersCount: relation.following._count.followers,
+          followingCount: relation.following._count.following,
+        })),
+        pageInfo: {
+          hasNextPage,
+          nextCursor,
+        },
+      };
+    },
+  );
+
+  app.get<{ Params: PublicProfileParams; Querystring: FollowsQuery }>(
+    "/profiles/:userId/followers",
+    {
+      preHandler: authenticate,
+      schema: {
+        ...publicProfileSchema,
+        ...followsQuerySchema,
+      },
+    },
+    async (request, reply) => {
+      const target = await prisma.user.findUnique({
+        where: { id: request.params.userId },
+        select: { id: true },
+      });
+
+      if (!target) {
+        return reply.status(404).send({
+          error: "Profile not found",
+          statusCode: 404,
+        });
+      }
+
+      const limit = request.query.limit ?? 20;
+      const cursor = request.query.cursor;
+
+      const relations = await prisma.follow.findMany({
+        where: {
+          followingId: request.params.userId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        ...(cursor
+          ? {
+              cursor: { id: cursor },
+              skip: 1,
+            }
+          : {}),
+        include: {
+          follower: {
+            include: profileInclude,
+          },
+        },
+        take: limit + 1,
+      });
+
+      const hasNextPage = relations.length > limit;
+      const pageItems = hasNextPage ? relations.slice(0, limit) : relations;
+      const nextCursor = hasNextPage ? pageItems[pageItems.length - 1]?.id : null;
+
+      return {
+        users: pageItems.map((relation) => ({
+          ...toPublicUser(relation.follower),
+          followersCount: relation.follower._count.followers,
+          followingCount: relation.follower._count.following,
+        })),
+        pageInfo: {
+          hasNextPage,
+          nextCursor,
+        },
+      };
     },
   );
 
