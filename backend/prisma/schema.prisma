@@ -46,6 +46,10 @@ model User {
   musicianProfile MusicianProfile?
   posts           Post[]
   postLikes       PostLike[]
+  comments        Comment[]
+  reposts         Repost[]
+  following       Follow[] @relation("user_follows")
+  followers       Follow[] @relation("user_followers")
   roadmapProgress UserRoadmapProgress[]
   achievements    Achievement[]
 }
@@ -70,11 +74,15 @@ model Post {
   text       String
   type       PostType
   likesCount Int      @default(0)
+  commentsCount Int   @default(0)
+  repostsCount Int    @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   author User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   postLikes PostLike[]
+  comments Comment[]
+  reposts  Repost[]
 }
 
 model PostLike {
@@ -87,6 +95,42 @@ model PostLike {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String
+  authorId  String
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Repost {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("user_follows", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("user_followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
 }
 
 model RoadmapStep {

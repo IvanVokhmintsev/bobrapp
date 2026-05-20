@@ -30,3 +30,33 @@ export const likePostSchema = {
     properties: {},
   },
 } as const;
+
+export const postIdParamsSchema = {
+  params: {
+    type: "object",
+    required: ["id"],
+    additionalProperties: false,
+    properties: {
+      id: { type: "string", minLength: 1 },
+    },
+  },
+} as const;
+
+export const commentPostSchema = {
+  params: {
+    type: "object",
+    required: ["id"],
+    additionalProperties: false,
+    properties: {
+      id: { type: "string", minLength: 1 },
+    },
+  },
+  body: {
+    type: "object",
+    required: ["text"],
+    additionalProperties: false,
+    properties: {
+      text: { type: "string", minLength: 1, maxLength: 1000 },
+    },
+  },
+} as const;

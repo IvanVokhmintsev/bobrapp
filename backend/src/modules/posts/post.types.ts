@@ -8,3 +8,7 @@ export type CreatePostBody = {
 export type PostIdParams = {
   id: string;
 };
+
+export type CreateCommentBody = {
+  text: string;
+};
