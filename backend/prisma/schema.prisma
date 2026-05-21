@@ -60,6 +60,11 @@ model MusicianProfile {
   level           MusicianLevel?
   bio             String?
   avatarUrl       String?
+  location        String?
+  genres          String[]       @default([])
+  instruments     String[]       @default([])
+  daw             String[]       @default([])
+  socialLinks     Json           @default("{}")
   points          Int            @default(0)
   roadmapProgress Int            @default(0)
   createdAt       DateTime       @default(now())

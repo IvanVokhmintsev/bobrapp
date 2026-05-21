@@ -11,7 +11,7 @@ import {
   type UserRole,
 } from "./api";
 
-type View = "auth" | "onboarding" | "feed" | "roadmap" | "profile";
+type View = "auth" | "onboarding" | "feed" | "discover" | "roadmap" | "profile";
 
 const levels: Array<{ value: MusicianLevel; label: string }> = [
   { value: "nothing", label: "Почти ничего не знаю" },
@@ -85,6 +85,7 @@ export function App() {
         </div>
         <nav>
           <button onClick={() => setView("feed")}>Feed</button>
+          <button onClick={() => setView("discover")}>Discover</button>
           <button onClick={() => setView("roadmap")}>Roadmap</button>
           <button onClick={() => setView("profile")}>Profile</button>
           <button onClick={logout}>Logout</button>
@@ -104,6 +105,7 @@ export function App() {
         />
       ) : null}
       {view === "feed" ? <FeedScreen token={token} user={user} /> : null}
+      {view === "discover" ? <DiscoverScreen token={token} user={user} /> : null}
       {view === "roadmap" ? <RoadmapScreen token={token} /> : null}
       {view === "profile" ? (
         <ProfileScreen token={token} user={user} onUserChange={setUser} />
@@ -262,6 +264,124 @@ function FeedScreen(props: { token: string; user: ApiUser }) {
   );
 }
 
+function DiscoverScreen(props: { token: string; user: ApiUser }) {
+  const [query, setQuery] = useState("");
+  const [users, setUsers] = useState<ApiUser[]>([]);
+  const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
+  const [posts, setPosts] = useState<ApiPost[]>([]);
+  const [error, setError] = useState("");
+
+  async function loadProfiles(nextQuery = query) {
+    try {
+      setError("");
+      const result = await api.getProfiles(props.token, { q: nextQuery });
+      setUsers(result.users);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to load profiles");
+    }
+  }
+
+  async function openProfile(userId: string) {
+    try {
+      setError("");
+      const [profileResult, postsResult] = await Promise.all([
+        api.getPublicProfile(props.token, userId),
+        api.getProfilePosts(props.token, userId),
+      ]);
+      setSelectedUser(profileResult.user);
+      setPosts(postsResult.posts);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to open profile");
+    }
+  }
+
+  async function toggleFollow(user: ApiUser) {
+    if (user.followingByMe) {
+      await api.unfollowProfile(props.token, user.id);
+    } else {
+      await api.followProfile(props.token, user.id);
+    }
+    await loadProfiles();
+    if (selectedUser?.id === user.id) {
+      await openProfile(user.id);
+    }
+  }
+
+  useEffect(() => {
+    void loadProfiles("");
+  }, []);
+
+  return (
+    <main>
+      <h2>Discover musicians</h2>
+      <section className="panel">
+        <label>
+          Search
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Name"
+          />
+        </label>
+        <button onClick={() => loadProfiles()}>Search</button>
+      </section>
+      {error ? <p className="error">{error}</p> : null}
+      <div className="split">
+        <section>
+          {users.map((profile) => (
+            <article className="panel" key={profile.id}>
+              <strong>{profile.name}</strong>
+              <p>{profile.musicianProfile?.bio ?? "No bio yet"}</p>
+              <p>
+                Followers: {profile.followersCount ?? 0} / Following:{" "}
+                {profile.followingCount ?? 0}
+              </p>
+              <button onClick={() => openProfile(profile.id)}>Open</button>
+              {profile.id !== props.user.id ? (
+                <button onClick={() => toggleFollow(profile)}>
+                  {profile.followingByMe ? "Unfollow" : "Follow"}
+                </button>
+              ) : null}
+            </article>
+          ))}
+        </section>
+        {selectedUser ? (
+          <section className="panel">
+            <h3>{selectedUser.name}</h3>
+            <p>{selectedUser.musicianProfile?.bio ?? "No bio yet"}</p>
+            <p>{selectedUser.musicianProfile?.location ?? ""}</p>
+            <p>Genres: {selectedUser.musicianProfile?.genres.join(", ")}</p>
+            <p>Instruments: {selectedUser.musicianProfile?.instruments.join(", ")}</p>
+            <p>DAW: {selectedUser.musicianProfile?.daw.join(", ")}</p>
+            {selectedUser.id !== props.user.id ? (
+              <button onClick={() => toggleFollow(selectedUser)}>
+                {selectedUser.followingByMe ? "Unfollow" : "Follow"}
+              </button>
+            ) : null}
+            <h4>Achievements</h4>
+            <ul>
+              {selectedUser.achievements.map((achievement) => (
+                <li key={achievement.id}>{achievement.title}</li>
+              ))}
+            </ul>
+            <h4>Posts</h4>
+            {posts.map((post) => (
+              <article className="compact-panel" key={post.id}>
+                <strong>{post.type}</strong>
+                <p>{post.text}</p>
+                <small>
+                  Likes: {post.likesCount} / Comments: {post.commentsCount} /
+                  Reposts: {post.repostsCount}
+                </small>
+              </article>
+            ))}
+          </section>
+        ) : null}
+      </div>
+    </main>
+  );
+}
+
 function RoadmapScreen(props: { token: string }) {
   const [steps, setSteps] = useState<RoadmapStep[]>([]);
   const [lesson, setLesson] = useState<RoadmapLesson | null>(null);
@@ -369,6 +489,23 @@ function ProfileScreen(props: {
   const [avatarUrl, setAvatarUrl] = useState(
     props.user.musicianProfile?.avatarUrl ?? "",
   );
+  const [location, setLocation] = useState(
+    props.user.musicianProfile?.location ?? "",
+  );
+  const [genres, setGenres] = useState(
+    props.user.musicianProfile?.genres.join(", ") ?? "",
+  );
+  const [instruments, setInstruments] = useState(
+    props.user.musicianProfile?.instruments.join(", ") ?? "",
+  );
+  const [daw, setDaw] = useState(props.user.musicianProfile?.daw.join(", ") ?? "");
+  const [socialLinks, setSocialLinks] = useState(
+    Object.entries(props.user.musicianProfile?.socialLinks ?? {})
+      .map(([key, value]) => `${key}: ${value}`)
+      .join("\n"),
+  );
+  const [achievementTitle, setAchievementTitle] = useState("");
+  const [achievementDescription, setAchievementDescription] = useState("");
 
   const achievements = useMemo(() => props.user.achievements ?? [], [props.user]);
 
@@ -377,8 +514,28 @@ function ProfileScreen(props: {
       name,
       bio,
       avatarUrl,
+      location,
+      genres: splitList(genres),
+      instruments: splitList(instruments),
+      daw: splitList(daw),
+      socialLinks: parseSocialLinks(socialLinks),
     });
     props.onUserChange(result.user);
+  }
+
+  async function addAchievement() {
+    if (!achievementTitle.trim()) {
+      return;
+    }
+
+    await api.createAchievement(props.token, {
+      title: achievementTitle,
+      description: achievementDescription || undefined,
+    });
+    const result = await api.getProfile(props.token);
+    props.onUserChange(result.user);
+    setAchievementTitle("");
+    setAchievementDescription("");
   }
 
   return (
@@ -399,10 +556,51 @@ function ProfileScreen(props: {
           onChange={(event) => setAvatarUrl(event.target.value)}
         />
       </label>
+      <label>
+        Location
+        <input value={location} onChange={(event) => setLocation(event.target.value)} />
+      </label>
+      <label>
+        Genres
+        <input value={genres} onChange={(event) => setGenres(event.target.value)} />
+      </label>
+      <label>
+        Instruments
+        <input
+          value={instruments}
+          onChange={(event) => setInstruments(event.target.value)}
+        />
+      </label>
+      <label>
+        DAW
+        <input value={daw} onChange={(event) => setDaw(event.target.value)} />
+      </label>
+      <label>
+        Social links
+        <textarea
+          value={socialLinks}
+          onChange={(event) => setSocialLinks(event.target.value)}
+        />
+      </label>
       <button onClick={save}>Save</button>
       <p>Points: {props.user.musicianProfile?.points ?? 0}</p>
       <p>Roadmap progress: {props.user.musicianProfile?.roadmapProgress ?? 0}%</p>
       <h3>Achievements</h3>
+      <label>
+        Title
+        <input
+          value={achievementTitle}
+          onChange={(event) => setAchievementTitle(event.target.value)}
+        />
+      </label>
+      <label>
+        Description
+        <textarea
+          value={achievementDescription}
+          onChange={(event) => setAchievementDescription(event.target.value)}
+        />
+      </label>
+      <button onClick={addAchievement}>Add achievement</button>
       <ul>
         {achievements.map((achievement) => (
           <li key={achievement.id}>{achievement.title}</li>
@@ -410,4 +608,26 @@ function ProfileScreen(props: {
       </ul>
     </main>
   );
+}
+
+function splitList(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseSocialLinks(value: string) {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .reduce<Record<string, string>>((links, item) => {
+      const [key, ...rest] = item.split(":");
+      const link = rest.join(":").trim();
+      if (key && link) {
+        links[key.trim()] = link;
+      }
+      return links;
+    }, {});
 }

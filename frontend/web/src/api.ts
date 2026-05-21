@@ -12,6 +12,11 @@ export type ApiUser = {
     level: MusicianLevel | null;
     bio: string | null;
     avatarUrl: string | null;
+    location: string | null;
+    genres: string[];
+    instruments: string[];
+    daw: string[];
+    socialLinks: Record<string, string>;
     points: number;
     roadmapProgress: number;
   };
@@ -22,6 +27,9 @@ export type ApiUser = {
     type: "roadmap" | "professional";
     createdAt: string;
   }>;
+  followersCount?: number;
+  followingCount?: number;
+  followingByMe?: boolean;
 };
 
 export type ApiPost = {
@@ -29,14 +37,23 @@ export type ApiPost = {
   text: string;
   type: PostType;
   likesCount: number;
+  commentsCount: number;
+  repostsCount: number;
   likedByMe: boolean;
+  repostedByMe: boolean;
   createdAt: string;
+  updatedAt: string;
   author: {
     id: string;
     name: string;
     role: UserRole;
     avatarUrl: string | null;
   };
+};
+
+export type PageInfo = {
+  hasNextPage: boolean;
+  nextCursor: string | null;
 };
 
 export type RoadmapStep = {
@@ -125,7 +142,16 @@ export const api = {
   },
   updateProfile(
     token: string,
-    input: { name?: string; bio?: string; avatarUrl?: string },
+    input: {
+      name?: string;
+      bio?: string;
+      avatarUrl?: string;
+      location?: string;
+      genres?: string[];
+      instruments?: string[];
+      daw?: string[];
+      socialLinks?: Record<string, string>;
+    },
   ) {
     return request<{ user: ApiUser }>(
       "/profile/me",
@@ -137,7 +163,64 @@ export const api = {
     );
   },
   getPosts(token: string) {
-    return request<{ posts: ApiPost[] }>("/posts", {}, token);
+    return request<{ posts: ApiPost[]; pageInfo: PageInfo }>("/posts", {}, token);
+  },
+  getProfiles(token: string, input: { q?: string; cursor?: string } = {}) {
+    const params = new URLSearchParams();
+    if (input.q) {
+      params.set("q", input.q);
+    }
+    if (input.cursor) {
+      params.set("cursor", input.cursor);
+    }
+    const query = params.toString();
+    return request<{ users: ApiUser[]; pageInfo: PageInfo }>(
+      `/profiles${query ? `?${query}` : ""}`,
+      {},
+      token,
+    );
+  },
+  getPublicProfile(token: string, userId: string) {
+    return request<{ user: ApiUser }>(`/profiles/${userId}`, {}, token);
+  },
+  getProfilePosts(token: string, userId: string) {
+    return request<{ posts: ApiPost[]; pageInfo: PageInfo }>(
+      `/profiles/${userId}/posts`,
+      {},
+      token,
+    );
+  },
+  followProfile(token: string, userId: string) {
+    return request<{ following: boolean }>(
+      `/profiles/${userId}/follow`,
+      {
+        method: "POST",
+        body: JSON.stringify({}),
+      },
+      token,
+    );
+  },
+  unfollowProfile(token: string, userId: string) {
+    return request<{ following: boolean }>(
+      `/profiles/${userId}/follow`,
+      {
+        method: "DELETE",
+        body: JSON.stringify({}),
+      },
+      token,
+    );
+  },
+  createAchievement(token: string, input: { title: string; description?: string }) {
+    return request<{
+      achievement: ApiUser["achievements"][number];
+    }>(
+      "/profile/me/achievements",
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+      token,
+    );
   },
   createPost(token: string, input: { text: string; type: PostType }) {
     return request<{ post: ApiPost }>(
