@@ -67,7 +67,7 @@
 }
 
 .post-composer,
-.feed-post,
+.post-content-card,
 .pro-promo {
   border-radius: 21px;
   background: rgba(122, 122, 122, 0.2);
@@ -143,15 +143,18 @@
 }
 
 .feed-post {
-  padding: 17px;
+  display: grid;
+  gap: 10px;
+  padding: 10px 0;
 }
 
 .post-author-row {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
-  margin-bottom: 12px;
+  min-height: 46px;
+  padding: 0 10px;
 }
 
 .post-avatar {
@@ -180,7 +183,7 @@
 .post-author-copy div {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -199,18 +202,18 @@
 
 .level-badge {
   display: inline-grid;
-  width: 11px;
-  height: 12px;
+  width: 9px;
+  height: 10px;
   place-items: center;
   color: #ffffff !important;
-  font-size: 7px !important;
+  font-size: 5px !important;
   font-weight: 800;
-  border-radius: 3px;
+  border-radius: 2px;
   background: #ff4646;
 }
 
 .post-menu button {
-  width: 28px;
+  width: 42px;
   height: 28px;
   padding: 0;
   margin: 0;
@@ -224,62 +227,66 @@
 .text-post,
 .roadmap-post,
 .gallery-post {
-  margin: 0 0 12px;
+  margin: 0;
+}
+
+.post-content-card {
+  padding: 19px 17px;
 }
 
 .demo-post {
   display: grid;
-  grid-template-columns: minmax(0, 186px) minmax(92px, 1fr);
-  gap: 9px;
+  grid-template-columns: minmax(0, 131px) minmax(136px, 1fr);
+  justify-content: center;
+  gap: 10px;
   align-items: start;
 }
 
 .demo-post p,
 .gallery-post p {
   grid-column: 1 / -1;
-  margin: 10px 0 0;
+  margin: 0;
   font-size: 15px;
   line-height: 1.25;
-  letter-spacing: 0;
+  letter-spacing: 0.6px;
 }
 
 .demo-cover {
   position: relative;
+  width: 131px;
   aspect-ratio: 1;
   overflow: hidden;
-  border: 1px solid #2d2d2d;
-  border-radius: 9px;
+  border-radius: 6px;
+  background: #d9d9d9;
 }
 
 .play-button {
   position: absolute;
   inset: 0;
-  width: 75px;
-  height: 75px;
-  display: grid;
-  place-items: center;
+  width: 45px !important;
+  height: 45px !important;
   margin: auto;
-  color: rgba(255, 255, 255, 0.93);
-  font-size: 30px;
-  border-radius: 999px;
-  background: rgba(7, 7, 7, 0.46);
+  object-fit: contain !important;
 }
 
 .service-list {
   display: grid;
-  gap: 7px;
+  gap: 4px;
+  width: 136px;
+  min-height: 138px;
+  padding: 7px 10px 10px;
 }
 
 .service-list button {
-  min-height: 40px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 10px;
   margin: 0;
   color: #ffffff;
-  border-radius: 9px;
-  background: rgba(0, 0, 0, 0.2);
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.24);
   cursor: pointer;
 }
 
@@ -292,12 +299,12 @@
 }
 
 .text-post {
-  padding: 14px 19px;
+  padding: 0;
   color: #ffffff;
   font-size: 15px;
   line-height: 1.28;
-  border-radius: 21px;
-  background: rgba(122, 122, 122, 0.2);
+  letter-spacing: 0.15px;
+  background: transparent;
 }
 
 .roadmap-post {
@@ -393,20 +400,31 @@
 }
 
 .post-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(105px, 0.8fr);
+  display: flex;
   gap: 12px;
   align-items: center;
+  justify-content: center;
+  min-height: 49px;
+  padding: 0 10px;
 }
 
 .post-actions button {
-  min-height: 38px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 0 10px;
   margin: 0;
   color: #828282;
-  border-radius: 21px;
-  background: rgba(122, 122, 122, 0.2);
+  border-radius: 45px;
+  background: rgba(138, 138, 138, 0.2);
   cursor: pointer;
+}
+
+.post-actions img {
+  width: auto;
+  height: 15px;
+  object-fit: contain;
 }
 
 .post-actions button.active {
@@ -414,7 +432,13 @@
 }
 
 .post-actions .roadmap-chip {
+  gap: 10px;
   white-space: nowrap;
+}
+
+.post-actions .roadmap-chip img {
+  width: 23px;
+  height: 14px;
 }
 
 .feed-comments {

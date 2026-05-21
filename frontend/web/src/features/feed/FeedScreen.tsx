@@ -7,10 +7,16 @@ import {
   type ApiUser,
   type PostType,
 } from "../../api";
+import bookmarkActionIcon from "../../assets/feed/bookmark-action.png";
+import cardCoverImage from "../../assets/feed/card-cover.png";
+import commentActionIcon from "../../assets/feed/comment-action.png";
 import concertCrowdImage from "../../assets/feed/concert-crowd.png";
 import concertStageImage from "../../assets/feed/concert-stage.png";
 import concertWideImage from "../../assets/feed/concert-wide.png";
 import coverImage from "../../assets/feed/cover.png";
+import likeActionIcon from "../../assets/feed/like-action.png";
+import playButtonImage from "../../assets/feed/play-button.png";
+import shareActionIcon from "../../assets/feed/share-action.png";
 import "./feed.css";
 
 type FeedScreenProps = {
@@ -279,7 +285,9 @@ function PostCard(props: {
   return (
     <article className="feed-post">
       <PostAuthorRow post={props.post} canDelete={canDeletePost} onDelete={props.onDeletePost} />
-      <PostBody post={props.post} variant={props.variant} />
+      <div className="post-content-card">
+        <PostBody post={props.post} variant={props.variant} />
+      </div>
       <PostActions post={props.post} onLike={props.onLike} onToggleComments={props.onToggleComments} />
       {props.comments ? (
         <CommentsPanel
@@ -307,7 +315,7 @@ function PostAuthorRow(props: {
         {props.post.author.avatarUrl ? (
           <img src={props.post.author.avatarUrl} alt="" />
         ) : (
-          <img src={coverImage} alt="" />
+          <img src={cardCoverImage} alt="" />
         )}
       </div>
       <div className="post-author-copy">
@@ -355,8 +363,8 @@ function DemoPost(props: { post: ApiPost }) {
   return (
     <div className="demo-post">
       <div className="demo-cover">
-        <img src={coverImage} alt="" />
-        <div className="play-button">▶</div>
+        <img src={cardCoverImage} alt="" />
+        <img className="play-button" src={playButtonImage} alt="" />
       </div>
       <div className="service-list">
         {serviceLinks.map((label) => (
@@ -413,14 +421,16 @@ function PostActions(props: {
         onClick={props.onLike}
         className={props.post.likedByMe ? "active" : ""}
       >
-        ♥ {props.post.likesCount}
+        <img src={likeActionIcon} alt="" /> {props.post.likesCount}
       </button>
       <button type="button" onClick={props.onToggleComments}>
-        💬 {props.post.commentsCount}
+        <img src={commentActionIcon} alt="" /> {props.post.commentsCount}
       </button>
-      <button type="button">↗ {props.post.repostsCount}</button>
+      <button type="button">
+        <img src={shareActionIcon} alt="" /> {props.post.repostsCount}
+      </button>
       <button type="button" className="roadmap-chip">
-        Роудмап ›
+        <img src={bookmarkActionIcon} alt="" /> Роудмап ›
       </button>
     </div>
   );
