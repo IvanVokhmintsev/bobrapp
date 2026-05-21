@@ -5,6 +5,7 @@ import { authenticate } from "../auth/auth.middleware.js";
 import { requireRole } from "../roles/role.middleware.js";
 import { toPublicPost } from "./post.presenter.js";
 import {
+  commentParamsSchema,
   commentPostSchema,
   createPostSchema,
   feedQuerySchema,
@@ -12,6 +13,7 @@ import {
   postIdParamsSchema,
 } from "./post.schemas.js";
 import type {
+  CommentParams,
   CreateCommentBody,
   CreatePostBody,
   FeedQuery,
@@ -125,6 +127,43 @@ export async function registerPostRoutes(app: FastifyInstance) {
       return reply.status(201).send({
         post: toPublicPost(post, request.user.userId),
       });
+    },
+  );
+
+  app.delete<{ Params: PostIdParams }>(
+    "/posts/:id",
+    {
+      preHandler: [authenticate, requireRole("musician")],
+      schema: postIdParamsSchema,
+    },
+    async (request, reply) => {
+      const post = await prisma.post.findUnique({
+        where: { id: request.params.id },
+        select: {
+          id: true,
+          authorId: true,
+        },
+      });
+
+      if (!post) {
+        return reply.status(404).send({
+          error: "Post not found",
+          statusCode: 404,
+        });
+      }
+
+      if (post.authorId !== request.user.userId) {
+        return reply.status(403).send({
+          error: "Only the post author can delete this post",
+          statusCode: 403,
+        });
+      }
+
+      await prisma.post.delete({
+        where: { id: post.id },
+      });
+
+      return reply.status(204).send();
     },
   );
 
@@ -525,6 +564,68 @@ export async function registerPostRoutes(app: FastifyInstance) {
           },
         },
       });
+    },
+  );
+
+  app.delete<{ Params: CommentParams }>(
+    "/posts/:id/comments/:commentId",
+    {
+      preHandler: authenticate,
+      schema: commentParamsSchema,
+    },
+    async (request, reply) => {
+      const comment = await prisma.comment.findUnique({
+        where: {
+          id: request.params.commentId,
+        },
+        include: {
+          post: {
+            select: {
+              id: true,
+              authorId: true,
+            },
+          },
+        },
+      });
+
+      if (!comment || comment.postId !== request.params.id) {
+        return reply.status(404).send({
+          error: "Comment not found",
+          statusCode: 404,
+        });
+      }
+
+      const canDelete =
+        comment.authorId === request.user.userId ||
+        comment.post.authorId === request.user.userId;
+
+      if (!canDelete) {
+        return reply.status(403).send({
+          error: "Only the comment author or post author can delete this comment",
+          statusCode: 403,
+        });
+      }
+
+      await prisma.$transaction(async (transaction) => {
+        await transaction.comment.delete({
+          where: {
+            id: comment.id,
+          },
+        });
+
+        await transaction.post.update({
+          where: {
+            id: comment.postId,
+          },
+          data: {
+            commentsCount: {
+              decrement: 1,
+            },
+          },
+        });
+      });
+
+      return reply.status(204).send();
     },
   );
 }

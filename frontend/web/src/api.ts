@@ -51,6 +51,19 @@ export type ApiPost = {
   };
 };
 
+export type ApiComment = {
+  id: string;
+  text: string;
+  createdAt: string;
+  updatedAt: string;
+  author: {
+    id: string;
+    name: string;
+    role: UserRole;
+    avatarUrl: string | null;
+  };
+};
+
 export type PageInfo = {
   hasNextPage: boolean;
   nextCursor: string | null;
@@ -95,9 +108,12 @@ async function request<T>(
     },
   });
 
-  const data = (await response.json()) as T & {
-    error?: string;
-  };
+  const data =
+    response.status === 204
+      ? (undefined as unknown as T & { error?: string })
+      : ((await response.json()) as T & {
+          error?: string;
+        });
 
   if (!response.ok) {
     throw new Error(data.error ?? "Request failed");
@@ -232,6 +248,15 @@ export const api = {
       token,
     );
   },
+  deletePost(token: string, id: string) {
+    return request<void>(
+      `/posts/${id}`,
+      {
+        method: "DELETE",
+      },
+      token,
+    );
+  },
   likePost(token: string, id: string) {
     return request<{ post: ApiPost }>(
       `/posts/${id}/like`,
@@ -244,6 +269,32 @@ export const api = {
   unlikePost(token: string, id: string) {
     return request<{ post: ApiPost }>(
       `/posts/${id}/like`,
+      {
+        method: "DELETE",
+      },
+      token,
+    );
+  },
+  getComments(token: string, postId: string) {
+    return request<{ comments: ApiComment[] }>(
+      `/posts/${postId}/comments`,
+      {},
+      token,
+    );
+  },
+  createComment(token: string, postId: string, input: { text: string }) {
+    return request<{ comment: ApiComment }>(
+      `/posts/${postId}/comments`,
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+      token,
+    );
+  },
+  deleteComment(token: string, postId: string, commentId: string) {
+    return request<void>(
+      `/posts/${postId}/comments/${commentId}`,
       {
         method: "DELETE",
       },

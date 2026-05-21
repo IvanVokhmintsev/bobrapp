@@ -56,6 +56,18 @@ export const commentPostSchema = {
   },
 } as const;
 
+export const commentParamsSchema = {
+  params: {
+    type: "object",
+    required: ["id", "commentId"],
+    additionalProperties: false,
+    properties: {
+      id: { type: "string", minLength: 1 },
+      commentId: { type: "string", minLength: 1 },
+    },
+  },
+} as const;
+
 export const feedQuerySchema = {
   querystring: {
     type: "object",
