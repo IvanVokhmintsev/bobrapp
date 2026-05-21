@@ -237,7 +237,6 @@ export const api = {
       `/posts/${id}/like`,
       {
         method: "POST",
-        body: JSON.stringify({}),
       },
       token,
     );
@@ -247,7 +246,6 @@ export const api = {
       `/posts/${id}/like`,
       {
         method: "DELETE",
-        body: JSON.stringify({}),
       },
       token,
     );

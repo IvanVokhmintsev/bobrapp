@@ -24,11 +24,6 @@ export const likePostSchema = {
       id: { type: "string", minLength: 1 },
     },
   },
-  body: {
-    type: "object",
-    additionalProperties: false,
-    properties: {},
-  },
 } as const;
 
 export const postIdParamsSchema = {

@@ -209,6 +209,7 @@ function FeedScreen(props: { token: string; user: ApiUser }) {
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [text, setText] = useState("");
   const [type, setType] = useState<PostType>("professional");
+  const [error, setError] = useState("");
 
   async function loadPosts() {
     const result = await api.getPosts(props.token);
@@ -220,9 +221,14 @@ function FeedScreen(props: { token: string; user: ApiUser }) {
   }, []);
 
   async function createPost() {
-    await api.createPost(props.token, { text, type });
-    setText("");
-    await loadPosts();
+    try {
+      setError("");
+      await api.createPost(props.token, { text, type });
+      setText("");
+      await loadPosts();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to create post");
+    }
   }
 
   async function likePost(id: string) {
@@ -230,12 +236,17 @@ function FeedScreen(props: { token: string; user: ApiUser }) {
     if (!target) {
       return;
     }
-    if (target.likedByMe) {
-      await api.unlikePost(props.token, id);
-    } else {
-      await api.likePost(props.token, id);
+    try {
+      setError("");
+      const result = target.likedByMe
+        ? await api.unlikePost(props.token, id)
+        : await api.likePost(props.token, id);
+      setPosts((currentPosts) =>
+        currentPosts.map((post) => (post.id === id ? result.post : post)),
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to update like");
     }
-    await loadPosts();
   }
 
   return (
@@ -251,6 +262,7 @@ function FeedScreen(props: { token: string; user: ApiUser }) {
           <button onClick={createPost}>Create post</button>
         </section>
       ) : null}
+      {error ? <p className="error">{error}</p> : null}
       {posts.map((post) => (
         <article className="panel" key={post.id}>
           <strong>{post.author.name}</strong> <span>{post.type}</span>
