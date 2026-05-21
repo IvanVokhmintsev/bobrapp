@@ -2,15 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   api,
-  type ApiComment,
   type ApiPost,
   type ApiUser,
   type MusicianLevel,
-  type PostType,
   type RoadmapLesson,
   type RoadmapStep,
   type UserRole,
 } from "./api";
+import { FeedScreen } from "./features/feed/FeedScreen";
 
 type View = "auth" | "onboarding" | "feed" | "discover" | "roadmap" | "profile";
 
@@ -79,19 +78,21 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <header>
-        <div>
-          <strong>Bobrapp</strong>
-          <span> {user.name}</span>
-        </div>
-        <nav>
-          <button onClick={() => setView("feed")}>Feed</button>
-          <button onClick={() => setView("discover")}>Discover</button>
-          <button onClick={() => setView("roadmap")}>Roadmap</button>
-          <button onClick={() => setView("profile")}>Profile</button>
-          <button onClick={logout}>Logout</button>
-        </nav>
-      </header>
+      {view === "feed" ? null : (
+        <header>
+          <div>
+            <strong>Bobrapp</strong>
+            <span> {user.name}</span>
+          </div>
+          <nav>
+            <button onClick={() => setView("feed")}>Feed</button>
+            <button onClick={() => setView("discover")}>Discover</button>
+            <button onClick={() => setView("roadmap")}>Roadmap</button>
+            <button onClick={() => setView("profile")}>Profile</button>
+            <button onClick={logout}>Logout</button>
+          </nav>
+        </header>
+      )}
 
       {message ? <p className="message">{message}</p> : null}
 
@@ -105,7 +106,21 @@ export function App() {
           onError={setMessage}
         />
       ) : null}
-      {view === "feed" ? <FeedScreen token={token} user={user} /> : null}
+      {view === "feed" ? (
+        <FeedScreen
+          token={token}
+          user={user}
+          onSelectTab={(tab) => {
+            if (tab === "profile") {
+              setView("profile");
+            } else if (tab === "booking" || tab === "events") {
+              setView("discover");
+            } else {
+              setView("feed");
+            }
+          }}
+        />
+      ) : null}
       {view === "discover" ? <DiscoverScreen token={token} user={user} /> : null}
       {view === "roadmap" ? <RoadmapScreen token={token} /> : null}
       {view === "profile" ? (
@@ -201,208 +216,6 @@ function OnboardingScreen(props: {
         <button key={level.value} onClick={() => choose(level.value)}>
           {level.label}
         </button>
-      ))}
-    </main>
-  );
-}
-
-function FeedScreen(props: { token: string; user: ApiUser }) {
-  const [posts, setPosts] = useState<ApiPost[]>([]);
-  const [text, setText] = useState("");
-  const [type, setType] = useState<PostType>("professional");
-  const [error, setError] = useState("");
-  const [commentsByPost, setCommentsByPost] = useState<
-    Record<string, ApiComment[]>
-  >({});
-  const [commentTextByPost, setCommentTextByPost] = useState<
-    Record<string, string>
-  >({});
-
-  async function loadPosts() {
-    const result = await api.getPosts(props.token);
-    setPosts(result.posts);
-  }
-
-  useEffect(() => {
-    void loadPosts();
-  }, []);
-
-  async function createPost() {
-    try {
-      setError("");
-      await api.createPost(props.token, { text, type });
-      setText("");
-      await loadPosts();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to create post");
-    }
-  }
-
-  async function likePost(id: string) {
-    const target = posts.find((post) => post.id === id);
-    if (!target) {
-      return;
-    }
-    try {
-      setError("");
-      const result = target.likedByMe
-        ? await api.unlikePost(props.token, id)
-        : await api.likePost(props.token, id);
-      setPosts((currentPosts) =>
-        currentPosts.map((post) => (post.id === id ? result.post : post)),
-      );
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to update like");
-    }
-  }
-
-  async function deletePost(id: string) {
-    try {
-      setError("");
-      await api.deletePost(props.token, id);
-      setPosts((currentPosts) => currentPosts.filter((post) => post.id !== id));
-      setCommentsByPost((current) => {
-        const next = { ...current };
-        delete next[id];
-        return next;
-      });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to delete post");
-    }
-  }
-
-  async function toggleComments(postId: string) {
-    if (commentsByPost[postId]) {
-      setCommentsByPost((current) => {
-        const next = { ...current };
-        delete next[postId];
-        return next;
-      });
-      return;
-    }
-
-    try {
-      setError("");
-      const result = await api.getComments(props.token, postId);
-      setCommentsByPost((current) => ({
-        ...current,
-        [postId]: result.comments,
-      }));
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to load comments");
-    }
-  }
-
-  async function createComment(postId: string) {
-    const text = commentTextByPost[postId]?.trim();
-    if (!text) {
-      return;
-    }
-
-    try {
-      setError("");
-      const result = await api.createComment(props.token, postId, { text });
-      setCommentsByPost((current) => ({
-        ...current,
-        [postId]: [...(current[postId] ?? []), result.comment],
-      }));
-      setCommentTextByPost((current) => ({
-        ...current,
-        [postId]: "",
-      }));
-      setPosts((currentPosts) =>
-        currentPosts.map((post) =>
-          post.id === postId
-            ? { ...post, commentsCount: post.commentsCount + 1 }
-            : post,
-        ),
-      );
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to add comment");
-    }
-  }
-
-  async function deleteComment(post: ApiPost, commentId: string) {
-    try {
-      setError("");
-      await api.deleteComment(props.token, post.id, commentId);
-      setCommentsByPost((current) => ({
-        ...current,
-        [post.id]: (current[post.id] ?? []).filter(
-          (comment) => comment.id !== commentId,
-        ),
-      }));
-      setPosts((currentPosts) =>
-        currentPosts.map((currentPost) =>
-          currentPost.id === post.id
-            ? {
-                ...currentPost,
-                commentsCount: Math.max(0, currentPost.commentsCount - 1),
-              }
-            : currentPost,
-        ),
-      );
-    } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Failed to delete comment",
-      );
-    }
-  }
-
-  return (
-    <main>
-      <h2>Feed</h2>
-      {props.user.role === "musician" ? (
-        <section className="panel">
-          <textarea value={text} onChange={(event) => setText(event.target.value)} />
-          <select value={type} onChange={(event) => setType(event.target.value as PostType)}>
-            <option value="professional">professional</option>
-            <option value="roadmap">roadmap</option>
-          </select>
-          <button onClick={createPost}>Create post</button>
-        </section>
-      ) : null}
-      {error ? <p className="error">{error}</p> : null}
-      {posts.map((post) => (
-        <article className="panel" key={post.id}>
-          <strong>{post.author.name}</strong> <span>{post.type}</span>
-          <p>{post.text}</p>
-          <button onClick={() => likePost(post.id)}>
-            {post.likedByMe ? "Unlike" : "Like"} {post.likesCount}
-          </button>
-          <button onClick={() => toggleComments(post.id)}>
-            Comments {post.commentsCount}
-          </button>
-          {post.author.id === props.user.id ? (
-            <button onClick={() => deletePost(post.id)}>Delete post</button>
-          ) : null}
-          {commentsByPost[post.id] ? (
-            <section className="comments">
-              {commentsByPost[post.id].map((comment) => (
-                <div className="comment" key={comment.id}>
-                  <strong>{comment.author.name}</strong>
-                  <p>{comment.text}</p>
-                  {comment.author.id === props.user.id ||
-                  post.author.id === props.user.id ? (
-                    <button onClick={() => deleteComment(post, comment.id)}>
-                      Delete comment
-                    </button>
-                  ) : null}
-                </div>
-              ))}
-              <textarea
-                value={commentTextByPost[post.id] ?? ""}
-                onChange={(event) =>
-                  setCommentTextByPost((current) => ({
-                    ...current,
-                    [post.id]: event.target.value,
-                  }))
-                }
-              />
-              <button onClick={() => createComment(post.id)}>Add comment</button>
-            </section>
-          ) : null}
-        </article>
       ))}
     </main>
   );
