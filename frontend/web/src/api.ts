@@ -99,10 +99,12 @@ async function request<T>(
   options: RequestInit = {},
   token: string | null = null,
 ): Promise<T> {
+  const hasBody = options.body !== undefined;
+
   const response = await fetch(`${apiUrl}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(hasBody ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
