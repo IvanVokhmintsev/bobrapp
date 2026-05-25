@@ -28,6 +28,16 @@ type FeedScreenProps = {
 type CommentsByPost = Record<string, ApiComment[]>;
 type CommentTextByPost = Record<string, string>;
 
+function toggleInSet(values: Set<string>, id: string) {
+  const next = new Set(values);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  return next;
+}
+
 const galleryImages = [concertWideImage, concertStageImage, concertCrowdImage];
 const serviceLinks = ["Presave", "Spotify", "VK Музыка", "Apple Music"];
 
@@ -37,6 +47,12 @@ export function FeedScreen(props: FeedScreenProps) {
   const [type, setType] = useState<PostType>("professional");
   const [error, setError] = useState("");
   const [commentsByPost, setCommentsByPost] = useState<CommentsByPost>({});
+  const [expandedCommentPostIds, setExpandedCommentPostIds] = useState(
+    () => new Set<string>(),
+  );
+  const [loadingCommentPostIds, setLoadingCommentPostIds] = useState(
+    () => new Set<string>(),
+  );
   const [commentTextByPost, setCommentTextByPost] =
     useState<CommentTextByPost>({});
 
@@ -91,20 +107,34 @@ export function FeedScreen(props: FeedScreenProps) {
         delete next[id];
         return next;
       });
+      setExpandedCommentPostIds((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
+      setLoadingCommentPostIds((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        return next;
+      });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Failed to delete post");
     }
   }
 
   async function toggleComments(postId: string) {
-    if (commentsByPost[postId]) {
-      setCommentsByPost((current) => {
-        const next = { ...current };
-        delete next[postId];
-        return next;
-      });
+    if (expandedCommentPostIds.has(postId)) {
+      setExpandedCommentPostIds((current) => toggleInSet(current, postId));
       return;
     }
+
+    setExpandedCommentPostIds((current) => toggleInSet(current, postId));
+
+    if (commentsByPost[postId] !== undefined) {
+      return;
+    }
+
+    setLoadingCommentPostIds((current) => toggleInSet(current, postId));
 
     try {
       setError("");
@@ -114,7 +144,14 @@ export function FeedScreen(props: FeedScreenProps) {
         [postId]: result.comments,
       }));
     } catch (caught) {
+      setExpandedCommentPostIds((current) => toggleInSet(current, postId));
       setError(caught instanceof Error ? caught.message : "Failed to load comments");
+    } finally {
+      setLoadingCommentPostIds((current) => {
+        const next = new Set(current);
+        next.delete(postId);
+        return next;
+      });
     }
   }
 
@@ -190,12 +227,14 @@ export function FeedScreen(props: FeedScreenProps) {
       ) : null}
       {error ? <p className="feed-error">{error}</p> : null}
       <section className="feed-list" aria-label="Лента постов">
-        {posts.map((post, index) => (
+        {posts.map((post) => (
           <PostCard
             key={post.id}
             post={post}
             currentUser={props.user}
-            variant={getPostVariant(post, index)}
+            variant={getPostVariant(post)}
+            commentsOpen={expandedCommentPostIds.has(post.id)}
+            commentsLoading={loadingCommentPostIds.has(post.id)}
             comments={commentsByPost[post.id]}
             commentText={commentTextByPost[post.id] ?? ""}
             onLike={() => likePost(post.id)}
@@ -271,6 +310,8 @@ function PostCard(props: {
   post: ApiPost;
   currentUser: ApiUser;
   variant: "demo" | "text" | "roadmap" | "gallery";
+  commentsOpen: boolean;
+  commentsLoading: boolean;
   comments?: ApiComment[];
   commentText: string;
   onLike: () => void;
@@ -288,12 +329,18 @@ function PostCard(props: {
       <div className="post-content-card">
         <PostBody post={props.post} variant={props.variant} />
       </div>
-      <PostActions post={props.post} onLike={props.onLike} onToggleComments={props.onToggleComments} />
-      {props.comments ? (
+      <PostActions
+        post={props.post}
+        commentsOpen={props.commentsOpen}
+        onLike={props.onLike}
+        onToggleComments={props.onToggleComments}
+      />
+      {props.commentsOpen ? (
         <CommentsPanel
           post={props.post}
           currentUser={props.currentUser}
-          comments={props.comments}
+          comments={props.comments ?? []}
+          loading={props.commentsLoading}
           commentText={props.commentText}
           onTextChange={props.onCommentTextChange}
           onCreate={props.onCreateComment}
@@ -411,27 +458,50 @@ function GalleryPost(props: { post: ApiPost }) {
 
 function PostActions(props: {
   post: ApiPost;
+  commentsOpen: boolean;
   onLike: () => void;
   onToggleComments: () => void;
 }) {
   return (
     <div className="post-actions">
-      <button
-        type="button"
-        onClick={props.onLike}
-        className={props.post.likedByMe ? "active" : ""}
-      >
-        <img src={likeActionIcon} alt="" /> {props.post.likesCount}
-      </button>
-      <button type="button" onClick={props.onToggleComments}>
-        <img src={commentActionIcon} alt="" /> {props.post.commentsCount}
-      </button>
-      <button type="button">
-        <img src={shareActionIcon} alt="" /> {props.post.repostsCount}
-      </button>
-      <button type="button" className="roadmap-chip">
-        <img src={bookmarkActionIcon} alt="" /> Роудмап ›
-      </button>
+      <div className="post-actions-group">
+        <button
+          type="button"
+          className={`post-action ${props.post.likedByMe ? "active" : ""}`}
+          onClick={props.onLike}
+          aria-label={`Лайки: ${props.post.likesCount}`}
+        >
+          <img src={likeActionIcon} alt="" />
+          <span>{props.post.likesCount}</span>
+        </button>
+        <button
+          type="button"
+          className={`post-action ${props.commentsOpen ? "active" : ""}`}
+          onClick={props.onToggleComments}
+          aria-expanded={props.commentsOpen}
+          aria-label={`Комментарии: ${props.post.commentsCount}`}
+        >
+          <img src={commentActionIcon} alt="" />
+          <span>{props.post.commentsCount}</span>
+        </button>
+        <button
+          type="button"
+          className="post-action"
+          aria-label={`Репосты: ${props.post.repostsCount}`}
+        >
+          <img src={shareActionIcon} alt="" />
+          <span>{props.post.repostsCount}</span>
+        </button>
+      </div>
+      {props.post.type === "roadmap" ? (
+        <button type="button" className="post-action roadmap-chip">
+          <img src={bookmarkActionIcon} alt="" />
+          <span>Роудмап</span>
+          <span className="roadmap-chip-chevron" aria-hidden="true">
+            ›
+          </span>
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -440,13 +510,18 @@ function CommentsPanel(props: {
   post: ApiPost;
   currentUser: ApiUser;
   comments: ApiComment[];
+  loading: boolean;
   commentText: string;
   onTextChange: (value: string) => void;
   onCreate: () => void;
   onDelete: (commentId: string) => void;
 }) {
   return (
-    <section className="feed-comments">
+    <section className="feed-comments" aria-label="Комментарии">
+      {props.loading ? <p className="feed-comments-status">Загрузка комментариев…</p> : null}
+      {!props.loading && props.comments.length === 0 ? (
+        <p className="feed-comments-status">Пока нет комментариев</p>
+      ) : null}
       {props.comments.map((comment) => {
         const canDelete =
           comment.author.id === props.currentUser.id ||
@@ -520,16 +595,28 @@ function BottomNav(props: {
   );
 }
 
-function getPostVariant(
-  post: ApiPost,
-  index: number,
-): "demo" | "text" | "roadmap" | "gallery" {
+function getPostVariant(post: ApiPost): "demo" | "text" | "roadmap" | "gallery" {
   if (post.type === "roadmap") {
     return "roadmap";
   }
 
-  const variants: Array<"demo" | "text" | "gallery"> = ["demo", "text", "gallery"];
-  return variants[index % variants.length];
+  if (looksLikeGalleryPost(post.text)) {
+    return "gallery";
+  }
+
+  if (looksLikeDemoPost(post.text)) {
+    return "demo";
+  }
+
+  return "text";
+}
+
+function looksLikeGalleryPost(text: string) {
+  return /\b(фото|gallery|галерея)\b/i.test(text);
+}
+
+function looksLikeDemoPost(text: string) {
+  return /\b(демо|demo|presave|spotify)\b/i.test(text);
 }
 
 function formatPostTime(value: string) {
