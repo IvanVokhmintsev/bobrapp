@@ -1,5 +1,6 @@
 import type { ApiUser } from "../../api";
-import { FeedComposer, FeedProBanner, FeedTabBar, FeedTopBar } from "./FeedChrome";
+import { AppTabBar } from "../navigation/AppTabBar";
+import { FeedComposer, FeedProBanner, FeedTopBar } from "./FeedChrome";
 import { FeedPostCard } from "./FeedPostCard";
 import "./feed.css";
 import { useFeedInteractions } from "./useFeedInteractions";
@@ -56,7 +57,7 @@ export function FeedScreen(props: FeedScreenProps) {
         <FeedProBanner />
       </main>
 
-      <FeedTabBar onSelect={props.onSelectTab} />
+      <AppTabBar active="feed" onSelect={props.onSelectTab} />
     </div>
   );
 }

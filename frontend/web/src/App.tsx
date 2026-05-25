@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   api,
@@ -10,6 +10,7 @@ import {
   type UserRole,
 } from "./api";
 import { FeedScreen } from "./features/feed/FeedScreen";
+import { ProfileScreen } from "./features/profile/ProfileScreen";
 
 type View = "auth" | "onboarding" | "feed" | "discover" | "roadmap" | "profile";
 
@@ -77,8 +78,14 @@ export function App() {
   }
 
   return (
-    <div className={view === "feed" ? "app-shell app-shell--feed" : "app-shell"}>
-      {view === "feed" ? null : (
+    <div
+      className={
+        view === "feed" || view === "profile"
+          ? "app-shell app-shell--feed"
+          : "app-shell"
+      }
+    >
+      {view === "feed" || view === "profile" ? null : (
         <header>
           <div>
             <strong>Bobrapp</strong>
@@ -124,7 +131,21 @@ export function App() {
       {view === "discover" ? <DiscoverScreen token={token} user={user} /> : null}
       {view === "roadmap" ? <RoadmapScreen token={token} /> : null}
       {view === "profile" ? (
-        <ProfileScreen token={token} user={user} onUserChange={setUser} />
+        <ProfileScreen
+          token={token}
+          user={user}
+          onUserChange={setUser}
+          onSelectTab={(tab) => {
+            if (tab === "feed") {
+              setView("feed");
+            } else if (tab === "booking" || tab === "events") {
+              setView("discover");
+            } else {
+              setView("profile");
+            }
+          }}
+          onOpenRoadmap={() => setView("roadmap")}
+        />
       ) : null}
     </div>
   );
@@ -436,155 +457,3 @@ function RoadmapScreen(props: { token: string }) {
   );
 }
 
-function ProfileScreen(props: {
-  token: string;
-  user: ApiUser;
-  onUserChange: (user: ApiUser) => void;
-}) {
-  const [name, setName] = useState(props.user.name);
-  const [bio, setBio] = useState(props.user.musicianProfile?.bio ?? "");
-  const [avatarUrl, setAvatarUrl] = useState(
-    props.user.musicianProfile?.avatarUrl ?? "",
-  );
-  const [location, setLocation] = useState(
-    props.user.musicianProfile?.location ?? "",
-  );
-  const [genres, setGenres] = useState(
-    props.user.musicianProfile?.genres.join(", ") ?? "",
-  );
-  const [instruments, setInstruments] = useState(
-    props.user.musicianProfile?.instruments.join(", ") ?? "",
-  );
-  const [daw, setDaw] = useState(props.user.musicianProfile?.daw.join(", ") ?? "");
-  const [socialLinks, setSocialLinks] = useState(
-    Object.entries(props.user.musicianProfile?.socialLinks ?? {})
-      .map(([key, value]) => `${key}: ${value}`)
-      .join("\n"),
-  );
-  const [achievementTitle, setAchievementTitle] = useState("");
-  const [achievementDescription, setAchievementDescription] = useState("");
-
-  const achievements = useMemo(() => props.user.achievements ?? [], [props.user]);
-
-  async function save() {
-    const result = await api.updateProfile(props.token, {
-      name,
-      bio,
-      avatarUrl,
-      location,
-      genres: splitList(genres),
-      instruments: splitList(instruments),
-      daw: splitList(daw),
-      socialLinks: parseSocialLinks(socialLinks),
-    });
-    props.onUserChange(result.user);
-  }
-
-  async function addAchievement() {
-    if (!achievementTitle.trim()) {
-      return;
-    }
-
-    await api.createAchievement(props.token, {
-      title: achievementTitle,
-      description: achievementDescription || undefined,
-    });
-    const result = await api.getProfile(props.token);
-    props.onUserChange(result.user);
-    setAchievementTitle("");
-    setAchievementDescription("");
-  }
-
-  return (
-    <main className="panel">
-      <h2>Profile</h2>
-      <label>
-        Name
-        <input value={name} onChange={(event) => setName(event.target.value)} />
-      </label>
-      <label>
-        Bio
-        <textarea value={bio} onChange={(event) => setBio(event.target.value)} />
-      </label>
-      <label>
-        Avatar URL
-        <input
-          value={avatarUrl}
-          onChange={(event) => setAvatarUrl(event.target.value)}
-        />
-      </label>
-      <label>
-        Location
-        <input value={location} onChange={(event) => setLocation(event.target.value)} />
-      </label>
-      <label>
-        Genres
-        <input value={genres} onChange={(event) => setGenres(event.target.value)} />
-      </label>
-      <label>
-        Instruments
-        <input
-          value={instruments}
-          onChange={(event) => setInstruments(event.target.value)}
-        />
-      </label>
-      <label>
-        DAW
-        <input value={daw} onChange={(event) => setDaw(event.target.value)} />
-      </label>
-      <label>
-        Social links
-        <textarea
-          value={socialLinks}
-          onChange={(event) => setSocialLinks(event.target.value)}
-        />
-      </label>
-      <button onClick={save}>Save</button>
-      <p>Points: {props.user.musicianProfile?.points ?? 0}</p>
-      <p>Roadmap progress: {props.user.musicianProfile?.roadmapProgress ?? 0}%</p>
-      <h3>Achievements</h3>
-      <label>
-        Title
-        <input
-          value={achievementTitle}
-          onChange={(event) => setAchievementTitle(event.target.value)}
-        />
-      </label>
-      <label>
-        Description
-        <textarea
-          value={achievementDescription}
-          onChange={(event) => setAchievementDescription(event.target.value)}
-        />
-      </label>
-      <button onClick={addAchievement}>Add achievement</button>
-      <ul>
-        {achievements.map((achievement) => (
-          <li key={achievement.id}>{achievement.title}</li>
-        ))}
-      </ul>
-    </main>
-  );
-}
-
-function splitList(value: string) {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function parseSocialLinks(value: string) {
-  return value
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .reduce<Record<string, string>>((links, item) => {
-      const [key, ...rest] = item.split(":");
-      const link = rest.join(":").trim();
-      if (key && link) {
-        links[key.trim()] = link;
-      }
-      return links;
-    }, {});
-}

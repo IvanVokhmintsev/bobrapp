@@ -1,0 +1,532 @@
+/* Profile — figma node 1:606 */
+
+.profile {
+  --profile-bg: #000000;
+  --profile-text: #ffffff;
+  --profile-muted: #828282;
+  --profile-card: rgba(122, 122, 122, 0.2);
+  --profile-pill: rgba(122, 122, 122, 0.2);
+  --profile-tools: rgba(217, 217, 217, 0.2);
+  --profile-accent: #ff4646;
+  --profile-max: 430px;
+
+  min-height: 100vh;
+  color: var(--profile-text);
+  background: var(--profile-bg);
+  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+.profile button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.profile__main {
+  max-width: var(--profile-max);
+  margin: 0 auto;
+  padding: 68px 18px 112px;
+}
+
+.profile__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.profile__title {
+  margin: 0;
+  font-size: 29px;
+  font-weight: 650;
+  letter-spacing: 0.29px;
+}
+
+.profile__topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 91px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 35px;
+  background: var(--profile-tools);
+}
+
+.profile__icon-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--profile-muted);
+  background: transparent;
+}
+
+.profile__hero {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+
+.profile__avatar {
+  width: 86px;
+  height: 86px;
+  border: 1px solid var(--profile-muted);
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.profile__name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.profile__name {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: 0.24px;
+}
+
+.profile__level {
+  display: grid;
+  width: 9px;
+  height: 10px;
+  place-items: center;
+  font-size: 5px;
+  font-weight: 900;
+  border-radius: 2px;
+  background: var(--profile-accent);
+}
+
+.profile__crown {
+  font-size: 8px;
+  line-height: 1;
+  color: #ffc800;
+}
+
+.profile__chevron {
+  margin-left: 2px;
+  color: var(--profile-muted);
+  font-size: 11px;
+  background: transparent;
+  transform: rotate(90deg);
+}
+
+.profile__quick-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.profile__pill {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 38px;
+  color: var(--profile-muted);
+  border-radius: 21px;
+  background: var(--profile-pill);
+}
+
+.profile__members {
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.profile__members-track {
+  display: flex;
+  gap: 22px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.profile__members-track::-webkit-scrollbar {
+  display: none;
+}
+
+.profile__member {
+  display: grid;
+  flex-shrink: 0;
+  gap: 4px;
+  justify-items: center;
+  width: 86px;
+  text-align: center;
+}
+
+.profile__member img {
+  width: 86px;
+  height: 86px;
+  border: 1px solid var(--profile-muted);
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.profile__member strong {
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.profile__member span {
+  color: var(--profile-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.profile__roadmap-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 46px;
+  margin-bottom: 22px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+  border-radius: 21px;
+  background: var(--profile-card);
+}
+
+.profile__roadmap-badge {
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 999px;
+  background: var(--profile-accent);
+}
+
+.profile__section {
+  margin-bottom: 24px;
+}
+
+.profile__section h3 {
+  margin: 0 0 12px;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: 0.19px;
+}
+
+.profile__about-card {
+  padding: 16px 18px 14px;
+  border-radius: 21px;
+  background: var(--profile-card);
+}
+
+.profile__about-card p {
+  margin: 0 0 14px;
+  font-size: 15px;
+  line-height: 18px;
+  letter-spacing: 0.15px;
+}
+
+.profile__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile__tag {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.11px;
+  border-radius: 7px;
+}
+
+.profile__tag--green {
+  background: rgba(30, 215, 96, 0.2);
+}
+
+.profile__tag--red {
+  background: rgba(255, 70, 70, 0.2);
+}
+
+.profile__tag--purple {
+  background: rgba(224, 70, 255, 0.2);
+}
+
+.profile__tag--orange {
+  background: rgba(255, 134, 29, 0.2);
+}
+
+.profile__tag--muted {
+  color: #ffffff;
+  background: rgba(122, 122, 122, 0.35);
+}
+
+.profile__albums-track,
+.profile__concerts-track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.profile__albums-track::-webkit-scrollbar,
+.profile__concerts-track::-webkit-scrollbar {
+  display: none;
+}
+
+.profile__album {
+  display: grid;
+  flex-shrink: 0;
+  gap: 6px;
+  width: 114px;
+}
+
+.profile__album img {
+  width: 114px;
+  height: 114px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.profile__album strong {
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.profile__album span {
+  color: var(--profile-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.profile__concert {
+  flex-shrink: 0;
+  border-radius: 15px;
+  background: var(--profile-card);
+}
+
+.profile__concert--ticket {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  width: 185px;
+  min-height: 56px;
+  padding: 12px 14px;
+}
+
+.profile__concert--ticket button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 8px 14px;
+  color: var(--profile-muted);
+  font-size: 15px;
+  font-weight: 650;
+  border-radius: 15px;
+  background: rgba(122, 122, 122, 0.35);
+}
+
+.profile__concert-icon {
+  font-size: 22px;
+}
+
+.profile__concert--ticket strong,
+.profile__concert-overlay strong {
+  display: block;
+  font-size: 13px;
+}
+
+.profile__concert--ticket span,
+.profile__concert-overlay span {
+  color: var(--profile-muted);
+  font-size: 11px;
+}
+
+.profile__concert--photo {
+  position: relative;
+  width: 200px;
+  height: 106px;
+  overflow: hidden;
+}
+
+.profile__concert--photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile__concert-overlay {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.75));
+}
+
+.profile__section--posts .profile__posts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile__error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 70, 70, 0.22);
+}
+
+.profile__empty {
+  margin: 0;
+  color: var(--profile-muted);
+  font-size: 15px;
+}
+
+/* Tab bar (shared with feed) */
+.profile .app-tabbar {
+  --feed-max: 430px;
+  --feed-muted: #828282;
+  position: fixed;
+  right: max(18px, calc((100vw - var(--feed-max)) / 2 + 18px));
+  bottom: 18px;
+  left: max(18px, calc((100vw - var(--feed-max)) / 2 + 18px));
+  z-index: 4;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  max-width: var(--feed-max);
+  margin: 0 auto;
+  min-height: 68px;
+  padding: 8px 12px;
+  border-radius: 45px;
+  background: rgba(55, 55, 55, 0.72);
+  backdrop-filter: blur(16px);
+}
+
+.profile .app-tabbar button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  color: var(--feed-muted);
+  font-size: 12px;
+  font-weight: 650;
+  background: transparent;
+}
+
+.profile .app-tabbar button.is-active {
+  color: #e9e9e9;
+}
+
+.profile .app-tabbar svg {
+  display: block;
+}
+
+/* Edit sheet */
+.profile-edit {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: end center;
+}
+
+.profile-edit__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.profile-edit__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 430px);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 21px 21px 0 0;
+  background: #1a1a1a;
+}
+
+.profile-edit__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(130, 130, 130, 0.25);
+}
+
+.profile-edit__header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.profile-edit__header button {
+  width: 32px;
+  height: 32px;
+  color: var(--profile-muted);
+  font-size: 22px;
+  background: transparent;
+}
+
+.profile-edit__body {
+  overflow-y: auto;
+  padding: 14px 18px;
+}
+
+.profile-edit__body label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--profile-muted);
+}
+
+.profile-edit__body input,
+.profile-edit__body textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  color: #ffffff;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  outline: none;
+}
+
+.profile-edit__error {
+  margin: 0;
+  color: #ff8a8a;
+  font-size: 13px;
+}
+
+.profile-edit__footer {
+  padding: 12px 18px 24px;
+}
+
+.profile-edit__save {
+  width: 100%;
+  min-height: 44px;
+  color: #ffffff;
+  font-weight: 650;
+  border-radius: 21px;
+  background: #1d52ff;
+}
+
+@media (max-width: 380px) {
+  .profile__main {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+}

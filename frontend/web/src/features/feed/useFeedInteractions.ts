@@ -21,7 +21,14 @@ function toggleInSet(values: Set<string>, id: string) {
   return next;
 }
 
-export function useFeedInteractions(token: string) {
+type UseFeedInteractionsOptions = {
+  profileUserId?: string;
+};
+
+export function useFeedInteractions(
+  token: string,
+  options?: UseFeedInteractionsOptions,
+) {
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [text, setText] = useState("");
   const [type, setType] = useState<PostType>("professional");
@@ -37,9 +44,11 @@ export function useFeedInteractions(token: string) {
     useState<CommentTextByPost>({});
 
   const loadPosts = useCallback(async () => {
-    const result = await api.getPosts(token);
+    const result = options?.profileUserId
+      ? await api.getProfilePosts(token, options.profileUserId)
+      : await api.getPosts(token);
     setPosts(result.posts);
-  }, [token]);
+  }, [token, options?.profileUserId]);
 
   useEffect(() => {
     void loadPosts().catch((caught) => {
