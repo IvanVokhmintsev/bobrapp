@@ -77,7 +77,7 @@ export function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={view === "feed" ? "app-shell app-shell--feed" : "app-shell"}>
       {view === "feed" ? null : (
         <header>
           <div>
