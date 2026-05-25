@@ -5,6 +5,7 @@ import { prisma } from "../../lib/prisma.js";
 import { toPublicUser } from "../users/user.presenter.js";
 import { authenticate } from "./auth.middleware.js";
 import { loginSchema, registerSchema } from "./auth.schemas.js";
+import { clearAuthCookie, setAuthCookie } from "./auth.session.js";
 import type { LoginBody, RegisterBody } from "./auth.types.js";
 
 export async function registerAuthRoutes(app: FastifyInstance) {
@@ -50,9 +51,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         userId: user.id,
         role: user.role,
       });
+      setAuthCookie(reply, token);
 
       return reply.status(201).send({
-        token,
         user: toPublicUser(user),
       });
     },
@@ -92,9 +93,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         userId: user.id,
         role: user.role,
       });
+      setAuthCookie(reply, token);
 
       return reply.send({
-        token,
         user: toPublicUser(user),
       });
     },
@@ -125,4 +126,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       });
     },
   );
+
+  app.post("/auth/logout", async (request, reply) => {
+    clearAuthCookie(reply);
+    return reply.status(204).send();
+  });
 }

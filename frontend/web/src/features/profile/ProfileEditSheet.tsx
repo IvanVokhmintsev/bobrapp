@@ -3,7 +3,6 @@ import { useState } from "react";
 import { api, type ApiUser } from "../../api";
 
 type ProfileEditSheetProps = {
-  token: string;
   user: ApiUser;
   onClose: () => void;
   onSaved: (user: ApiUser) => void;
@@ -28,7 +27,7 @@ export function ProfileEditSheet(props: ProfileEditSheetProps) {
   async function save() {
     try {
       setError("");
-      const result = await api.updateProfile(props.token, {
+      const result = await api.updateProfile({
         name,
         bio,
         avatarUrl,

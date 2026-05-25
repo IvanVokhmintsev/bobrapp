@@ -25,10 +25,7 @@ type UseFeedInteractionsOptions = {
   profileUserId?: string;
 };
 
-export function useFeedInteractions(
-  token: string,
-  options?: UseFeedInteractionsOptions,
-) {
+export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [text, setText] = useState("");
   const [type, setType] = useState<PostType>("professional");
@@ -45,10 +42,10 @@ export function useFeedInteractions(
 
   const loadPosts = useCallback(async () => {
     const result = options?.profileUserId
-      ? await api.getProfilePosts(token, options.profileUserId)
-      : await api.getPosts(token);
+      ? await api.getProfilePosts(options.profileUserId)
+      : await api.getPosts();
     setPosts(result.posts);
-  }, [token, options?.profileUserId]);
+  }, [options?.profileUserId]);
 
   useEffect(() => {
     void loadPosts().catch((caught) => {
@@ -59,7 +56,7 @@ export function useFeedInteractions(
   async function createPost() {
     try {
       setError("");
-      await api.createPost(token, { text, type });
+      await api.createPost({ text, type });
       setText("");
       await loadPosts();
     } catch (caught) {
@@ -76,8 +73,8 @@ export function useFeedInteractions(
     try {
       setError("");
       const result = target.likedByMe
-        ? await api.unlikePost(token, id)
-        : await api.likePost(token, id);
+        ? await api.unlikePost(id)
+        : await api.likePost(id);
       setPosts((currentPosts) =>
         currentPosts.map((post) => (post.id === id ? result.post : post)),
       );
@@ -89,7 +86,7 @@ export function useFeedInteractions(
   async function deletePost(id: string) {
     try {
       setError("");
-      await api.deletePost(token, id);
+      await api.deletePost(id);
       setPosts((currentPosts) => currentPosts.filter((post) => post.id !== id));
       setCommentsByPost((current) => {
         const next = { ...current };
@@ -127,7 +124,7 @@ export function useFeedInteractions(
 
     try {
       setError("");
-      const result = await api.getComments(token, postId);
+      const result = await api.getComments(postId);
       setCommentsByPost((current) => ({
         ...current,
         [postId]: result.comments,
@@ -154,7 +151,7 @@ export function useFeedInteractions(
 
     try {
       setError("");
-      const result = await api.createComment(token, postId, {
+      const result = await api.createComment(postId, {
         text: commentText,
       });
       setCommentsByPost((current) => ({
@@ -180,7 +177,7 @@ export function useFeedInteractions(
   async function deleteComment(post: ApiPost, commentId: string) {
     try {
       setError("");
-      await api.deleteComment(token, post.id, commentId);
+      await api.deleteComment(post.id, commentId);
       setCommentsByPost((current) => ({
         ...current,
         [post.id]: (current[post.id] ?? []).filter(

@@ -12,7 +12,6 @@ import { ProfileEditSheet } from "./ProfileEditSheet";
 import "./profile.css";
 
 type ProfileScreenProps = {
-  token: string;
   user: ApiUser;
   onUserChange: (user: ApiUser) => void;
   onSelectTab?: (tab: AppTab) => void;
@@ -28,7 +27,7 @@ const placeholderAlbums = [
 export function ProfileScreen(props: ProfileScreenProps) {
   const [user, setUser] = useState(props.user);
   const [editing, setEditing] = useState(false);
-  const posts = useFeedInteractions(props.token, { profileUserId: user.id });
+  const posts = useFeedInteractions({ profileUserId: user.id });
 
   useEffect(() => {
     setUser(props.user);
@@ -36,7 +35,7 @@ export function ProfileScreen(props: ProfileScreenProps) {
 
   useEffect(() => {
     void api
-      .getProfile(props.token)
+      .getProfile()
       .then((result) => {
         setUser(result.user);
         props.onUserChange(result.user);
@@ -44,7 +43,7 @@ export function ProfileScreen(props: ProfileScreenProps) {
       .catch(() => {
         /* keep cached user */
       });
-  }, [props.token]);
+  }, []);
 
   const avatarSrc = user.musicianProfile?.avatarUrl ?? defaultAvatar;
   const level = getLevel(user);
@@ -217,7 +216,6 @@ export function ProfileScreen(props: ProfileScreenProps) {
 
       {editing ? (
         <ProfileEditSheet
-          token={props.token}
           user={user}
           onClose={() => setEditing(false)}
           onSaved={handleUserSaved}

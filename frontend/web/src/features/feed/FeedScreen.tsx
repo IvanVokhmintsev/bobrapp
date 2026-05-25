@@ -6,13 +6,12 @@ import "./feed.css";
 import { useFeedInteractions } from "./useFeedInteractions";
 
 type FeedScreenProps = {
-  token: string;
   user: ApiUser;
   onSelectTab?: (tab: "feed" | "booking" | "events" | "profile") => void;
 };
 
 export function FeedScreen(props: FeedScreenProps) {
-  const feed = useFeedInteractions(props.token);
+  const feed = useFeedInteractions();
 
   return (
     <div className="feed">

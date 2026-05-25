@@ -21,22 +21,14 @@ const levels: Array<{ value: MusicianLevel; label: string }> = [
   { value: "professional", label: "Профессионально занимаюсь музыкой" },
 ];
 
-function getInitialToken() {
-  return localStorage.getItem("bobrapp_token");
-}
-
 export function App() {
-  const [token, setToken] = useState<string | null>(getInitialToken);
   const [user, setUser] = useState<ApiUser | null>(null);
   const [view, setView] = useState<View>("auth");
   const [message, setMessage] = useState("");
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
 
-  async function loadMe(currentToken = token) {
-    if (!currentToken) {
-      return;
-    }
-
-    const result = await api.me(currentToken);
+  async function loadMe() {
+    const result = await api.me();
     setUser(result.user);
     setView(
       result.user.role === "musician" && !result.user.musicianProfile?.level
@@ -46,18 +38,17 @@ export function App() {
   }
 
   useEffect(() => {
-    if (token) {
-      void loadMe(token).catch(() => {
-        localStorage.removeItem("bobrapp_token");
-        setToken(null);
+    void loadMe()
+      .catch(() => {
+        setUser(null);
         setView("auth");
+      })
+      .finally(() => {
+        setIsBootstrapping(false);
       });
-    }
   }, []);
 
-  function handleAuth(nextToken: string, nextUser: ApiUser) {
-    localStorage.setItem("bobrapp_token", nextToken);
-    setToken(nextToken);
+  function handleAuth(nextUser: ApiUser) {
     setUser(nextUser);
     setView(
       nextUser.role === "musician" && !nextUser.musicianProfile?.level
@@ -66,14 +57,19 @@ export function App() {
     );
   }
 
-  function logout() {
-    localStorage.removeItem("bobrapp_token");
-    setToken(null);
+  async function logout() {
+    await api.logout().catch(() => {
+      /* clear local state even if the session is already gone */
+    });
     setUser(null);
     setView("auth");
   }
 
-  if (!token || !user) {
+  if (isBootstrapping) {
+    return <main className="panel">Loading...</main>;
+  }
+
+  if (!user) {
     return <AuthScreen onAuth={handleAuth} />;
   }
 
@@ -96,7 +92,7 @@ export function App() {
             <button onClick={() => setView("discover")}>Discover</button>
             <button onClick={() => setView("roadmap")}>Roadmap</button>
             <button onClick={() => setView("profile")}>Profile</button>
-            <button onClick={logout}>Logout</button>
+            <button onClick={() => void logout()}>Logout</button>
           </nav>
         </header>
       )}
@@ -105,7 +101,6 @@ export function App() {
 
       {view === "onboarding" ? (
         <OnboardingScreen
-          token={token}
           onDone={(nextUser) => {
             setUser(nextUser);
             setView("feed");
@@ -115,7 +110,6 @@ export function App() {
       ) : null}
       {view === "feed" ? (
         <FeedScreen
-          token={token}
           user={user}
           onSelectTab={(tab) => {
             if (tab === "profile") {
@@ -128,11 +122,10 @@ export function App() {
           }}
         />
       ) : null}
-      {view === "discover" ? <DiscoverScreen token={token} user={user} /> : null}
-      {view === "roadmap" ? <RoadmapScreen token={token} /> : null}
+      {view === "discover" ? <DiscoverScreen user={user} /> : null}
+      {view === "roadmap" ? <RoadmapScreen /> : null}
       {view === "profile" ? (
         <ProfileScreen
-          token={token}
           user={user}
           onUserChange={setUser}
           onSelectTab={(tab) => {
@@ -152,7 +145,7 @@ export function App() {
 }
 
 function AuthScreen(props: {
-  onAuth: (token: string, user: ApiUser) => void;
+  onAuth: (user: ApiUser) => void;
 }) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("Test Musician");
@@ -168,7 +161,7 @@ function AuthScreen(props: {
         mode === "login"
           ? await api.login({ email, password })
           : await api.register({ name, email, password, role });
-      props.onAuth(result.token, result.user);
+      props.onAuth(result.user);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Auth failed");
     }
@@ -217,13 +210,12 @@ function AuthScreen(props: {
 }
 
 function OnboardingScreen(props: {
-  token: string;
   onDone: (user: ApiUser) => void;
   onError: (message: string) => void;
 }) {
   async function choose(level: MusicianLevel) {
     try {
-      const result = await api.onboardMusician(props.token, level);
+      const result = await api.onboardMusician(level);
       props.onDone(result.user);
     } catch (caught) {
       props.onError(caught instanceof Error ? caught.message : "Onboarding failed");
@@ -242,7 +234,7 @@ function OnboardingScreen(props: {
   );
 }
 
-function DiscoverScreen(props: { token: string; user: ApiUser }) {
+function DiscoverScreen(props: { user: ApiUser }) {
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
@@ -252,7 +244,7 @@ function DiscoverScreen(props: { token: string; user: ApiUser }) {
   async function loadProfiles(nextQuery = query) {
     try {
       setError("");
-      const result = await api.getProfiles(props.token, { q: nextQuery });
+      const result = await api.getProfiles({ q: nextQuery });
       setUsers(result.users);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Failed to load profiles");
@@ -263,8 +255,8 @@ function DiscoverScreen(props: { token: string; user: ApiUser }) {
     try {
       setError("");
       const [profileResult, postsResult] = await Promise.all([
-        api.getPublicProfile(props.token, userId),
-        api.getProfilePosts(props.token, userId),
+        api.getPublicProfile(userId),
+        api.getProfilePosts(userId),
       ]);
       setSelectedUser(profileResult.user);
       setPosts(postsResult.posts);
@@ -275,9 +267,9 @@ function DiscoverScreen(props: { token: string; user: ApiUser }) {
 
   async function toggleFollow(user: ApiUser) {
     if (user.followingByMe) {
-      await api.unfollowProfile(props.token, user.id);
+      await api.unfollowProfile(user.id);
     } else {
-      await api.followProfile(props.token, user.id);
+      await api.followProfile(user.id);
     }
     await loadProfiles();
     if (selectedUser?.id === user.id) {
@@ -360,14 +352,14 @@ function DiscoverScreen(props: { token: string; user: ApiUser }) {
   );
 }
 
-function RoadmapScreen(props: { token: string }) {
+function RoadmapScreen() {
   const [steps, setSteps] = useState<RoadmapStep[]>([]);
   const [lesson, setLesson] = useState<RoadmapLesson | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
 
   async function loadRoadmap() {
-    const result = await api.getRoadmap(props.token);
+    const result = await api.getRoadmap();
     setSteps(result.steps);
   }
 
@@ -377,7 +369,7 @@ function RoadmapScreen(props: { token: string }) {
 
   async function openLesson(stepId: string) {
     setError("");
-    const result = await api.getLesson(props.token, stepId);
+    const result = await api.getLesson(stepId);
     setLesson(result.step);
     setAnswers({});
   }
@@ -389,7 +381,6 @@ function RoadmapScreen(props: { token: string }) {
 
     try {
       const result = await api.submitQuiz(
-        props.token,
         lesson.id,
         Object.entries(answers).map(([questionId, optionId]) => ({
           questionId,
@@ -456,4 +447,3 @@ function RoadmapScreen(props: { token: string }) {
     </main>
   );
 }
-

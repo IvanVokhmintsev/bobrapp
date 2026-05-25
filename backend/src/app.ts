@@ -12,10 +12,15 @@ export function buildApp(): FastifyInstance {
     secret: env.jwtSecret,
   });
 
+  void app.register(import("@fastify/cookie"), {
+    secret: env.cookieSecret,
+  });
+
   void app.register(import("@fastify/cors"), {
     origin: env.corsOrigins,
+    credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type"],
   });
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
