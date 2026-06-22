@@ -37,14 +37,14 @@ FR-PP-01…05 (без PP-06), FR-FEED-01…03 (без модерации), FR-RM
 | ID | Требование | Статус | Что есть | Чего не хватает |
 |----|------------|--------|----------|-----------------|
 | FR-PP-01.1 | Страница профиля с учётом прав | 🟡 | `/profile`, `/profile/:userId`, follow, solo/band | Нет явного «ограничение доступа»; приватные блоки не моделируются |
-| FR-PP-01.2 | Статус заполненности блоков | ❌ | Блоки в UI (bio, tags, albums demo) | Нет индикаторов «заполнен / не заполнен» по блокам; albums/concerts — demo |
-| FR-PP-02.1 | Редактирование профиля | 🟡 | `ProfileEditSheet`, PATCH, avatar, solo/band, members | Нет альбомов/концертов/шоу в БД; нет постов как блока редактирования |
+| FR-PP-01.2 | Статус заполненности блоков | 🟡 | `ProfileCompleteness`, albums/concerts из БД | Albums/concerts — реальные данные; нет проектов как сущности |
+| FR-PP-02.1 | Редактирование профиля | 🟡 | `ProfileEditSheet`, `ProfileContentEditSheet`, PATCH, avatar | Нет unified «проектов»; шоу — вне scope |
 | FR-PP-02.2 | Отмена изменений | 🟡 | Закрытие sheet без save | Нет «вернуть последнюю сохранённую версию» / предупреждения |
-| FR-PP-03.1 | Проекты в профиле | ❌ | — | Нет модели Project; demo albums/concerts |
+| FR-PP-03.1 | Проекты в профиле | 🟡 | `ProfileAlbum`, `ProfileConcert`, CRUD API + UI | Нет единой модели Project; шоу не моделируются |
 | FR-PP-03.2 | Состав и история проекта | 🟡 | `memberNames` (текст) | Нет ролей участников, событий, истории |
 | FR-PP-04.1 | Ценности и позиционирование | ❌ | — | Нет поля/блока |
 | FR-PP-04.2 | Отмена блока ценностей | ❌ | — | — |
-| FR-PP-05.1 | Профиль для оценки лейблом | 🟡 | Публичный профиль, roadmap map, achievements в tags | Demo albums/concerts; нет постов на странице; roadmap не у чужого профиля |
+| FR-PP-05.1 | Профиль для оценки лейблом | 🟡 | Публичный профиль, roadmap map, achievements, albums/concerts | Нет постов у чужого профиля в некоторых сценариях; roadmap не у чужого профиля |
 | FR-PP-05.2 | Контакт с артистом | 🟡 | Кнопки-иконки (message/link) без логики | «Связаться», избранное, скрытие контактов |
 | FR-PP-06.* | Поддержка | ⏸ | — | Роль support, тикеты — вне scope |
 
@@ -137,7 +137,7 @@ FR-PP-01…05 (без PP-06), FR-FEED-01…03 (без модерации), FR-RM
 | Logout не редиректит на `/login` | FR auth flow |
 | Регистрация только `musician` | FR-PP-05, label journey |
 | Profile posts API без UI | FR-PP-01.2, FR-PP-05.1 |
-| Demo albums/concerts/members | FR-PP-03, FR-PP-05 |
+| Demo albums/concerts/members | ~~FR-PP-03~~ albums/concerts в БД (ит. 2); members — текст |
 | Feed filters без логики | FR-FEED-01.2 |
 | `/roadmap` не в навигации | FR-RM-01.1 (из профиля) |
 | Нет favorites | FR-FEED-03.2, FR-MA-02.2, FR-PP-01.2 |
@@ -201,4 +201,17 @@ FR-PP-01…05 (без PP-06), FR-FEED-01…03 (без модерации), FR-RM
 - [x] FR-RM-01.1 — кнопки «Roadmap» / «Этап на roadmap»
 - [x] Заготовки «Связаться» / «В избранное» (UI + notice, backend в ит. 3/7)
 
-Не трогали: demo albums/concerts (итерация 2), favorites backend (итерация 3).
+Не трогали: favorites backend (итерация 3).
+
+---
+
+## Итерация 2 — Контент профиля в БД (выполнено 2026-05-25)
+
+Закрыто:
+- [x] FR-PP-03.1 — модели `ProfileAlbum`, `ProfileConcert` + миграция
+- [x] CRUD API: `/profile/me/albums`, `/profile/me/concerts`, публичное чтение `/profiles/:userId/albums|concerts`
+- [x] UI: `ProfileContentEditSheet` — добавление, редактирование, удаление
+- [x] Профиль: реальные альбомы/концерты вместо demo; кнопка «Управлять»
+- [x] FR-PP-01.2 — заполненность блоков albums/concerts по данным из БД
+
+Не трогали: unified Project model, роли участников проекта (FR-PP-03.2), шоу.

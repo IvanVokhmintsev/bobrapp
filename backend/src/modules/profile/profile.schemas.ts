@@ -1,3 +1,8 @@
+export const profileTypeSchema = {
+  type: "string",
+  enum: ["solo", "band"],
+} as const;
+
 export const updateProfileSchema = {
   body: {
     type: "object",
@@ -7,6 +12,7 @@ export const updateProfileSchema = {
       bio: { type: "string", maxLength: 1000 },
       avatarUrl: { type: "string", maxLength: 2000 },
       location: { type: "string", maxLength: 120 },
+      profileType: profileTypeSchema,
       genres: {
         type: "array",
         maxItems: 20,
@@ -21,6 +27,11 @@ export const updateProfileSchema = {
         type: "array",
         maxItems: 20,
         items: { type: "string", minLength: 1, maxLength: 60 },
+      },
+      memberNames: {
+        type: "array",
+        maxItems: 20,
+        items: { type: "string", minLength: 1, maxLength: 80 },
       },
       socialLinks: {
         type: "object",
@@ -59,6 +70,7 @@ export const publicProfilesQuerySchema = {
     additionalProperties: false,
     properties: {
       q: { type: "string", minLength: 1, maxLength: 100 },
+      type: profileTypeSchema,
       cursor: { type: "string", minLength: 1 },
       limit: { type: "integer", minimum: 1, maximum: 100 },
     },
@@ -103,6 +115,111 @@ export const updateAchievementSchema = {
           { type: "null" },
         ],
       },
+    },
+  },
+} as const;
+
+const optionalDateSchema = {
+  anyOf: [
+    { type: "string", format: "date" },
+    { type: "null" },
+  ],
+} as const;
+
+export const createProfileAlbumSchema = {
+  body: {
+    type: "object",
+    required: ["title"],
+    additionalProperties: false,
+    properties: {
+      title: { type: "string", minLength: 1, maxLength: 120 },
+      releaseDate: optionalDateSchema,
+      coverUrl: {
+        anyOf: [
+          { type: "string", maxLength: 2000 },
+          { type: "null" },
+        ],
+      },
+      sortOrder: { type: "integer", minimum: 0, maximum: 1000 },
+    },
+  },
+} as const;
+
+export const profileAlbumParamsSchema = {
+  params: {
+    type: "object",
+    required: ["albumId"],
+    additionalProperties: false,
+    properties: {
+      albumId: { type: "string", minLength: 1 },
+    },
+  },
+} as const;
+
+export const updateProfileAlbumSchema = {
+  params: profileAlbumParamsSchema.params,
+  body: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      title: { type: "string", minLength: 1, maxLength: 120 },
+      releaseDate: optionalDateSchema,
+      coverUrl: {
+        anyOf: [
+          { type: "string", maxLength: 2000 },
+          { type: "null" },
+        ],
+      },
+      sortOrder: { type: "integer", minimum: 0, maximum: 1000 },
+    },
+  },
+} as const;
+
+export const createProfileConcertSchema = {
+  body: {
+    type: "object",
+    required: ["venue", "eventDate"],
+    additionalProperties: false,
+    properties: {
+      venue: { type: "string", minLength: 1, maxLength: 200 },
+      eventDate: { type: "string", format: "date" },
+      coverUrl: {
+        anyOf: [
+          { type: "string", maxLength: 2000 },
+          { type: "null" },
+        ],
+      },
+      sortOrder: { type: "integer", minimum: 0, maximum: 1000 },
+    },
+  },
+} as const;
+
+export const profileConcertParamsSchema = {
+  params: {
+    type: "object",
+    required: ["concertId"],
+    additionalProperties: false,
+    properties: {
+      concertId: { type: "string", minLength: 1 },
+    },
+  },
+} as const;
+
+export const updateProfileConcertSchema = {
+  params: profileConcertParamsSchema.params,
+  body: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      venue: { type: "string", minLength: 1, maxLength: 200 },
+      eventDate: { type: "string", format: "date" },
+      coverUrl: {
+        anyOf: [
+          { type: "string", maxLength: 2000 },
+          { type: "null" },
+        ],
+      },
+      sortOrder: { type: "integer", minimum: 0, maximum: 1000 },
     },
   },
 } as const;

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
-import { api, type ApiPost, type ApiUser, type RoadmapStep } from "../../api";
+import { api, type ApiPost, type ApiProfileAlbum, type ApiProfileConcert, type ApiUser, type RoadmapStep } from "../../api";
 import defaultAvatar from "../../assets/feed/card-cover.png";
 import albumCover from "../../assets/profile/album-cover.png";
 import chevronDownIcon from "../../assets/profile/chevron-down.svg";
@@ -14,7 +14,9 @@ import { resolveAvatarUrl } from "../../lib/avatarUrl";
 import type { ProfileBlockStatus } from "../../lib/profileCompleteness";
 import { getProfileBlockStatuses } from "../../lib/profileCompleteness";
 import { getProfileType, isBandProfile } from "../../lib/profileType";
+import { resolveCoverUrl, formatProfileDate } from "../../lib/coverUrl";
 import { ProfileCompleteness } from "./ProfileCompleteness";
+import { ProfileContentEditSheet } from "./ProfileContentEditSheet";
 import { ProfileEditSheet } from "./ProfileEditSheet";
 import { AvatarPicker } from "./AvatarPicker";
 import { ProfileRoadmapMap } from "./ProfileRoadmapMap";
@@ -22,12 +24,7 @@ import { ProfileTypeBadge } from "./ProfileTypeBadge";
 import "./profile.css";
 import "./profile-completeness.css";
 
-const demoAlbums = [
-  { id: "1", title: "Любим древесину", date: "10 янв 2025", cover: albumCover },
-  { id: "2", title: "Любим древесину", date: "10 янв 2025", cover: albumCover },
-  { id: "3", title: "Любим древесину", date: "10 янв 2025", cover: albumCover },
-  { id: "4", title: "Любим древесину", date: "10 янв 2025", cover: albumCover },
-] as const;
+import "./profile-content-edit.css";
 
 const guideCards = [
   {
@@ -50,6 +47,9 @@ export function ProfileScreen() {
   const [roadmapSteps, setRoadmapSteps] = useState<RoadmapStep[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [contentEditOpen, setContentEditOpen] = useState(false);
+  const [albums, setAlbums] = useState<ApiProfileAlbum[]>([]);
+  const [concerts, setConcerts] = useState<ApiProfileConcert[]>([]);
   const [isLoading, setIsLoading] = useState(!isOwnProfile);
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [notice, setNotice] = useState("");
@@ -57,13 +57,13 @@ export function ProfileScreen() {
   const shouldRedirectToOwnProfile = Boolean(routeUserId && authUser && routeUserId === authUser.id);
 
   useEffect(() => {
-    if (isOwnProfile) {
+    if (isOwnProfile && authUser) {
       setLocalUser(authUser);
     }
-  }, [authUser, isOwnProfile]);
+  }, [authUser?.id, isOwnProfile]);
 
   useEffect(() => {
-    if (!isOwnProfile || !authUser) {
+    if (!isOwnProfile || !authUser?.id) {
       return;
     }
 
@@ -71,12 +71,11 @@ export function ProfileScreen() {
       .getProfile()
       .then((result) => {
         setLocalUser(result.user);
-        setUser(result.user);
       })
       .catch(() => {
         /* keep cached user */
       });
-  }, [authUser, isOwnProfile, setUser]);
+  }, [isOwnProfile, authUser?.id]);
 
   useEffect(() => {
     if (!routeUserId || isOwnProfile) {
@@ -116,6 +115,8 @@ export function ProfileScreen() {
   useEffect(() => {
     if (!user?.id) {
       setPosts([]);
+      setAlbums([]);
+      setConcerts([]);
       return;
     }
 
@@ -123,13 +124,30 @@ export function ProfileScreen() {
       .getProfilePosts(user.id)
       .then((result) => setPosts(result.posts))
       .catch(() => setPosts([]));
+
+    void api
+      .getProfileAlbums(user.id)
+      .then((result) => setAlbums(result.albums))
+      .catch(() => setAlbums([]));
+
+    void api
+      .getProfileConcerts(user.id)
+      .then((result) => setConcerts(result.concerts))
+      .catch(() => setConcerts([]));
   }, [user?.id]);
 
   const members = useMemo(() => (user ? buildMembers(user) : []), [user]);
   const tags = useMemo(() => (user ? buildTags(user) : []), [user]);
   const blockStatuses = useMemo(
-    () => (user ? getProfileBlockStatuses(user, { postsCount: posts.length }) : []),
-    [user, posts.length],
+    () =>
+      user
+        ? getProfileBlockStatuses(user, {
+            postsCount: posts.length,
+            albumsCount: albums.length,
+            concertsCount: concerts.length,
+          })
+        : [],
+    [user, posts.length, albums.length, concerts.length],
   );
   const profileType = user ? getProfileType(user) : "solo";
   const bandProfile = user ? isBandProfile(user) : false;
@@ -201,12 +219,15 @@ export function ProfileScreen() {
               members={members}
               tags={tags}
               posts={posts}
+              albums={albums}
+              concerts={concerts}
               bio={bio}
               profileType={profileType}
               blockStatuses={blockStatuses}
               isOwnProfile={isOwnProfile}
               canOpenRoadmapLesson={isOwnProfile && authUser?.role === "musician"}
               onEdit={() => setEditOpen(true)}
+              onManageContent={() => setContentEditOpen(true)}
               onAvatarUpdated={handleProfileSaved}
               onToggleFollow={() => void toggleFollow()}
               onContact={() => showComingSoon("Связаться с артистом")}
@@ -242,6 +263,19 @@ export function ProfileScreen() {
           onSaved={handleProfileSaved}
         />
       ) : null}
+
+      {contentEditOpen && isOwnProfile ? (
+        <ProfileContentEditSheet
+          albums={albums}
+          concerts={concerts}
+          onClose={() => setContentEditOpen(false)}
+          onChanged={({ albums: nextAlbums, concerts: nextConcerts }) => {
+            setAlbums(nextAlbums);
+            setConcerts(nextConcerts);
+            setNotice("Альбомы и концерты обновлены");
+          }}
+        />
+      ) : null}
     </>
   );
 }
@@ -251,12 +285,15 @@ function ProfileSummary(props: {
   members: ProfileMember[];
   tags: ProfileTag[];
   posts: ApiPost[];
+  albums: ApiProfileAlbum[];
+  concerts: ApiProfileConcert[];
   bio: string;
   profileType: "solo" | "band";
   blockStatuses: ProfileBlockStatus[];
   isOwnProfile: boolean;
   canOpenRoadmapLesson: boolean;
   onEdit: () => void;
+  onManageContent: () => void;
   onAvatarUpdated: (user: ApiUser) => void;
   onToggleFollow: () => void;
   onContact: () => void;
@@ -305,14 +342,14 @@ function ProfileSummary(props: {
             <div className="profile-card__actions">
               {props.isOwnProfile ? (
                 <>
+                  <button type="button" className="profile-header-action" onClick={props.onOpenRoadmap}>
+                    Карта развития
+                  </button>
                   {props.canOpenRoadmapLesson ? (
                     <Link className="profile-header-action profile-header-action--primary" to="/roadmap">
-                      Roadmap
+                      Уроки roadmap
                     </Link>
                   ) : null}
-                  <button type="button" className="profile-header-action" onClick={props.onOpenRoadmap}>
-                    Этап на roadmap
-                  </button>
                 </>
               ) : (
                 <>
@@ -323,7 +360,7 @@ function ProfileSummary(props: {
                     В избранное
                   </button>
                   <button type="button" className="profile-header-action" onClick={props.onOpenRoadmap}>
-                    Этап на roadmap
+                    Карта развития
                   </button>
                   <button
                     type="button"
@@ -378,33 +415,79 @@ function ProfileSummary(props: {
       </section>
 
       <section className="profile-block profile-block--albums">
-        <h2>Альбомы</h2>
-        <div className="profile-albums">
-          {demoAlbums.map((album) => (
-            <article className="profile-album" key={album.id}>
-              <img src={album.cover} alt="" />
-              <strong>{album.title}</strong>
-              <span>{album.date}</span>
-            </article>
-          ))}
+        <div className="profile-block__heading">
+          <h2>Альбомы</h2>
+          {props.isOwnProfile ? (
+            <button type="button" className="profile-header-action" onClick={props.onManageContent}>
+              Управлять
+            </button>
+          ) : null}
         </div>
-        <p className="profile-members__empty">Демо-блок — реальные альбомы в итерации 2</p>
+        {props.albums.length ? (
+          <div className="profile-albums">
+            {props.albums.map((album) => (
+              <article className="profile-album" key={album.id}>
+                <img
+                  src={resolveCoverUrl(album.coverUrl, albumCover)}
+                  alt=""
+                />
+                <strong>{album.title}</strong>
+                <span>{formatProfileDate(album.releaseDate)}</span>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="profile-members__empty">
+            {props.isOwnProfile
+              ? "Добавьте альбомы через «Управлять»"
+              : "Альбомов пока нет"}
+          </p>
+        )}
       </section>
 
       <section className="profile-block">
-        <h2>Концерты</h2>
-        <div className="profile-concerts">
-          <article className="profile-concert profile-concert--dark">
-            <img src={concertStadiumIcon} alt="" />
-            <strong>СК “Олимпийский” 20.09</strong>
-          </article>
-          <article className="profile-concert profile-concert--photo">
-            <img className="profile-concert__photo" src={concertPhoto} alt="" />
-            <img className="profile-concert__icon" src={concertStadiumIcon} alt="" />
-            <strong>СК “Олимпийский” 20.09</strong>
-          </article>
+        <div className="profile-block__heading">
+          <h2>Концерты</h2>
+          {props.isOwnProfile ? (
+            <button type="button" className="profile-header-action" onClick={props.onManageContent}>
+              Управлять
+            </button>
+          ) : null}
         </div>
-        <p className="profile-members__empty">Демо-блок — реальные концерты в итерации 2</p>
+        {props.concerts.length ? (
+          <div className="profile-concerts">
+            {props.concerts.map((concert, index) => {
+              const hasPhoto = Boolean(concert.coverUrl?.trim());
+              const concertLabel = `${concert.venue} ${formatProfileDate(concert.eventDate)}`;
+
+              return hasPhoto ? (
+                <article className="profile-concert profile-concert--photo" key={concert.id}>
+                  <img
+                    className="profile-concert__photo"
+                    src={resolveCoverUrl(concert.coverUrl, concertPhoto)}
+                    alt=""
+                  />
+                  <img className="profile-concert__icon" src={concertStadiumIcon} alt="" />
+                  <strong>{concertLabel}</strong>
+                </article>
+              ) : (
+                <article
+                  className={`profile-concert profile-concert--dark ${index % 2 === 1 ? "profile-concert--alt" : ""}`}
+                  key={concert.id}
+                >
+                  <img src={concertStadiumIcon} alt="" />
+                  <strong>{concertLabel}</strong>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="profile-members__empty">
+            {props.isOwnProfile
+              ? "Добавьте концерты через «Управлять»"
+              : "Концертов пока нет"}
+          </p>
+        )}
       </section>
 
       <section className="profile-block">

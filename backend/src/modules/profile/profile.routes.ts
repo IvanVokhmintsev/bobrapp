@@ -17,21 +17,39 @@ import { toPublicUser } from "../users/user.presenter.js";
 import {
   achievementParamsSchema,
   createAchievementSchema,
+  createProfileAlbumSchema,
+  createProfileConcertSchema,
   followsQuerySchema,
+  profileAlbumParamsSchema,
+  profileConcertParamsSchema,
   profilePostsQuerySchema,
   publicProfileSchema,
   publicProfilesQuerySchema,
   updateAchievementSchema,
+  updateProfileAlbumSchema,
+  updateProfileConcertSchema,
   updateProfileSchema,
 } from "./profile.schemas.js";
+import {
+  parseOptionalDate,
+  parseRequiredDate,
+  toPublicProfileAlbum,
+  toPublicProfileConcert,
+} from "./profile-content.presenter.js";
 import type {
   AchievementParams,
   CreateAchievementBody,
+  CreateProfileAlbumBody,
+  CreateProfileConcertBody,
   FollowsQuery,
+  ProfileAlbumParams,
+  ProfileConcertParams,
   ProfilePostsQuery,
   PublicProfileParams,
   PublicProfilesQuery,
   UpdateAchievementBody,
+  UpdateProfileAlbumBody,
+  UpdateProfileConcertBody,
   UpdateProfileBody,
 } from "./profile.types.js";
 
@@ -96,6 +114,29 @@ function cleanStringArray(values: string[] | undefined) {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
+async function getMusicianProfileForUser(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      role: true,
+      musicianProfile: {
+        select: { id: true },
+      },
+    },
+  });
+
+  if (!user || user.role !== "musician" || !user.musicianProfile) {
+    return null;
+  }
+
+  return user.musicianProfile;
+}
+
+async function getMusicianProfileIdForUser(userId: string) {
+  const profile = await getMusicianProfileForUser(userId);
+  return profile?.id ?? null;
+}
+
 export async function registerProfileRoutes(app: FastifyInstance) {
   app.get(
     "/profile/me",
@@ -133,9 +174,11 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         bio,
         avatarUrl,
         location,
+        profileType,
         genres,
         instruments,
         daw,
+        memberNames,
         socialLinks,
       } = request.body;
 
@@ -144,9 +187,11 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         bio === undefined &&
         avatarUrl === undefined &&
         location === undefined &&
+        profileType === undefined &&
         genres === undefined &&
         instruments === undefined &&
         daw === undefined &&
+        memberNames === undefined &&
         socialLinks === undefined
       ) {
         return reply.status(400).send({
@@ -187,9 +232,11 @@ export async function registerProfileRoutes(app: FastifyInstance) {
             bio !== undefined ||
             avatarUrl !== undefined ||
             location !== undefined ||
+            profileType !== undefined ||
             genres !== undefined ||
             instruments !== undefined ||
             daw !== undefined ||
+            memberNames !== undefined ||
             socialLinks !== undefined
               ? {
                   upsert: {
@@ -197,9 +244,11 @@ export async function registerProfileRoutes(app: FastifyInstance) {
                       bio: bio?.trim() ?? null,
                       avatarUrl: avatarUrl?.trim() || null,
                       location: location?.trim() ?? null,
+                      profileType: profileType ?? "solo",
                       genres: cleanStringArray(genres) ?? [],
                       instruments: cleanStringArray(instruments) ?? [],
                       daw: cleanStringArray(daw) ?? [],
+                      memberNames: cleanStringArray(memberNames) ?? [],
                       socialLinks: (socialLinks ?? {}) as Prisma.InputJsonValue,
                     },
                     update: {
@@ -210,9 +259,11 @@ export async function registerProfileRoutes(app: FastifyInstance) {
                           : undefined,
                       location:
                         location !== undefined ? location.trim() : undefined,
+                      profileType,
                       genres: cleanStringArray(genres),
                       instruments: cleanStringArray(instruments),
                       daw: cleanStringArray(daw),
+                      memberNames: cleanStringArray(memberNames),
                       socialLinks:
                         socialLinks !== undefined
                           ? (socialLinks as Prisma.InputJsonValue)
@@ -370,8 +421,18 @@ export async function registerProfileRoutes(app: FastifyInstance) {
       const limit = request.query.limit ?? 20;
       const cursor = request.query.cursor;
       const query = request.query.q?.trim();
+      const profileType = request.query.type;
       const where: Prisma.UserWhereInput = {
         role: "musician",
+        ...(profileType
+          ? {
+              musicianProfile: {
+                is: {
+                  profileType,
+                },
+              },
+            }
+          : {}),
         ...(query
           ? {
               name: {
@@ -762,6 +823,326 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         where: {
           id: existing.id,
         },
+      });
+
+      return reply.status(204).send();
+    },
+  );
+
+  app.get<{ Params: PublicProfileParams }>(
+    "/profiles/:userId/albums",
+    {
+      preHandler: authenticate,
+      schema: publicProfileSchema,
+    },
+    async (request, reply) => {
+      const profileId = await getMusicianProfileIdForUser(request.params.userId);
+
+      if (!profileId) {
+        return reply.status(404).send({
+          error: "Profile not found",
+          statusCode: 404,
+        });
+      }
+
+      const albums = await prisma.profileAlbum.findMany({
+        where: { musicianProfileId: profileId },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      });
+
+      return {
+        albums: albums.map(toPublicProfileAlbum),
+      };
+    },
+  );
+
+  app.get<{ Params: PublicProfileParams }>(
+    "/profiles/:userId/concerts",
+    {
+      preHandler: authenticate,
+      schema: publicProfileSchema,
+    },
+    async (request, reply) => {
+      const profileId = await getMusicianProfileIdForUser(request.params.userId);
+
+      if (!profileId) {
+        return reply.status(404).send({
+          error: "Profile not found",
+          statusCode: 404,
+        });
+      }
+
+      const concerts = await prisma.profileConcert.findMany({
+        where: { musicianProfileId: profileId },
+        orderBy: [{ sortOrder: "asc" }, { eventDate: "desc" }],
+      });
+
+      return {
+        concerts: concerts.map(toPublicProfileConcert),
+      };
+    },
+  );
+
+  app.post<{ Body: CreateProfileAlbumBody }>(
+    "/profile/me/albums",
+    {
+      preHandler: authenticate,
+      schema: createProfileAlbumSchema,
+    },
+    async (request, reply) => {
+      const profile = await getMusicianProfileForUser(request.user.userId);
+
+      if (!profile) {
+        return reply.status(403).send({
+          error: "Only musician accounts can manage albums",
+          statusCode: 403,
+        });
+      }
+
+      const album = await prisma.profileAlbum.create({
+        data: {
+          musicianProfileId: profile.id,
+          title: request.body.title.trim(),
+          releaseDate: parseOptionalDate(request.body.releaseDate) ?? null,
+          coverUrl: request.body.coverUrl?.trim() || null,
+          sortOrder: request.body.sortOrder ?? 0,
+        },
+      });
+
+      return reply.status(201).send({
+        album: toPublicProfileAlbum(album),
+      });
+    },
+  );
+
+  app.patch<{ Params: ProfileAlbumParams; Body: UpdateProfileAlbumBody }>(
+    "/profile/me/albums/:albumId",
+    {
+      preHandler: authenticate,
+      schema: updateProfileAlbumSchema,
+    },
+    async (request, reply) => {
+      const profileId = await getMusicianProfileIdForUser(request.user.userId);
+
+      if (!profileId) {
+        return reply.status(403).send({
+          error: "Only musician accounts can manage albums",
+          statusCode: 403,
+        });
+      }
+
+      const { title, releaseDate, coverUrl, sortOrder } = request.body;
+
+      if (
+        title === undefined &&
+        releaseDate === undefined &&
+        coverUrl === undefined &&
+        sortOrder === undefined
+      ) {
+        return reply.status(400).send({
+          error: "No album fields provided",
+          statusCode: 400,
+        });
+      }
+
+      const existing = await prisma.profileAlbum.findFirst({
+        where: {
+          id: request.params.albumId,
+          musicianProfileId: profileId,
+        },
+      });
+
+      if (!existing) {
+        return reply.status(404).send({
+          error: "Album not found",
+          statusCode: 404,
+        });
+      }
+
+      const album = await prisma.profileAlbum.update({
+        where: { id: existing.id },
+        data: {
+          title: title !== undefined ? title.trim() : undefined,
+          releaseDate:
+            releaseDate !== undefined
+              ? parseOptionalDate(releaseDate)
+              : undefined,
+          coverUrl:
+            coverUrl !== undefined ? coverUrl?.trim() || null : undefined,
+          sortOrder,
+        },
+      });
+
+      return {
+        album: toPublicProfileAlbum(album),
+      };
+    },
+  );
+
+  app.delete<{ Params: ProfileAlbumParams }>(
+    "/profile/me/albums/:albumId",
+    {
+      preHandler: authenticate,
+      schema: profileAlbumParamsSchema,
+    },
+    async (request, reply) => {
+      const profileId = await getMusicianProfileIdForUser(request.user.userId);
+
+      if (!profileId) {
+        return reply.status(403).send({
+          error: "Only musician accounts can manage albums",
+          statusCode: 403,
+        });
+      }
+
+      const existing = await prisma.profileAlbum.findFirst({
+        where: {
+          id: request.params.albumId,
+          musicianProfileId: profileId,
+        },
+      });
+
+      if (!existing) {
+        return reply.status(404).send({
+          error: "Album not found",
+          statusCode: 404,
+        });
+      }
+
+      await prisma.profileAlbum.delete({
+        where: { id: existing.id },
+      });
+
+      return reply.status(204).send();
+    },
+  );
+
+  app.post<{ Body: CreateProfileConcertBody }>(
+    "/profile/me/concerts",
+    {
+      preHandler: authenticate,
+      schema: createProfileConcertSchema,
+    },
+    async (request, reply) => {
+      const profile = await getMusicianProfileForUser(request.user.userId);
+
+      if (!profile) {
+        return reply.status(403).send({
+          error: "Only musician accounts can manage concerts",
+          statusCode: 403,
+        });
+      }
+
+      const concert = await prisma.profileConcert.create({
+        data: {
+          musicianProfileId: profile.id,
+          venue: request.body.venue.trim(),
+          eventDate: parseRequiredDate(request.body.eventDate),
+          coverUrl: request.body.coverUrl?.trim() || null,
+          sortOrder: request.body.sortOrder ?? 0,
+        },
+      });
+
+      return reply.status(201).send({
+        concert: toPublicProfileConcert(concert),
+      });
+    },
+  );
+
+  app.patch<{ Params: ProfileConcertParams; Body: UpdateProfileConcertBody }>(
+    "/profile/me/concerts/:concertId",
+    {
+      preHandler: authenticate,
+      schema: updateProfileConcertSchema,
+    },
+    async (request, reply) => {
+      const profileId = await getMusicianProfileIdForUser(request.user.userId);
+
+      if (!profileId) {
+        return reply.status(403).send({
+          error: "Only musician accounts can manage concerts",
+          statusCode: 403,
+        });
+      }
+
+      const { venue, eventDate, coverUrl, sortOrder } = request.body;
+
+      if (
+        venue === undefined &&
+        eventDate === undefined &&
+        coverUrl === undefined &&
+        sortOrder === undefined
+      ) {
+        return reply.status(400).send({
+          error: "No concert fields provided",
+          statusCode: 400,
+        });
+      }
+
+      const existing = await prisma.profileConcert.findFirst({
+        where: {
+          id: request.params.concertId,
+          musicianProfileId: profileId,
+        },
+      });
+
+      if (!existing) {
+        return reply.status(404).send({
+          error: "Concert not found",
+          statusCode: 404,
+        });
+      }
+
+      const concert = await prisma.profileConcert.update({
+        where: { id: existing.id },
+        data: {
+          venue: venue !== undefined ? venue.trim() : undefined,
+          eventDate:
+            eventDate !== undefined ? parseRequiredDate(eventDate) : undefined,
+          coverUrl:
+            coverUrl !== undefined ? coverUrl?.trim() || null : undefined,
+          sortOrder,
+        },
+      });
+
+      return {
+        concert: toPublicProfileConcert(concert),
+      };
+    },
+  );
+
+  app.delete<{ Params: ProfileConcertParams }>(
+    "/profile/me/concerts/:concertId",
+    {
+      preHandler: authenticate,
+      schema: profileConcertParamsSchema,
+    },
+    async (request, reply) => {
+      const profileId = await getMusicianProfileIdForUser(request.user.userId);
+
+      if (!profileId) {
+        return reply.status(403).send({
+          error: "Only musician accounts can manage concerts",
+          statusCode: 403,
+        });
+      }
+
+      const existing = await prisma.profileConcert.findFirst({
+        where: {
+          id: request.params.concertId,
+          musicianProfileId: profileId,
+        },
+      });
+
+      if (!existing) {
+        return reply.status(404).send({
+          error: "Concert not found",
+          statusCode: 404,
+        });
+      }
+
+      await prisma.profileConcert.delete({
+        where: { id: existing.id },
       });
 
       return reply.status(204).send();

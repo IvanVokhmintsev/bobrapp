@@ -9,7 +9,7 @@ export type ProfileBlockStatus = {
 
 export function getProfileBlockStatuses(
   user: ApiUser,
-  options: { postsCount: number },
+  options: { postsCount: number; albumsCount: number; concertsCount: number },
 ): ProfileBlockStatus[] {
   const profile = user.musicianProfile;
   const band = isBandProfile(user);
@@ -62,12 +62,12 @@ export function getProfileBlockStatuses(
     {
       id: "albums",
       label: "Альбомы",
-      filled: false,
+      filled: options.albumsCount > 0,
     },
     {
       id: "concerts",
       label: "Концерты",
-      filled: false,
+      filled: options.concertsCount > 0,
     },
   );
 

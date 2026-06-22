@@ -6,6 +6,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum ProfileType {
+  solo
+  band
+}
+
 enum UserRole {
   musician
   label
@@ -34,6 +39,36 @@ enum AchievementType {
   professional
 }
 
+model ProfileAlbum {
+  id                String   @id @default(uuid())
+  musicianProfileId String
+  title             String
+  releaseDate       DateTime?
+  coverUrl          String?
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  musicianProfile MusicianProfile @relation(fields: [musicianProfileId], references: [id], onDelete: Cascade)
+
+  @@index([musicianProfileId, sortOrder])
+}
+
+model ProfileConcert {
+  id                String   @id @default(uuid())
+  musicianProfileId String
+  venue             String
+  eventDate         DateTime
+  coverUrl          String?
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  musicianProfile MusicianProfile @relation(fields: [musicianProfileId], references: [id], onDelete: Cascade)
+
+  @@index([musicianProfileId, sortOrder])
+}
+
 model User {
   id           String   @id @default(uuid())
   name         String
@@ -57,6 +92,7 @@ model User {
 model MusicianProfile {
   id              String         @id @default(uuid())
   userId          String         @unique
+  profileType     ProfileType    @default(solo)
   level           MusicianLevel?
   bio             String?
   avatarUrl       String?
@@ -64,13 +100,16 @@ model MusicianProfile {
   genres          String[]       @default([])
   instruments     String[]       @default([])
   daw             String[]       @default([])
+  memberNames     String[]       @default([])
   socialLinks     Json           @default("{}")
   points          Int            @default(0)
   roadmapProgress Int            @default(0)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albums   ProfileAlbum[]
+  concerts ProfileConcert[]
 }
 
 model Post {

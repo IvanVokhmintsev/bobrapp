@@ -1,6 +1,7 @@
 export type UserRole = "musician" | "label";
 export type MusicianLevel = "nothing" | "beginner" | "advanced" | "professional";
 export type PostType = "professional" | "roadmap";
+export type ProfileType = "solo" | "band";
 
 export type ApiUser = {
   id: string;
@@ -9,6 +10,7 @@ export type ApiUser = {
   role: UserRole;
   musicianProfile: null | {
     id: string;
+    profileType: ProfileType;
     level: MusicianLevel | null;
     bio: string | null;
     avatarUrl: string | null;
@@ -16,6 +18,7 @@ export type ApiUser = {
     genres: string[];
     instruments: string[];
     daw: string[];
+    memberNames: string[];
     socialLinks: Record<string, string>;
     points: number;
     roadmapProgress: number;
@@ -50,6 +53,7 @@ export type ApiPost = {
     name: string;
     role: UserRole;
     avatarUrl: string | null;
+    profileType: ProfileType;
   };
 };
 
@@ -64,6 +68,26 @@ export type ApiComment = {
     role: UserRole;
     avatarUrl: string | null;
   };
+};
+
+export type ApiProfileAlbum = {
+  id: string;
+  title: string;
+  releaseDate: string | null;
+  coverUrl: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiProfileConcert = {
+  id: string;
+  venue: string;
+  eventDate: string;
+  coverUrl: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type PageInfo = {
@@ -152,12 +176,16 @@ export const api = {
   me() {
     return request<{ user: ApiUser }>("/auth/me");
   },
-  onboardMusician(level: MusicianLevel) {
+  onboardMusician(input: {
+    level: MusicianLevel;
+    profileType?: ProfileType;
+    memberNames?: string[];
+  }) {
     return request<{ user: ApiUser }>(
       "/onboarding/musician",
       {
         method: "POST",
-        body: JSON.stringify({ level }),
+        body: JSON.stringify(input),
       },
     );
   },
@@ -170,9 +198,11 @@ export const api = {
       bio?: string;
       avatarUrl?: string;
       location?: string;
+      profileType?: ProfileType;
       genres?: string[];
       instruments?: string[];
       daw?: string[];
+      memberNames?: string[];
       socialLinks?: Record<string, string>;
     },
   ) {
@@ -201,10 +231,13 @@ export const api = {
   getPosts() {
     return request<{ posts: ApiPost[]; pageInfo: PageInfo }>("/posts");
   },
-  getProfiles(input: { q?: string; cursor?: string } = {}) {
+  getProfiles(input: { q?: string; type?: ProfileType; cursor?: string } = {}) {
     const params = new URLSearchParams();
     if (input.q) {
       params.set("q", input.q);
+    }
+    if (input.type) {
+      params.set("type", input.type);
     }
     if (input.cursor) {
       params.set("cursor", input.cursor);
@@ -221,6 +254,76 @@ export const api = {
     return request<{ posts: ApiPost[]; pageInfo: PageInfo }>(
       `/profiles/${userId}/posts`,
     );
+  },
+  getProfileAlbums(userId: string) {
+    return request<{ albums: ApiProfileAlbum[] }>(`/profiles/${userId}/albums`);
+  },
+  getProfileConcerts(userId: string) {
+    return request<{ concerts: ApiProfileConcert[] }>(
+      `/profiles/${userId}/concerts`,
+    );
+  },
+  createProfileAlbum(input: {
+    title: string;
+    releaseDate?: string | null;
+    coverUrl?: string | null;
+  }) {
+    return request<{ album: ApiProfileAlbum }>("/profile/me/albums", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+  updateProfileAlbum(
+    albumId: string,
+    input: {
+      title?: string;
+      releaseDate?: string | null;
+      coverUrl?: string | null;
+    },
+  ) {
+    return request<{ album: ApiProfileAlbum }>(
+      `/profile/me/albums/${albumId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    );
+  },
+  deleteProfileAlbum(albumId: string) {
+    return request<void>(`/profile/me/albums/${albumId}`, {
+      method: "DELETE",
+    });
+  },
+  createProfileConcert(input: {
+    venue: string;
+    eventDate: string;
+    coverUrl?: string | null;
+  }) {
+    return request<{ concert: ApiProfileConcert }>("/profile/me/concerts", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+  updateProfileConcert(
+    concertId: string,
+    input: {
+      venue?: string;
+      eventDate?: string;
+      coverUrl?: string | null;
+    },
+  ) {
+    return request<{ concert: ApiProfileConcert }>(
+      `/profile/me/concerts/${concertId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    );
+  },
+  deleteProfileConcert(concertId: string) {
+    return request<void>(`/profile/me/concerts/${concertId}`, {
+      method: "DELETE",
+    });
   },
   followProfile(userId: string) {
     return request<{ following: boolean }>(
