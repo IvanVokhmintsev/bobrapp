@@ -65,6 +65,7 @@ CREATE TABLE "RoadmapStep" (
     "order" INTEGER NOT NULL,
     "content" TEXT NOT NULL,
     "checklist" JSONB NOT NULL,
+    "quiz" JSONB NOT NULL DEFAULT '[]',
     "pointsReward" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
