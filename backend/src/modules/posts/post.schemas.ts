@@ -75,6 +75,7 @@ export const feedQuerySchema = {
     properties: {
       cursor: { type: "string", minLength: 1 },
       limit: { type: "integer", minimum: 1, maximum: 100 },
+      type: postTypeSchema,
     },
   },
 } as const;

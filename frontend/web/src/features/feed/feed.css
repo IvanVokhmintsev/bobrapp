@@ -1,4 +1,5 @@
-.feed-page {
+.feed-page,
+.feed-surface {
   --feed-bg: #000000;
   --feed-panel: #171717;
   --feed-panel-2: #2b2b2b;
@@ -8,22 +9,28 @@
   --feed-text: #ffffff;
   --feed-pro: rgba(0, 234, 255, 0.2);
   --feed-red: #ff1018;
-
-  display: grid;
-  grid-template-columns: minmax(560px, 882px) 484px;
-  gap: 41px;
-  min-height: calc(100vh - 60px);
   color: var(--feed-text);
   font-family: inherit;
 }
 
+.feed-page {
+  display: grid;
+  grid-template-columns: minmax(560px, 882px) 484px;
+  gap: 41px;
+  min-height: calc(100vh - 60px);
+}
+
 .feed-page button,
+.feed-surface button,
 .feed-page textarea,
-.feed-page select {
+.feed-surface textarea,
+.feed-page select,
+.feed-surface select {
   font: inherit;
 }
 
-.feed-page button {
+.feed-page button,
+.feed-surface button {
   margin: 0;
   padding: 0;
   border: 0;
@@ -271,6 +278,59 @@
   font-size: 24px;
   font-weight: 650;
   text-align: center;
+}
+
+.feed-filters__types {
+  display: grid;
+  gap: 12px;
+}
+
+.feed-filters__types-label {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.15px;
+}
+
+.feed-filters__types-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feed-filters__types-list button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--feed-card);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.feed-filters__types-list button.is-active {
+  border-color: rgba(57, 216, 240, 0.45);
+  background: rgba(57, 216, 240, 0.14);
+}
+
+.feed-filters .app-pro {
+  margin-top: 24px;
+}
+
+.feed__load-more {
+  width: min(100%, 560px);
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--feed-card);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.feed__load-more:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .feed-filters__range {
@@ -561,6 +621,13 @@
   display: flex;
   min-width: 0;
   align-items: center;
+  gap: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.feed-card__author:hover .feed-card__name {
+  color: #ffffff;
 }
 
 .feed-card__avatar-stack {
@@ -832,10 +899,12 @@
   letter-spacing: 0.26px;
 }
 
-.feed-card__stat img {
+.feed-card__stat img,
+.feed-card__stat svg {
   width: 26px;
   height: 24px;
   object-fit: contain;
+  flex: 0 0 auto;
 }
 
 .feed-card__stat.is-active {

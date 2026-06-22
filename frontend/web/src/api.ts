@@ -230,8 +230,21 @@ export const api = {
       method: "DELETE",
     });
   },
-  getPosts() {
-    return request<{ posts: ApiPost[]; pageInfo: PageInfo }>("/posts");
+  getPosts(input?: { cursor?: string; limit?: number; type?: PostType }) {
+    const params = new URLSearchParams();
+    if (input?.cursor) {
+      params.set("cursor", input.cursor);
+    }
+    if (input?.limit) {
+      params.set("limit", String(input.limit));
+    }
+    if (input?.type) {
+      params.set("type", input.type);
+    }
+    const query = params.toString();
+    return request<{ posts: ApiPost[]; pageInfo: PageInfo }>(
+      `/posts${query ? `?${query}` : ""}`,
+    );
   },
   getProfiles(input: { q?: string; type?: ProfileType; cursor?: string } = {}) {
     const params = new URLSearchParams();

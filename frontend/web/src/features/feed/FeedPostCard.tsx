@@ -1,14 +1,16 @@
 import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import type { ApiComment, ApiPost, ApiUser } from "../../api";
 import commentIcon from "../../assets/feed/comment-action.png";
-import bookmarkIcon from "../../assets/feed/bookmark-action.png";
+import { BookmarkIcon } from "../../components/BookmarkIcon";
+import { HeartIcon } from "../../components/HeartIcon";
 import defaultAvatar from "../../assets/feed/card-cover.png";
-import likeIcon from "../../assets/feed/like-action.png";
 import playIcon from "../../assets/feed/play-button.png";
 import levelFlagIcon from "../../assets/profile/level-flag.svg";
 import { getMusicianLevel } from "../../lib/musicianLevel";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
+import { getProfilePath } from "../../lib/profilePath";
 import { ProfileTypeBadge } from "../profile/ProfileTypeBadge";
 import { getPostDisplayMode } from "./feedPostMedia";
 import { resolveUploadUrl } from "../../lib/mediaUrl";
@@ -28,11 +30,12 @@ export function FeedPostCard(props: FeedPostCardProps) {
   const level = getAuthorLevel(props.post, props.currentUser);
   const displayMode = getPostDisplayMode(props.post);
   const caption = getPostCaption(props.post, displayMode);
+  const authorProfilePath = getProfilePath(props.post.author.id, props.currentUser.id);
 
   return (
     <article className="feed-card" data-post-type={props.post.type}>
       <header className="feed-card__header">
-        <div className="feed-card__author">
+        <Link className="feed-card__author" to={authorProfilePath}>
           <div className="feed-card__avatar-stack" aria-hidden="true">
             <span className="feed-card__avatar-ring feed-card__avatar-ring--dark" />
             <span className="feed-card__avatar-ring feed-card__avatar-ring--muted" />
@@ -53,7 +56,7 @@ export function FeedPostCard(props: FeedPostCardProps) {
               </time>
             </div>
           </div>
-        </div>
+        </Link>
         <div className="feed-card__menu">
           {canDelete ? (
             <button
@@ -95,7 +98,7 @@ export function FeedPostCard(props: FeedPostCardProps) {
             aria-label={`Лайки: ${props.post.likesCount}`}
             aria-pressed={props.post.likedByMe}
           >
-            <img src={likeIcon} alt="" />
+            <HeartIcon filled={props.post.likedByMe} size={26} />
             <span>{props.post.likesCount}</span>
           </button>
           <button
@@ -118,7 +121,7 @@ export function FeedPostCard(props: FeedPostCardProps) {
               aria-label={props.post.favoritedByMe ? "Убрать из избранного" : "В избранное"}
               aria-pressed={props.post.favoritedByMe}
             >
-              <img src={bookmarkIcon} alt="" />
+              <BookmarkIcon filled={props.post.favoritedByMe} size={26} />
             </button>
           ) : null}
         </div>

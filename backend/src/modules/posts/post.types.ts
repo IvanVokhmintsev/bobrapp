@@ -21,4 +21,5 @@ export type CommentParams = {
 export type FeedQuery = {
   cursor?: string;
   limit?: number;
+  type?: PostType;
 };

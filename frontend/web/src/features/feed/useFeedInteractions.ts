@@ -5,10 +5,18 @@ import {
   type ApiComment,
   type ApiPost,
   type ApiUser,
+  type PageInfo,
+  type PostType,
 } from "../../api";
+import type { FeedPostTypeFilter } from "./FeedFiltersPanel";
 
 type CommentsByPost = Record<string, ApiComment[]>;
 type CommentTextByPost = Record<string, string>;
+
+const emptyPageInfo: PageInfo = {
+  hasNextPage: false,
+  nextCursor: null,
+};
 
 function toggleInSet(values: Set<string>, id: string) {
   const next = new Set(values);
@@ -24,13 +32,18 @@ type UseFeedInteractionsOptions = {
   profileUserId?: string;
   enabled?: boolean;
   source?: "feed" | "profile" | "favorites";
+  postType?: FeedPostTypeFilter;
 };
 
 export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   const enabled = options?.enabled ?? true;
   const profileUserId = options?.profileUserId;
   const source = options?.source ?? (profileUserId ? "profile" : "feed");
+  const postTypeFilter = options?.postType ?? "all";
   const [posts, setPosts] = useState<ApiPost[]>([]);
+  const [pageInfo, setPageInfo] = useState<PageInfo>(emptyPageInfo);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [text, setText] = useState("");
   const [composerImage, setComposerImage] = useState<File | null>(null);
   const [composerAudio, setComposerAudio] = useState<File | null>(null);
@@ -46,25 +59,62 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   const [commentTextByPost, setCommentTextByPost] =
     useState<CommentTextByPost>({});
 
+  const fetchFeedPosts = useCallback(
+    async (cursor?: string) => {
+      return api.getPosts({
+        cursor,
+        type: postTypeFilter === "all" ? undefined : (postTypeFilter as PostType),
+      });
+    },
+    [postTypeFilter],
+  );
+
   const loadPosts = useCallback(async () => {
     if (!enabled) {
       return;
     }
 
-    const result =
-      source === "favorites"
-        ? await api.getFavoritePosts()
-        : profileUserId
-          ? await api.getProfilePosts(profileUserId)
-          : await api.getPosts();
-    setPosts(result.posts);
-  }, [enabled, profileUserId, source]);
+    try {
+      setIsLoadingPosts(true);
+      setError("");
+
+      const result =
+        source === "favorites"
+          ? await api.getFavoritePosts()
+          : profileUserId
+            ? await api.getProfilePosts(profileUserId)
+            : await fetchFeedPosts();
+
+      setPosts(result.posts);
+      setPageInfo(result.pageInfo ?? emptyPageInfo);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Не удалось загрузить ленту");
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  }, [enabled, fetchFeedPosts, profileUserId, source]);
 
   useEffect(() => {
-    void loadPosts().catch((caught) => {
-      setError(caught instanceof Error ? caught.message : "Не удалось загрузить ленту");
-    });
+    void loadPosts();
   }, [loadPosts]);
+
+  async function loadMorePosts() {
+    if (source !== "feed" || !pageInfo.hasNextPage || !pageInfo.nextCursor || isLoadingMore) {
+      return;
+    }
+
+    try {
+      setIsLoadingMore(true);
+      setError("");
+      const result = await fetchFeedPosts(pageInfo.nextCursor);
+      setPosts((currentPosts) => [...currentPosts, ...result.posts]);
+      setPageInfo(result.pageInfo);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Не удалось загрузить ещё посты");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
 
   const visiblePosts = useMemo(() => posts, [posts]);
 
@@ -281,6 +331,10 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
 
   return {
     posts: visiblePosts,
+    pageInfo,
+    isLoadingPosts,
+    isLoadingMore,
+    loadMorePosts,
     text,
     setText,
     composerImage,

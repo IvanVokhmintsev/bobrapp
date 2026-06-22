@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
 import { getMusicianLevelFromUser } from "../../lib/musicianLevel";
 import { getProfileType } from "../../lib/profileType";
-import { FeedPostCard } from "../feed/FeedPostCard";
+import { FeedPostStream } from "../feed/FeedPostStream";
 import { useFeedInteractions } from "../feed/useFeedInteractions";
 import { ProfileTypeBadge } from "../profile/ProfileTypeBadge";
 import "../feed/feed.css";
@@ -131,31 +131,14 @@ export function FavoritesScreen() {
           })}
         </section>
       ) : (
-        <section className="favorites-posts feed__stream" aria-label="Избранные публикации">
-          {postsFeed.posts.length === 0 ? (
-            <p className="favorites-page__hint">
-              Пока нет сохранённых публикаций. Добавляйте их из ленты кнопкой закладки.
-            </p>
-          ) : null}
-          {postsFeed.posts.map((post) => (
-            <FeedPostCard
-              key={post.id}
-              post={post}
-              currentUser={user}
-              commentsOpen={postsFeed.expandedCommentPostIds.has(post.id)}
-              commentsLoading={postsFeed.loadingCommentPostIds.has(post.id)}
-              comments={postsFeed.commentsByPost[post.id]}
-              commentText={postsFeed.commentTextByPost[post.id] ?? ""}
-              onLike={() => void postsFeed.likePost(post.id)}
-              onFavorite={() => void postsFeed.favoritePost(post.id)}
-              onDeletePost={() => void postsFeed.deletePost(post.id)}
-              onToggleComments={() => void postsFeed.toggleComments(post.id)}
-              onCommentTextChange={(value) => postsFeed.setCommentText(post.id, value)}
-              onCreateComment={() => void postsFeed.createComment(post.id)}
-              onDeleteComment={(commentId) => void postsFeed.deleteComment(post, commentId)}
-            />
-          ))}
-        </section>
+        <FeedPostStream
+          feed={postsFeed}
+          currentUser={user}
+          className="favorites-posts"
+          ariaLabel="Избранные публикации"
+          showEmpty
+          emptyMessage="Пока нет сохранённых публикаций. Добавляйте их из ленты кнопкой закладки."
+        />
       )}
     </main>
   );

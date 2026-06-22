@@ -64,6 +64,7 @@ export async function registerPostRoutes(app: FastifyInstance) {
     async (request) => {
       const limit = request.query.limit ?? 20;
       const cursor = request.query.cursor;
+      const postType = request.query.type;
 
       const follows = await prisma.follow.findMany({
         where: {
@@ -78,19 +79,24 @@ export async function registerPostRoutes(app: FastifyInstance) {
 
       const posts = await prisma.post.findMany({
         where: {
-          OR: [
+          AND: [
             {
-              authorId: request.user.userId,
+              OR: [
+                {
+                  authorId: request.user.userId,
+                },
+                ...(followingIds.length > 0
+                  ? [
+                      {
+                        authorId: {
+                          in: followingIds,
+                        },
+                      },
+                    ]
+                  : []),
+              ],
             },
-            ...(followingIds.length > 0
-              ? [
-                  {
-                    authorId: {
-                      in: followingIds,
-                    },
-                  },
-                ]
-              : []),
+            ...(postType ? [{ type: postType }] : []),
           ],
         },
         orderBy: {
