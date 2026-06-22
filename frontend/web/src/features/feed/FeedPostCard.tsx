@@ -1,26 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import type { ApiComment, ApiPost, ApiUser } from "../../api";
 import commentIcon from "../../assets/feed/comment-action.png";
 import defaultAvatar from "../../assets/feed/card-cover.png";
 import likeIcon from "../../assets/feed/like-action.png";
-import musicNoteIcon from "../../assets/feed/music-note.svg";
+import playIcon from "../../assets/feed/play-button.png";
 import levelFlagIcon from "../../assets/profile/level-flag.svg";
 import { getMusicianLevel } from "../../lib/musicianLevel";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
-import {
-  formatAudioDuration,
-  getDemoCoverSrc,
-  getPostDisplayMode,
-  readAudioCoverFromUrl,
-  revokeObjectUrl,
-  type FeedPostMedia,
-} from "./feedPostMedia";
+import { getPostDisplayMode, type FeedPostMedia } from "./feedPostMedia";
 import type { FeedPostCardHandlers, FeedPostCardState } from "./useFeedInteractions";
 import { formatPostTime } from "./useFeedInteractions";
-
-const DEMO_AUDIO_TITLE = "Любим Древесину – Крутые бобры";
-const DEMO_AUDIO_DURATION_SEC = 172;
 
 type FeedPostCardProps = FeedPostCardHandlers &
   FeedPostCardState & {
@@ -142,69 +132,63 @@ function DemoBody(props: {
   media?: FeedPostMedia;
   caption: string;
 }) {
-  const extractedCoverUrl = useAudioCoverFallback(props.media);
-  const coverSrc = getDemoCoverSrc(props.media, extractedCoverUrl);
-  const audioTitle =
-    props.media?.audioTitle ??
-    (props.media?.audioUrl ? "Демо-трек" : DEMO_AUDIO_TITLE);
-  const audioDurationSec =
-    props.media?.audioDurationSec ??
-    (props.media?.audioUrl ? null : DEMO_AUDIO_DURATION_SEC);
-  const showAudio = Boolean(props.media?.audioUrl) || !props.post.text.trim();
-
   return (
     <div className="feed-card__body feed-card__body--demo">
       <p className="feed-card__caption">{props.caption}</p>
-      <div className="feed-card__demo-cover">
-        <img src={coverSrc} alt="" />
-      </div>
-      {showAudio ? (
-        <AudioBar
-          audioUrl={props.media?.audioUrl}
-          title={audioTitle}
-          durationSec={audioDurationSec}
-        />
-      ) : null}
+      <DemoCover imageUrl={props.media?.imageUrl} audioUrl={props.media?.audioUrl} />
     </div>
   );
 }
 
-function AudioBar(props: {
-  audioUrl?: string | null;
-  title: string;
-  durationSec: number | null;
-}) {
+function DemoCover(props: { imageUrl?: string | null; audioUrl?: string | null }) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const isPlayable = Boolean(props.audioUrl);
+
+  function togglePlayback() {
+    if (!props.audioUrl) {
+      return;
+    }
+
+    const audio = audioRef.current;
+    if (!audio) {
+      return;
+    }
+
+    if (audio.paused) {
+      void audio.play();
+    } else {
+      audio.pause();
+    }
+  }
 
   return (
-    <div className="feed-card__audio">
-      <button
-        type="button"
-        className="feed-card__audio-play"
-        aria-label="Воспроизвести"
-        onClick={() => {
-          const audio = audioRef.current;
-          if (!audio) {
-            return;
-          }
-
-          if (audio.paused) {
-            void audio.play();
-          } else {
-            audio.pause();
-          }
-        }}
-      >
-        <img src={musicNoteIcon} alt="" />
-      </button>
-      <div className="feed-card__audio-meta">
-        <span className="feed-card__audio-title">{props.title}</span>
-        <span className="feed-card__audio-duration">
-          {formatAudioDuration(props.durationSec)}
-        </span>
-      </div>
-      {props.audioUrl ? <audio ref={audioRef} src={props.audioUrl} preload="metadata" /> : null}
-    </div>
+    <button
+      type="button"
+      className={`feed-card__demo-cover ${isPlayable ? "is-playable" : ""} ${
+        isPlaying ? "is-playing" : ""
+      } ${props.imageUrl ? "has-image" : "is-placeholder"}`}
+      onClick={togglePlayback}
+      disabled={!isPlayable}
+      aria-label={isPlayable ? (isPlaying ? "Пауза" : "Воспроизвести") : "Демо"}
+    >
+      {props.imageUrl ? <img src={props.imageUrl} alt="" /> : null}
+      {isPlayable ? (
+        <>
+          <span className="feed-card__demo-play" aria-hidden="true">
+            <img src={playIcon} alt="" />
+          </span>
+          <audio
+            ref={audioRef}
+            src={props.audioUrl ?? undefined}
+            preload="metadata"
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => setIsPlaying(false)}
+          />
+        </>
+      ) : null}
+    </button>
   );
 }
 
@@ -296,49 +280,4 @@ function getAuthorLevel(post: ApiPost, currentUser: ApiUser) {
   }
 
   return getMusicianLevel(null);
-}
-
-function useAudioCoverFallback(media?: FeedPostMedia) {
-  const [coverUrl, setCoverUrl] = useState<string | null>(null);
-  const coverUrlRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    coverUrlRef.current = coverUrl;
-  }, [coverUrl]);
-
-  useEffect(() => {
-    if (media?.imageUrl || !media?.audioUrl) {
-      revokeObjectUrl(coverUrlRef.current);
-      setCoverUrl(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    void readAudioCoverFromUrl(media.audioUrl).then((nextCoverUrl) => {
-      if (cancelled) {
-        revokeObjectUrl(nextCoverUrl);
-        return;
-      }
-
-      setCoverUrl((current) => {
-        if (current && current !== nextCoverUrl) {
-          revokeObjectUrl(current);
-        }
-        return nextCoverUrl;
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [media?.audioUrl, media?.imageUrl]);
-
-  useEffect(() => {
-    return () => {
-      revokeObjectUrl(coverUrlRef.current);
-    };
-  }, []);
-
-  return coverUrl;
 }

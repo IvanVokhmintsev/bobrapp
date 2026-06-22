@@ -578,11 +578,33 @@
 
 .feed-card__demo-cover {
   position: relative;
+  display: block;
   width: 210px;
   height: 210px;
   overflow: hidden;
+  padding: 0;
+  border: 0;
   border-radius: 8px;
-  background: #d9d9d9;
+  background: transparent;
+}
+
+.feed-card__demo-cover.is-placeholder {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 42%),
+    linear-gradient(180deg, #3b3b3b 0%, #2b2b2b 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.feed-card__demo-cover.is-playable {
+  cursor: pointer;
+}
+
+.feed-card__demo-cover.is-playable:hover {
+  filter: brightness(1.06);
+}
+
+.feed-card__demo-cover:disabled {
+  cursor: default;
 }
 
 .feed-card__demo-cover > img {
@@ -591,59 +613,26 @@
   object-fit: cover;
 }
 
-.feed-card__audio {
-  display: flex;
-  width: 100%;
-  max-width: 420px;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 16px;
-  background: rgba(0, 0, 0, 0.22);
-}
-
-.feed-card__audio-play {
+.feed-card__demo-play {
+  position: absolute;
+  inset: 0;
   display: grid;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
   place-items: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
 }
 
-.feed-card__audio-play img {
-  width: 18px;
-  height: 18px;
+.feed-card__demo-play img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.35));
 }
 
-.feed-card__audio-meta {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.feed-card__demo-cover.is-playing .feed-card__demo-play {
+  background: rgba(0, 0, 0, 0.42);
 }
 
-.feed-card__audio-title {
-  overflow: hidden;
-  min-width: 0;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: 0.16px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.feed-card__audio-duration {
-  flex-shrink: 0;
-  color: var(--feed-muted);
-  font-size: 14px;
-}
-
-.feed-card__audio audio {
+.feed-card__demo-cover audio {
   display: none;
 }
 
