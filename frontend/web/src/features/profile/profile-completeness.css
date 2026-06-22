@@ -3,7 +3,8 @@
   padding: 16px 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  background: #171717;
+  background: #2b2b2b;
+  color: #ffffff;
 }
 
 .profile-completeness__header {
@@ -12,11 +13,19 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .profile-completeness__header h2 {
   margin: 0;
   font-size: 16px;
+  color: #ffffff;
+}
+
+.profile-completeness__label {
+  color: #ffffff;
 }
 
 .profile-completeness__header span {
@@ -104,9 +113,19 @@
   border-color: rgba(255, 48, 56, 0.55);
 }
 
-.profile-posts {
-  display: grid;
-  gap: 12px;
+.profile-block--posts {
+  width: min(100%, 560px);
+}
+
+.profile-posts-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+.profile-posts-feed .feed-card {
+  width: 100%;
 }
 
 .profile-post {
@@ -134,4 +153,17 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 6px;
+}
+
+.profile-card__actions .profile-header-action {
+  display: inline-flex;
+  width: auto;
+  height: auto;
+  min-height: 34px;
+  align-items: center;
+  place-items: unset;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: transparent;
 }

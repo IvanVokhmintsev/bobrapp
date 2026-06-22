@@ -22,9 +22,12 @@ function toggleInSet(values: Set<string>, id: string) {
 
 type UseFeedInteractionsOptions = {
   profileUserId?: string;
+  enabled?: boolean;
 };
 
 export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
+  const enabled = options?.enabled ?? true;
+  const profileUserId = options?.profileUserId;
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [text, setText] = useState("");
   const [composerImage, setComposerImage] = useState<File | null>(null);
@@ -42,11 +45,15 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
     useState<CommentTextByPost>({});
 
   const loadPosts = useCallback(async () => {
-    const result = options?.profileUserId
-      ? await api.getProfilePosts(options.profileUserId)
+    if (!enabled) {
+      return;
+    }
+
+    const result = profileUserId
+      ? await api.getProfilePosts(profileUserId)
       : await api.getPosts();
     setPosts(result.posts);
-  }, [options?.profileUserId]);
+  }, [enabled, profileUserId]);
 
   useEffect(() => {
     void loadPosts().catch((caught) => {

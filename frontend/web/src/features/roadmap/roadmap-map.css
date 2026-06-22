@@ -1,0 +1,51 @@
+.roadmap-map-page {
+  display: grid;
+  gap: 18px;
+  min-height: calc(100vh - 60px);
+  color: #ffffff;
+}
+
+.roadmap-map-page__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.roadmap-map-page__back,
+.roadmap-map-page__links a {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.roadmap-map-page__links {
+  display: flex;
+  gap: 8px;
+}
+
+.roadmap-map-page__panel {
+  min-height: calc(100vh - 120px);
+  overflow: hidden;
+  border-radius: 22px;
+  background: #171717;
+}
+
+.roadmap-map-page__detail {
+  height: 100%;
+  padding: 30px 24px;
+  overflow-y: auto;
+}
+
+@media (max-width: 1180px) {
+  .roadmap-map-page__panel {
+    min-height: 720px;
+  }
+}

@@ -2,12 +2,15 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "rea
 
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { AuthScreen } from "../features/auth/AuthScreen";
-import { DiscoverScreen } from "../features/discover/DiscoverScreen";
+import { BookingScreen } from "../features/booking/BookingScreen";
+import { EventsScreen } from "../features/events/EventsScreen";
 import { FeedScreen } from "../features/feed/FeedScreen";
+import { PeopleScreen } from "../features/people/PeopleScreen";
 import { AppLayout } from "../features/layout/AppLayout";
 import { AppLoading } from "../features/layout/AppLoading";
 import "../features/layout/app-shell.css";
 import { OnboardingScreen } from "../features/onboarding/OnboardingScreen";
+import { RoadmapMapScreen } from "../features/roadmap/RoadmapMapScreen";
 import { ProfileScreen } from "../features/profile/ProfileScreen";
 import { RoadmapScreen } from "../features/roadmap/RoadmapScreen";
 
@@ -61,9 +64,14 @@ export function AppRouter() {
             <Route path="/onboarding" element={<OnboardingScreen />} />
             <Route element={<AppLayout />}>
               <Route path="/feed" element={<FeedScreen />} />
+              <Route path="/people" element={<PeopleScreen />} />
+              <Route path="/booking" element={<BookingScreen />} />
+              <Route path="/events" element={<EventsScreen />} />
               <Route path="/profile" element={<ProfileScreen />} />
-              <Route path="/discover" element={<DiscoverScreen />} />
+              <Route path="/profile/:userId" element={<ProfileScreen />} />
+              <Route path="/discover" element={<Navigate to="/people" replace />} />
               <Route path="/roadmap" element={<RoadmapScreen />} />
+              <Route path="/roadmap/map" element={<RoadmapMapScreen />} />
             </Route>
           </Route>
 
