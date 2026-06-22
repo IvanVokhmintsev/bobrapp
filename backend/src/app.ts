@@ -2,6 +2,7 @@ import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 
 import { env } from "./config/env.js";
 import { avatarsDir, ensureUploadDirs } from "./lib/avatars.js";
+import { ensureProfileCoverDirs, profileCoversDir } from "./lib/profileCovers.js";
 import { uploadsRoot } from "./lib/backendRoot.js";
 import { ensurePostMediaDirs, maxPostMediaBytes } from "./lib/postMedia.js";
 import { registerRoutes } from "./routes/index.js";
@@ -12,6 +13,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   await ensureUploadDirs();
+  await ensureProfileCoverDirs();
   await ensurePostMediaDirs();
 
   void app.register(import("@fastify/jwt"), {
@@ -61,7 +63,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   void registerRoutes(app);
 
-  app.log.info({ avatarsDir }, "Avatar uploads directory ready");
+  app.log.info({ avatarsDir, profileCoversDir }, "Upload directories ready");
 
   return app;
 }

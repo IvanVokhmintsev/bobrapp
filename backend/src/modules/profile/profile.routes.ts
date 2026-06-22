@@ -2,6 +2,15 @@ import type { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 
 import {
+  buildProfileCoverFileName,
+  buildProfileCoverPublicPath,
+  deleteManagedProfileCover,
+  isAllowedProfileCoverMimeType,
+  isManagedProfileCoverUrl,
+  maxProfileCoverBytes,
+  saveProfileCoverFile,
+} from "../../lib/profileCovers.js";
+import {
   buildAvatarFileName,
   buildAvatarPublicPath,
   deleteManagedAvatar,
@@ -959,6 +968,14 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         });
       }
 
+      if (
+        coverUrl !== undefined &&
+        coverUrl !== existing.coverUrl &&
+        isManagedProfileCoverUrl(existing.coverUrl)
+      ) {
+        await deleteManagedProfileCover(existing.coverUrl);
+      }
+
       const album = await prisma.profileAlbum.update({
         where: { id: existing.id },
         data: {
@@ -1009,11 +1026,133 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         });
       }
 
+      await deleteManagedProfileCover(existing.coverUrl);
+
       await prisma.profileAlbum.delete({
         where: { id: existing.id },
       });
 
       return reply.status(204).send();
+    },
+  );
+
+  app.post<{ Params: ProfileAlbumParams }>(
+    "/profile/me/albums/:albumId/cover",
+    {
+      preHandler: authenticate,
+      schema: profileAlbumParamsSchema,
+    },
+    async (request, reply) => {
+      const profileId = await getMusicianProfileIdForUser(request.user.userId);
+
+      if (!profileId) {
+        return reply.status(403).send({
+          error: "Only musician accounts can manage albums",
+          statusCode: 403,
+        });
+      }
+
+      const existing = await prisma.profileAlbum.findFirst({
+        where: {
+          id: request.params.albumId,
+          musicianProfileId: profileId,
+        },
+      });
+
+      if (!existing) {
+        return reply.status(404).send({
+          error: "Album not found",
+          statusCode: 404,
+        });
+      }
+
+      const file = await request.file();
+
+      if (!file) {
+        return reply.status(400).send({
+          error: "Cover file is required",
+          statusCode: 400,
+        });
+      }
+
+      if (!isAllowedProfileCoverMimeType(file.mimetype)) {
+        return reply.status(400).send({
+          error: "Cover must be a JPEG, PNG, WebP, or GIF image",
+          statusCode: 400,
+        });
+      }
+
+      let buffer: Buffer;
+      try {
+        buffer = await file.toBuffer();
+      } catch {
+        return reply.status(413).send({
+          error: `Cover must be smaller than ${maxProfileCoverBytes / (1024 * 1024)}MB`,
+          statusCode: 413,
+        });
+      }
+
+      const fileName = buildProfileCoverFileName(
+        "album",
+        existing.id,
+        file.mimetype,
+      );
+      await saveProfileCoverFile(fileName, buffer);
+      const nextCoverUrl = buildProfileCoverPublicPath(fileName);
+
+      await deleteManagedProfileCover(existing.coverUrl);
+
+      const album = await prisma.profileAlbum.update({
+        where: { id: existing.id },
+        data: { coverUrl: nextCoverUrl },
+      });
+
+      return {
+        album: toPublicProfileAlbum(album),
+      };
+    },
+  );
+
+  app.delete<{ Params: ProfileAlbumParams }>(
+    "/profile/me/albums/:albumId/cover",
+    {
+      preHandler: authenticate,
+      schema: profileAlbumParamsSchema,
+    },
+    async (request, reply) => {
+      const profileId = await getMusicianProfileIdForUser(request.user.userId);
+
+      if (!profileId) {
+        return reply.status(403).send({
+          error: "Only musician accounts can manage albums",
+          statusCode: 403,
+        });
+      }
+
+      const existing = await prisma.profileAlbum.findFirst({
+        where: {
+          id: request.params.albumId,
+          musicianProfileId: profileId,
+        },
+      });
+
+      if (!existing) {
+        return reply.status(404).send({
+          error: "Album not found",
+          statusCode: 404,
+        });
+      }
+
+      await deleteManagedProfileCover(existing.coverUrl);
+
+      const album = await prisma.profileAlbum.update({
+        where: { id: existing.id },
+        data: { coverUrl: null },
+      });
+
+      return {
+        album: toPublicProfileAlbum(album),
+      };
     },
   );
 
@@ -1093,6 +1232,14 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         });
       }
 
+      if (
+        coverUrl !== undefined &&
+        coverUrl !== existing.coverUrl &&
+        isManagedProfileCoverUrl(existing.coverUrl)
+      ) {
+        await deleteManagedProfileCover(existing.coverUrl);
+      }
+
       const concert = await prisma.profileConcert.update({
         where: { id: existing.id },
         data: {
@@ -1141,11 +1288,133 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         });
       }
 
+      await deleteManagedProfileCover(existing.coverUrl);
+
       await prisma.profileConcert.delete({
         where: { id: existing.id },
       });
 
       return reply.status(204).send();
+    },
+  );
+
+  app.post<{ Params: ProfileConcertParams }>(
+    "/profile/me/concerts/:concertId/cover",
+    {
+      preHandler: authenticate,
+      schema: profileConcertParamsSchema,
+    },
+    async (request, reply) => {
+      const profileId = await getMusicianProfileIdForUser(request.user.userId);
+
+      if (!profileId) {
+        return reply.status(403).send({
+          error: "Only musician accounts can manage concerts",
+          statusCode: 403,
+        });
+      }
+
+      const existing = await prisma.profileConcert.findFirst({
+        where: {
+          id: request.params.concertId,
+          musicianProfileId: profileId,
+        },
+      });
+
+      if (!existing) {
+        return reply.status(404).send({
+          error: "Concert not found",
+          statusCode: 404,
+        });
+      }
+
+      const file = await request.file();
+
+      if (!file) {
+        return reply.status(400).send({
+          error: "Cover file is required",
+          statusCode: 400,
+        });
+      }
+
+      if (!isAllowedProfileCoverMimeType(file.mimetype)) {
+        return reply.status(400).send({
+          error: "Cover must be a JPEG, PNG, WebP, or GIF image",
+          statusCode: 400,
+        });
+      }
+
+      let buffer: Buffer;
+      try {
+        buffer = await file.toBuffer();
+      } catch {
+        return reply.status(413).send({
+          error: `Cover must be smaller than ${maxProfileCoverBytes / (1024 * 1024)}MB`,
+          statusCode: 413,
+        });
+      }
+
+      const fileName = buildProfileCoverFileName(
+        "concert",
+        existing.id,
+        file.mimetype,
+      );
+      await saveProfileCoverFile(fileName, buffer);
+      const nextCoverUrl = buildProfileCoverPublicPath(fileName);
+
+      await deleteManagedProfileCover(existing.coverUrl);
+
+      const concert = await prisma.profileConcert.update({
+        where: { id: existing.id },
+        data: { coverUrl: nextCoverUrl },
+      });
+
+      return {
+        concert: toPublicProfileConcert(concert),
+      };
+    },
+  );
+
+  app.delete<{ Params: ProfileConcertParams }>(
+    "/profile/me/concerts/:concertId/cover",
+    {
+      preHandler: authenticate,
+      schema: profileConcertParamsSchema,
+    },
+    async (request, reply) => {
+      const profileId = await getMusicianProfileIdForUser(request.user.userId);
+
+      if (!profileId) {
+        return reply.status(403).send({
+          error: "Only musician accounts can manage concerts",
+          statusCode: 403,
+        });
+      }
+
+      const existing = await prisma.profileConcert.findFirst({
+        where: {
+          id: request.params.concertId,
+          musicianProfileId: profileId,
+        },
+      });
+
+      if (!existing) {
+        return reply.status(404).send({
+          error: "Concert not found",
+          statusCode: 404,
+        });
+      }
+
+      await deleteManagedProfileCover(existing.coverUrl);
+
+      const concert = await prisma.profileConcert.update({
+        where: { id: existing.id },
+        data: { coverUrl: null },
+      });
+
+      return {
+        concert: toPublicProfileConcert(concert),
+      };
     },
   );
 

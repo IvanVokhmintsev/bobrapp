@@ -5,6 +5,9 @@ import {
   type ApiProfileAlbum,
   type ApiProfileConcert,
 } from "../../api";
+import albumCover from "../../assets/profile/album-cover.png";
+import concertPhoto from "../../assets/profile/concert-photo.png";
+import { CoverPicker } from "./CoverPicker";
 
 type ProfileContentEditSheetProps = {
   albums: ApiProfileAlbum[];
@@ -25,13 +28,16 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
   const [albumTitle, setAlbumTitle] = useState("");
   const [albumDate, setAlbumDate] = useState("");
   const [albumCoverUrl, setAlbumCoverUrl] = useState("");
+  const [pendingAlbumFile, setPendingAlbumFile] = useState<File | null>(null);
   const [concertVenue, setConcertVenue] = useState("");
   const [concertDate, setConcertDate] = useState("");
   const [concertCoverUrl, setConcertCoverUrl] = useState("");
+  const [pendingConcertFile, setPendingConcertFile] = useState<File | null>(null);
   const [editingAlbumId, setEditingAlbumId] = useState<string | null>(null);
   const [editingConcertId, setEditingConcertId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   function notifyChanged(nextAlbums: ApiProfileAlbum[], nextConcerts: ApiProfileConcert[]) {
     setAlbums(nextAlbums);
@@ -43,6 +49,7 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
     setAlbumTitle("");
     setAlbumDate("");
     setAlbumCoverUrl("");
+    setPendingAlbumFile(null);
     setEditingAlbumId(null);
   }
 
@@ -50,7 +57,29 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
     setConcertVenue("");
     setConcertDate("");
     setConcertCoverUrl("");
+    setPendingConcertFile(null);
     setEditingConcertId(null);
+  }
+
+  async function finalizeAlbumCover(album: ApiProfileAlbum, pendingFile: File | null) {
+    if (!pendingFile) {
+      return album;
+    }
+
+    const uploaded = await api.uploadProfileAlbumCover(album.id, pendingFile);
+    return uploaded.album;
+  }
+
+  async function finalizeConcertCover(
+    concert: ApiProfileConcert,
+    pendingFile: File | null,
+  ) {
+    if (!pendingFile) {
+      return concert;
+    }
+
+    const uploaded = await api.uploadProfileConcertCover(concert.id, pendingFile);
+    return uploaded.concert;
   }
 
   async function saveAlbum() {
@@ -60,15 +89,21 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
     }
 
     try {
+      setIsSaving(true);
       setError("");
+      let savedAlbum: ApiProfileAlbum;
+
       if (editingAlbumId) {
         const result = await api.updateProfileAlbum(editingAlbumId, {
           title: albumTitle.trim(),
           releaseDate: albumDate || null,
-          coverUrl: albumCoverUrl.trim() || null,
+          ...(pendingAlbumFile
+            ? {}
+            : { coverUrl: albumCoverUrl.trim() || null }),
         });
+        savedAlbum = await finalizeAlbumCover(result.album, pendingAlbumFile);
         const nextAlbums = albums.map((album) =>
-          album.id === editingAlbumId ? result.album : album,
+          album.id === editingAlbumId ? savedAlbum : album,
         );
         notifyChanged(nextAlbums, concerts);
         setNotice("Альбом обновлён");
@@ -76,14 +111,18 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
         const result = await api.createProfileAlbum({
           title: albumTitle.trim(),
           releaseDate: albumDate || null,
-          coverUrl: albumCoverUrl.trim() || null,
+          coverUrl: pendingAlbumFile ? null : albumCoverUrl.trim() || null,
         });
-        notifyChanged([result.album, ...albums], concerts);
+        savedAlbum = await finalizeAlbumCover(result.album, pendingAlbumFile);
+        notifyChanged([savedAlbum, ...albums], concerts);
         setNotice("Альбом добавлен");
       }
+
       resetAlbumForm();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Не удалось сохранить альбом");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -110,6 +149,7 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
     setAlbumTitle(album.title);
     setAlbumDate(album.releaseDate ?? "");
     setAlbumCoverUrl(album.coverUrl ?? "");
+    setPendingAlbumFile(null);
     setError("");
   }
 
@@ -125,15 +165,21 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
     }
 
     try {
+      setIsSaving(true);
       setError("");
+      let savedConcert: ApiProfileConcert;
+
       if (editingConcertId) {
         const result = await api.updateProfileConcert(editingConcertId, {
           venue: concertVenue.trim(),
           eventDate: concertDate,
-          coverUrl: concertCoverUrl.trim() || null,
+          ...(pendingConcertFile
+            ? {}
+            : { coverUrl: concertCoverUrl.trim() || null }),
         });
+        savedConcert = await finalizeConcertCover(result.concert, pendingConcertFile);
         const nextConcerts = concerts.map((concert) =>
-          concert.id === editingConcertId ? result.concert : concert,
+          concert.id === editingConcertId ? savedConcert : concert,
         );
         notifyChanged(albums, nextConcerts);
         setNotice("Концерт обновлён");
@@ -141,14 +187,18 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
         const result = await api.createProfileConcert({
           venue: concertVenue.trim(),
           eventDate: concertDate,
-          coverUrl: concertCoverUrl.trim() || null,
+          coverUrl: pendingConcertFile ? null : concertCoverUrl.trim() || null,
         });
-        notifyChanged(albums, [result.concert, ...concerts]);
+        savedConcert = await finalizeConcertCover(result.concert, pendingConcertFile);
+        notifyChanged(albums, [savedConcert, ...concerts]);
         setNotice("Концерт добавлен");
       }
+
       resetConcertForm();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Не удалось сохранить концерт");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -175,6 +225,7 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
     setConcertVenue(concert.venue);
     setConcertDate(concert.eventDate);
     setConcertCoverUrl(concert.coverUrl ?? "");
+    setPendingConcertFile(null);
     setError("");
   }
 
@@ -182,12 +233,12 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
     <div className="profile-edit" role="dialog" aria-label="Альбомы и концерты">
       <div className="profile-edit__backdrop" onClick={props.onClose} />
       <section className="profile-edit__panel profile-content-edit__panel">
-        <header className="profile-edit__header">
+        <div className="profile-edit__header">
           <h2>Альбомы и концерты</h2>
           <button type="button" onClick={props.onClose} aria-label="Закрыть">
             ×
           </button>
-        </header>
+        </div>
 
         <div className="profile-content-edit__tabs">
           <button
@@ -229,22 +280,31 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
                     onChange={(event) => setAlbumDate(event.target.value)}
                   />
                 </label>
-                <label>
-                  Обложка (URL)
-                  <input
-                    value={albumCoverUrl}
-                    onChange={(event) => setAlbumCoverUrl(event.target.value)}
-                    placeholder="https://..."
-                  />
-                </label>
+                <CoverPicker
+                  label="Обложка"
+                  coverUrl={albumCoverUrl}
+                  fallback={albumCover}
+                  pendingFile={pendingAlbumFile}
+                  onCoverUrlChange={setAlbumCoverUrl}
+                  onPendingFileChange={setPendingAlbumFile}
+                />
                 <div className="profile-content-edit__form-actions">
                   {editingAlbumId ? (
-                    <button type="button" onClick={resetAlbumForm}>
+                    <button type="button" onClick={resetAlbumForm} disabled={isSaving}>
                       Отмена
                     </button>
                   ) : null}
-                  <button type="button" className="profile-edit__save" onClick={() => void saveAlbum()}>
-                    {editingAlbumId ? "Сохранить" : "Добавить альбом"}
+                  <button
+                    type="button"
+                    className="profile-edit__save"
+                    disabled={isSaving}
+                    onClick={() => void saveAlbum()}
+                  >
+                    {isSaving
+                      ? "Сохранение…"
+                      : editingAlbumId
+                        ? "Сохранить"
+                        : "Добавить альбом"}
                   </button>
                 </div>
               </div>
@@ -292,22 +352,31 @@ export function ProfileContentEditSheet(props: ProfileContentEditSheetProps) {
                     onChange={(event) => setConcertDate(event.target.value)}
                   />
                 </label>
-                <label>
-                  Фото (URL)
-                  <input
-                    value={concertCoverUrl}
-                    onChange={(event) => setConcertCoverUrl(event.target.value)}
-                    placeholder="https://..."
-                  />
-                </label>
+                <CoverPicker
+                  label="Фото концерта"
+                  coverUrl={concertCoverUrl}
+                  fallback={concertPhoto}
+                  pendingFile={pendingConcertFile}
+                  onCoverUrlChange={setConcertCoverUrl}
+                  onPendingFileChange={setPendingConcertFile}
+                />
                 <div className="profile-content-edit__form-actions">
                   {editingConcertId ? (
-                    <button type="button" onClick={resetConcertForm}>
+                    <button type="button" onClick={resetConcertForm} disabled={isSaving}>
                       Отмена
                     </button>
                   ) : null}
-                  <button type="button" className="profile-edit__save" onClick={() => void saveConcert()}>
-                    {editingConcertId ? "Сохранить" : "Добавить концерт"}
+                  <button
+                    type="button"
+                    className="profile-edit__save"
+                    disabled={isSaving}
+                    onClick={() => void saveConcert()}
+                  >
+                    {isSaving
+                      ? "Сохранение…"
+                      : editingConcertId
+                        ? "Сохранить"
+                        : "Добавить концерт"}
                   </button>
                 </div>
               </div>

@@ -294,6 +294,26 @@ export const api = {
       method: "DELETE",
     });
   },
+  uploadProfileAlbumCover(albumId: string, file: File) {
+    const formData = new FormData();
+    formData.append("cover", file);
+
+    return request<{ album: ApiProfileAlbum }>(
+      `/profile/me/albums/${albumId}/cover`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+  },
+  deleteProfileAlbumCover(albumId: string) {
+    return request<{ album: ApiProfileAlbum }>(
+      `/profile/me/albums/${albumId}/cover`,
+      {
+        method: "DELETE",
+      },
+    );
+  },
   createProfileConcert(input: {
     venue: string;
     eventDate: string;
@@ -324,6 +344,26 @@ export const api = {
     return request<void>(`/profile/me/concerts/${concertId}`, {
       method: "DELETE",
     });
+  },
+  uploadProfileConcertCover(concertId: string, file: File) {
+    const formData = new FormData();
+    formData.append("cover", file);
+
+    return request<{ concert: ApiProfileConcert }>(
+      `/profile/me/concerts/${concertId}/cover`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+  },
+  deleteProfileConcertCover(concertId: string) {
+    return request<{ concert: ApiProfileConcert }>(
+      `/profile/me/concerts/${concertId}/cover`,
+      {
+        method: "DELETE",
+      },
+    );
   },
   followProfile(userId: string) {
     return request<{ following: boolean }>(

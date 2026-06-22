@@ -150,3 +150,70 @@
   color: var(--app-muted, #828282);
   background: rgba(255, 255, 255, 0.03);
 }
+
+.cover-picker {
+  display: grid;
+  gap: 10px;
+}
+
+.cover-picker__label {
+  font-size: 14px;
+}
+
+.cover-picker__preview img {
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cover-picker__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cover-picker__actions button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cover-picker__url {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.cover-picker__url input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #ffffff;
+  background: #171717;
+  font: inherit;
+}
+
+.cover-picker__url input:disabled {
+  opacity: 0.55;
+}
+
+.cover-picker__hint {
+  margin: 0;
+  color: var(--app-muted, #828282);
+  font-size: 12px;
+}
+
+.cover-picker__error {
+  margin: 0;
+  color: #ff8a8a;
+  font-size: 13px;
+}

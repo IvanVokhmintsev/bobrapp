@@ -175,6 +175,12 @@
   background: #000000;
 }
 
+.profile-members__empty {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 14px;
+}
+
 .profile-members span {
   color: var(--profile-muted);
   font-size: 12px;
@@ -623,12 +629,16 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
+  border: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #171717;
+  color: #ffffff;
 }
 
 .profile-edit__header h2 {
   margin: 0;
   font-size: 24px;
+  color: #ffffff;
 }
 
 .profile-edit__header button {
@@ -653,6 +663,25 @@
   display: grid;
   gap: 8px;
   font-size: 14px;
+}
+
+.profile-edit__type {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.profile-edit__type legend {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.profile-edit__type label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .profile-edit__body input,
