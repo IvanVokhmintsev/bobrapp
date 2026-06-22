@@ -1,0 +1,137 @@
+.profile-completeness {
+  margin-bottom: 26px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: #171717;
+}
+
+.profile-completeness__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.profile-completeness__header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.profile-completeness__header span {
+  color: var(--app-muted);
+  font-size: 13px;
+}
+
+.profile-completeness__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-completeness__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 14px;
+}
+
+.profile-completeness__status {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.profile-completeness__list .is-filled .profile-completeness__status {
+  color: #8fd99a;
+}
+
+.profile-completeness__list .is-empty .profile-completeness__status {
+  color: #ffb27a;
+}
+
+.profile-completeness__hint {
+  margin: 12px 0 0;
+  color: var(--app-muted);
+  font-size: 13px;
+}
+
+.profile-social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.profile-social-links a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.profile-social-links a:hover {
+  border-color: rgba(255, 48, 56, 0.5);
+}
+
+.profile-header-action {
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #ffffff;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.profile-header-action:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.profile-header-action--primary {
+  border-color: rgba(255, 48, 56, 0.55);
+}
+
+.profile-posts {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-post {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #171717;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profile-post__meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  color: var(--app-muted);
+  font-size: 12px;
+}
+
+.profile-post__empty {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 14px;
+}
+
+.profile-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

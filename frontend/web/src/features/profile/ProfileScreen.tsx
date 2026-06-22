@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, Navigate, useParams } from "react-router-dom";
 
-import { api, type ApiUser, type RoadmapStep } from "../../api";
-import actionLinkIcon from "../../assets/profile/action-link.svg";
-import actionMessageIcon from "../../assets/profile/action-message.svg";
-import actionShareIcon from "../../assets/profile/action-share.svg";
+import { api, type ApiPost, type ApiUser, type RoadmapStep } from "../../api";
+import defaultAvatar from "../../assets/feed/card-cover.png";
 import albumCover from "../../assets/profile/album-cover.png";
 import chevronDownIcon from "../../assets/profile/chevron-down.svg";
 import concertPhoto from "../../assets/profile/concert-photo.png";
@@ -11,10 +10,17 @@ import concertStadiumIcon from "../../assets/profile/concert-stadium.svg";
 import memberAvatarRing from "../../assets/profile/member-avatar-ring.svg";
 import verifiedBadgeIcon from "../../assets/profile/verified-badge.svg";
 import { useAuth } from "../../context/AuthContext";
+import { resolveAvatarUrl } from "../../lib/avatarUrl";
+import type { ProfileBlockStatus } from "../../lib/profileCompleteness";
+import { getProfileBlockStatuses } from "../../lib/profileCompleteness";
+import { getProfileType, isBandProfile } from "../../lib/profileType";
+import { ProfileCompleteness } from "./ProfileCompleteness";
 import { ProfileEditSheet } from "./ProfileEditSheet";
 import { AvatarPicker } from "./AvatarPicker";
 import { ProfileRoadmapMap } from "./ProfileRoadmapMap";
+import { ProfileTypeBadge } from "./ProfileTypeBadge";
 import "./profile.css";
+import "./profile-completeness.css";
 
 const demoAlbums = [
   { id: "1", title: "Любим древесину", date: "10 янв 2025", cover: albumCover },
@@ -37,17 +43,30 @@ const guideCards = [
 ];
 
 export function ProfileScreen() {
+  const { userId: routeUserId } = useParams<{ userId?: string }>();
   const { user: authUser, setUser } = useAuth();
-  const [user, setLocalUser] = useState<ApiUser | null>(authUser);
+  const isOwnProfile = !routeUserId || routeUserId === authUser?.id;
+  const [user, setLocalUser] = useState<ApiUser | null>(isOwnProfile ? authUser : null);
   const [roadmapSteps, setRoadmapSteps] = useState<RoadmapStep[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(!isOwnProfile);
+  const [posts, setPosts] = useState<ApiPost[]>([]);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const shouldRedirectToOwnProfile = Boolean(routeUserId && authUser && routeUserId === authUser.id);
 
   useEffect(() => {
-    setLocalUser(authUser);
-  }, [authUser]);
+    if (isOwnProfile) {
+      setLocalUser(authUser);
+    }
+  }, [authUser, isOwnProfile]);
 
   useEffect(() => {
+    if (!isOwnProfile || !authUser) {
+      return;
+    }
+
     void api
       .getProfile()
       .then((result) => {
@@ -57,33 +76,123 @@ export function ProfileScreen() {
       .catch(() => {
         /* keep cached user */
       });
-  }, [setUser]);
+  }, [authUser, isOwnProfile, setUser]);
 
   useEffect(() => {
+    if (!routeUserId || isOwnProfile) {
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+    setSelectedLevel(null);
+
+    void api
+      .getPublicProfile(routeUserId)
+      .then((result) => {
+        setLocalUser(result.user);
+      })
+      .catch((caught) => {
+        setError(caught instanceof Error ? caught.message : "Не удалось загрузить профиль");
+        setLocalUser(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [routeUserId, isOwnProfile]);
+
+  useEffect(() => {
+    if (!isOwnProfile) {
+      setRoadmapSteps([]);
+      return;
+    }
+
     void api
       .getRoadmap()
       .then((result) => setRoadmapSteps(result.steps))
       .catch(() => setRoadmapSteps([]));
-  }, []);
+  }, [isOwnProfile]);
 
-  const members = useMemo(() => (user ? buildMembers() : []), [user]);
+  useEffect(() => {
+    if (!user?.id) {
+      setPosts([]);
+      return;
+    }
+
+    void api
+      .getProfilePosts(user.id)
+      .then((result) => setPosts(result.posts))
+      .catch(() => setPosts([]));
+  }, [user?.id]);
+
+  const members = useMemo(() => (user ? buildMembers(user) : []), [user]);
   const tags = useMemo(() => (user ? buildTags(user) : []), [user]);
+  const blockStatuses = useMemo(
+    () => (user ? getProfileBlockStatuses(user, { postsCount: posts.length }) : []),
+    [user, posts.length],
+  );
+  const profileType = user ? getProfileType(user) : "solo";
+  const bandProfile = user ? isBandProfile(user) : false;
+
+  async function toggleFollow() {
+    if (!user || isOwnProfile) {
+      return;
+    }
+
+    try {
+      setError("");
+      if (user.followingByMe) {
+        await api.unfollowProfile(user.id);
+      } else {
+        await api.followProfile(user.id);
+      }
+      const result = await api.getPublicProfile(user.id);
+      setLocalUser(result.user);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Не удалось обновить подписку");
+    }
+  }
+
+  if (shouldRedirectToOwnProfile) {
+    return <Navigate to="/profile" replace />;
+  }
+
+  if (isLoading) {
+    return <p className="app-page__hint">Загрузка профиля…</p>;
+  }
+
+  if (error && !user) {
+    return <p className="app-page__error">{error}</p>;
+  }
 
   if (!user) {
     return null;
   }
 
-  const bio =
-    user.musicianProfile?.bio?.trim() ||
-    "Расскажите о себе в редактировании профиля. Здесь появится описание группы, проекта или артиста.";
+  const bio = isOwnProfile
+    ? user.musicianProfile?.bio?.trim() ||
+      (bandProfile
+        ? "Расскажите о группе в редактировании профиля."
+        : "Расскажите о себе в редактировании профиля. Здесь появится описание группы, проекта или артиста.")
+    : user.musicianProfile?.bio?.trim() || (bandProfile ? "О группе пока ничего не написано" : "Биография пока пустая");
 
   function handleProfileSaved(nextUser: ApiUser) {
     setLocalUser(nextUser);
     setUser(nextUser);
   }
 
+  function showComingSoon(feature: string) {
+    setNotice(`${feature} будет добавлено в следующей итерации.`);
+  }
+
+  function scrollToRoadmap() {
+    document.getElementById("profile-roadmap-aside")?.scrollIntoView({ behavior: "smooth" });
+  }
+
   return (
     <>
+      {error ? <p className="app-page__error">{error}</p> : null}
+      {notice ? <p className="app-page__hint">{notice}</p> : null}
       <div className="profile-page">
         <main className="profile-page__middle">
           {selectedLevel === null ? (
@@ -91,9 +200,18 @@ export function ProfileScreen() {
               user={user}
               members={members}
               tags={tags}
+              posts={posts}
               bio={bio}
+              profileType={profileType}
+              blockStatuses={blockStatuses}
+              isOwnProfile={isOwnProfile}
+              canOpenRoadmapLesson={isOwnProfile && authUser?.role === "musician"}
               onEdit={() => setEditOpen(true)}
               onAvatarUpdated={handleProfileSaved}
+              onToggleFollow={() => void toggleFollow()}
+              onContact={() => showComingSoon("Связаться с артистом")}
+              onFavorite={() => showComingSoon("Избранное")}
+              onOpenRoadmap={scrollToRoadmap}
             />
           ) : (
             <ProfileRoadmapMap
@@ -104,7 +222,7 @@ export function ProfileScreen() {
           )}
         </main>
 
-        <aside className="profile-page__right">
+        <aside className="profile-page__right" id="profile-roadmap-aside">
           {selectedLevel === null ? (
             <ProfileRoadmapMap onSelectLevel={setSelectedLevel} />
           ) : (
@@ -117,7 +235,7 @@ export function ProfileScreen() {
         </aside>
       </div>
 
-      {editOpen ? (
+      {editOpen && isOwnProfile ? (
         <ProfileEditSheet
           user={user}
           onClose={() => setEditOpen(false)}
@@ -132,58 +250,123 @@ function ProfileSummary(props: {
   user: ApiUser;
   members: ProfileMember[];
   tags: ProfileTag[];
+  posts: ApiPost[];
   bio: string;
+  profileType: "solo" | "band";
+  blockStatuses: ProfileBlockStatus[];
+  isOwnProfile: boolean;
+  canOpenRoadmapLesson: boolean;
   onEdit: () => void;
   onAvatarUpdated: (user: ApiUser) => void;
+  onToggleFollow: () => void;
+  onContact: () => void;
+  onFavorite: () => void;
+  onOpenRoadmap: () => void;
 }) {
+  const avatarSrc = resolveAvatarUrl(props.user.musicianProfile?.avatarUrl, defaultAvatar);
+  const bandProfile = props.profileType === "band";
+  const socialLinks = Object.entries(props.user.musicianProfile?.socialLinks ?? {}).filter(
+    ([, url]) => url.trim().length > 0,
+  );
+
   return (
     <div className="profile-summary">
+      {props.isOwnProfile ? (
+        <ProfileCompleteness blocks={props.blockStatuses} showHints />
+      ) : null}
+
       <section className="profile-card">
         <header className="profile-card__hero">
-          <AvatarPicker
-            user={props.user}
-            size="large"
-            onUpdated={props.onAvatarUpdated}
-          />
+          {props.isOwnProfile ? (
+            <AvatarPicker
+              user={props.user}
+              size="large"
+              onUpdated={props.onAvatarUpdated}
+            />
+          ) : (
+            <img className="profile-card__avatar" src={avatarSrc} alt="" />
+          )}
           <div className="profile-card__identity">
             <div className="profile-card__name-row">
               <h1>{props.user.name}</h1>
+              <ProfileTypeBadge profileType={props.profileType} />
               <img className="profile-card__verified" src={verifiedBadgeIcon} alt="" />
-              <button
-                type="button"
-                className="profile-card__chevron-btn"
-                onClick={props.onEdit}
-                aria-label="Редактировать профиль"
-              >
-                <img src={chevronDownIcon} alt="" />
-              </button>
+              {props.isOwnProfile ? (
+                <button
+                  type="button"
+                  className="profile-card__chevron-btn"
+                  onClick={props.onEdit}
+                  aria-label="Редактировать профиль"
+                >
+                  <img src={chevronDownIcon} alt="" />
+                </button>
+              ) : null}
             </div>
             <div className="profile-card__actions">
-              <button type="button" aria-label="Ссылка">
-                <img src={actionLinkIcon} alt="" />
-              </button>
-              <button type="button" aria-label="Поделиться">
-                <img src={actionShareIcon} alt="" />
-              </button>
-              <button type="button" aria-label="Сообщение">
-                <img src={actionMessageIcon} alt="" />
-              </button>
+              {props.isOwnProfile ? (
+                <>
+                  {props.canOpenRoadmapLesson ? (
+                    <Link className="profile-header-action profile-header-action--primary" to="/roadmap">
+                      Roadmap
+                    </Link>
+                  ) : null}
+                  <button type="button" className="profile-header-action" onClick={props.onOpenRoadmap}>
+                    Этап на roadmap
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="profile-header-action" onClick={props.onContact}>
+                    Связаться с артистом
+                  </button>
+                  <button type="button" className="profile-header-action" onClick={props.onFavorite}>
+                    В избранное
+                  </button>
+                  <button type="button" className="profile-header-action" onClick={props.onOpenRoadmap}>
+                    Этап на roadmap
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-header-action profile-header-action--primary"
+                    onClick={props.onToggleFollow}
+                  >
+                    {props.user.followingByMe ? "Отписаться" : "Подписаться"}
+                  </button>
+                </>
+              )}
             </div>
+            {socialLinks.length ? (
+              <div className="profile-social-links">
+                {socialLinks.map(([label, url]) => (
+                  <a key={label} href={url} target="_blank" rel="noreferrer noopener">
+                    {label}
+                  </a>
+                ))}
+              </div>
+            ) : props.isOwnProfile ? (
+              <p className="profile-members__empty">Ссылки на музыку пока не добавлены</p>
+            ) : null}
           </div>
         </header>
 
-        <section className="profile-members" aria-label="Состав">
-          {props.members.map((member) => (
-            <article key={member.id}>
-              <img src={member.avatarUrl} alt="" />
-              <span>{member.name}</span>
-            </article>
-          ))}
-        </section>
+        {bandProfile ? (
+          <section className="profile-members" aria-label="Состав">
+            {props.members.length ? (
+              props.members.map((member) => (
+                <article key={member.id}>
+                  <img src={member.avatarUrl} alt="" />
+                  <span>{member.name}</span>
+                </article>
+              ))
+            ) : (
+              <p className="profile-members__empty">Состав пока не указан</p>
+            )}
+          </section>
+        ) : null}
       </section>
 
       <section className="profile-block">
-        <h2>О нас</h2>
+        <h2>{bandProfile ? "О нас" : "О себе"}</h2>
         <p>{props.bio}</p>
         <div className="profile-tags">
           {props.tags.map((tag) => (
@@ -205,6 +388,7 @@ function ProfileSummary(props: {
             </article>
           ))}
         </div>
+        <p className="profile-members__empty">Демо-блок — реальные альбомы в итерации 2</p>
       </section>
 
       <section className="profile-block">
@@ -220,6 +404,28 @@ function ProfileSummary(props: {
             <strong>СК “Олимпийский” 20.09</strong>
           </article>
         </div>
+        <p className="profile-members__empty">Демо-блок — реальные концерты в итерации 2</p>
+      </section>
+
+      <section className="profile-block">
+        <h2>Публикации</h2>
+        {props.posts.length ? (
+          <div className="profile-posts">
+            {props.posts.map((post) => (
+              <article className="profile-post" key={post.id}>
+                <strong>{post.type === "roadmap" ? "Roadmap" : "Пост"}</strong>
+                <p>{post.text.trim() || "Без текста"}</p>
+                <div className="profile-post__meta">
+                  <span>{new Date(post.createdAt).toLocaleDateString("ru-RU")}</span>
+                  <span>Лайки: {post.likesCount}</span>
+                  <span>Комментарии: {post.commentsCount}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="profile-post__empty">Публикаций пока нет</p>
+        )}
       </section>
     </div>
   );
@@ -279,25 +485,23 @@ type ProfileTag = {
   tone: "green" | "blue";
 };
 
-function buildMembers(): ProfileMember[] {
-  return Array.from({ length: 4 }, (_, index) => ({
+function buildMembers(user: ApiUser): ProfileMember[] {
+  return (user.musicianProfile?.memberNames ?? []).map((name, index) => ({
     id: `member-${index}`,
-    name: "Иван Иванов",
+    name,
     avatarUrl: memberAvatarRing,
   }));
 }
 
 function buildTags(user: ApiUser): ProfileTag[] {
+  const band = isBandProfile(user);
   const source = [
     ...(user.musicianProfile?.genres ?? []),
-    ...(user.musicianProfile?.instruments ?? []),
+    ...(band ? [] : user.musicianProfile?.instruments ?? []),
     ...user.achievements.map((achievement) => achievement.title),
   ].filter(Boolean);
 
-  const labels =
-    source.length > 0
-      ? source.slice(0, 4)
-      : ["Есть мониторы", "Кейтеринг", "Кейтеринг", "Кейтеринг"];
+  const labels = source.length > 0 ? source.slice(0, 4) : [];
 
   return labels.map((label, index) => ({
     id: `${label}-${index}`,

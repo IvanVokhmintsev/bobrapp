@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { api, type ApiUser } from "../api";
 
@@ -22,6 +23,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider(props: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState<ApiUser | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
 
@@ -44,7 +46,8 @@ export function AuthProvider(props: { children: ReactNode }) {
       /* clear local state even if the session is already gone */
     });
     setUser(null);
-  }, []);
+    navigate("/login", { replace: true });
+  }, [navigate]);
 
   useEffect(() => {
     void refreshUser().finally(() => {
