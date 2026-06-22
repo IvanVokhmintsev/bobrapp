@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 
 import type { ApiPost, ApiUser } from "../../api";
 import { formatProfileDate } from "../../lib/coverUrl";
@@ -36,7 +37,13 @@ export function ProfileCareerTimeline(props: ProfileCareerTimelineProps) {
 
   return (
     <section className="profile-career" aria-labelledby="profile-career-title">
-      <h2 id="profile-career-title">Карьерный путь</h2>
+      <div className="profile-career__head">
+        <h2 id="profile-career-title">Карьерный путь</h2>
+        <p className="profile-career__note">
+          История достижений. Пройти новый этап — в разделе{" "}
+          <Link to="/roadmap">Roadmap</Link>.
+        </p>
+      </div>
       <ol className="profile-career__list">
         {entries.map((entry) => (
           <li className="profile-career__item" key={entry.id}>

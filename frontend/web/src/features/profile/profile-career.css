@@ -5,6 +5,22 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.profile-career__head {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-career__note {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.profile-career__note a {
+  color: #39d8f0;
+}
+
 .profile-career h2 {
   margin: 0;
   font-size: 22px;

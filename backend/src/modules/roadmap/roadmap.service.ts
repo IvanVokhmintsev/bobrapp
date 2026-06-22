@@ -40,14 +40,52 @@ export async function ensureUserRoadmapProgress(userId: string) {
     userId: string;
     stepId: string;
     status: RoadmapStepStatus;
-  }> = steps
-    .filter((step) => !existingStepIds.has(step.id))
-    .map((step, index) => ({
-      userId,
-      stepId: step.id,
-      status:
-        index === 0 && existingProgress.length === 0 ? "available" : "locked",
-    }));
+  }> = [];
+
+  if (existingProgress.length === 0) {
+    for (const step of steps) {
+      if (existingStepIds.has(step.id)) {
+        continue;
+      }
+
+      missingProgress.push({
+        userId,
+        stepId: step.id,
+        status: step.order === 1 ? "available" : "locked",
+      });
+    }
+  } else {
+    const progressWithSteps = await prisma.userRoadmapProgress.findMany({
+      where: { userId },
+      include: { step: { select: { order: true } } },
+    });
+
+    const maxCompletedOrder = progressWithSteps
+      .filter((item) => item.status === "completed")
+      .reduce((max, item) => Math.max(max, item.step.order), 0);
+
+    for (const step of steps) {
+      if (existingStepIds.has(step.id)) {
+        continue;
+      }
+
+      let status: RoadmapStepStatus = "locked";
+
+      if (maxCompletedOrder === 0) {
+        status = step.order === 1 ? "available" : "locked";
+      } else if (step.order <= maxCompletedOrder) {
+        status = "completed";
+      } else if (step.order === maxCompletedOrder + 1) {
+        status = "available";
+      }
+
+      missingProgress.push({
+        userId,
+        stepId: step.id,
+        status,
+      });
+    }
+  }
 
   if (missingProgress.length > 0) {
     await prisma.userRoadmapProgress.createMany({
@@ -56,7 +94,73 @@ export async function ensureUserRoadmapProgress(userId: string) {
     });
   }
 
+  await reconcileRoadmapProgress(userId);
+
   return steps;
+}
+
+export async function reconcileRoadmapProgress(userId: string) {
+  const steps = await prisma.roadmapStep.findMany({
+    orderBy: { order: "asc" },
+  });
+
+  if (steps.length === 0) {
+    return;
+  }
+
+  const progress = await prisma.userRoadmapProgress.findMany({
+    where: { userId },
+    include: {
+      step: {
+        select: { order: true },
+      },
+    },
+  });
+
+  if (progress.length === 0) {
+    return;
+  }
+
+  if (progress.some((item) => item.status === "available")) {
+    return;
+  }
+
+  if (progress.every((item) => item.status === "completed")) {
+    return;
+  }
+
+  const progressByStepId = new Map(progress.map((item) => [item.stepId, item]));
+
+  for (const step of steps) {
+    const item = progressByStepId.get(step.id);
+
+    if (!item || item.status !== "locked") {
+      continue;
+    }
+
+    const previousSteps = steps.filter((candidate) => candidate.order < step.order);
+    const allPreviousCompleted =
+      previousSteps.length === 0 ||
+      previousSteps.every((candidate) => {
+        const previous = progressByStepId.get(candidate.id);
+        return previous?.status === "completed";
+      });
+
+    if (allPreviousCompleted) {
+      await prisma.userRoadmapProgress.update({
+        where: {
+          userId_stepId: {
+            userId,
+            stepId: step.id,
+          },
+        },
+        data: {
+          status: "available",
+        },
+      });
+      break;
+    }
+  }
 }
 
 export function readRoadmapQuiz(value: unknown): RoadmapQuizQuestion[] {

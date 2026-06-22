@@ -1,3 +1,61 @@
+.roadmap-page__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.roadmap-page__map-link {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.roadmap-page__section {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.roadmap-page__section-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.roadmap-step--hero {
+  margin-bottom: 8px;
+}
+
+.roadmap-lesson__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.roadmap-lesson__head h2 {
+  margin: 0;
+}
+
+.roadmap-lesson__close {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: #ffffff;
+  background: transparent;
+}
+
 .roadmap-page__steps {
   display: grid;
   gap: 12px;
