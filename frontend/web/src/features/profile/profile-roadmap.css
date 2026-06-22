@@ -1,0 +1,112 @@
+.profile-roadmap-figma {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.profile-roadmap-figma--compact .profile-roadmap-figma__viewport {
+  overflow: hidden;
+}
+
+.profile-roadmap-figma__toolbar {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  z-index: 3;
+  display: flex;
+  gap: 10px;
+}
+
+.profile-roadmap-figma__toolbar button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.profile-roadmap-figma__viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.profile-roadmap-figma__canvas {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform-origin: top center;
+}
+
+.profile-roadmap-figma__path,
+.profile-roadmap-figma__milestone,
+.profile-roadmap-figma__level {
+  position: absolute;
+}
+
+.profile-roadmap-figma__path {
+  pointer-events: none;
+  user-select: none;
+}
+
+.profile-roadmap-figma__milestone {
+  pointer-events: none;
+}
+
+.profile-roadmap-figma__milestone-ring,
+.profile-roadmap-figma__milestone-icon {
+  position: absolute;
+  display: block;
+}
+
+.profile-roadmap-figma__milestone-ring {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.profile-roadmap-figma__milestone-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 650;
+  transform: translate(-50%, -50%);
+}
+
+.profile-roadmap-figma__level {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.profile-roadmap-figma__level img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.profile-roadmap-figma__level.is-selected,
+.profile-roadmap-figma__level:hover {
+  filter: drop-shadow(0 0 18px rgba(255, 48, 56, 0.45));
+}
+
+.profile-roadmap-figma--compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+@media (max-width: 1180px) {
+  .profile-roadmap-figma__viewport {
+    max-height: 720px;
+  }
+}
