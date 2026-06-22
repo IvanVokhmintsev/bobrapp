@@ -28,6 +28,15 @@ const baseNavItems = [
 ] as const;
 
 function buildNavItems(role: ApiUser["role"]) {
+  if (role === "label") {
+    return [
+      baseNavItems[0],
+      baseNavItems[1],
+      baseNavItems[2],
+      baseNavItems[5],
+    ];
+  }
+
   if (role !== "musician") {
     return baseNavItems;
   }
@@ -52,6 +61,7 @@ export function AppSidebar(props: AppSidebarProps) {
   );
   const level = getMusicianLevelFromUser(props.user);
   const navItems = buildNavItems(props.user.role);
+  const isLabel = props.user.role === "label";
 
   return (
     <aside className="app-sidebar" aria-label="Навигация">
@@ -63,10 +73,14 @@ export function AppSidebar(props: AppSidebarProps) {
       <div className="app-sidebar__user">
         <img src={avatarSrc} alt="" />
         <span>{props.user.name}</span>
-        <span className="app-sidebar__level" aria-label={`Уровень ${level}`}>
-          <img src={levelFlagIcon} alt="" />
-          <strong>{level}</strong>
-        </span>
+        {isLabel ? (
+          <span className="app-sidebar__badge">Лейбл</span>
+        ) : (
+          <span className="app-sidebar__level" aria-label={`Уровень ${level}`}>
+            <img src={levelFlagIcon} alt="" />
+            <strong>{level}</strong>
+          </span>
+        )}
       </div>
 
       <nav className="app-sidebar__nav">

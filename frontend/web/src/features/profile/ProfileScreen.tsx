@@ -21,6 +21,7 @@ import { AvatarPicker } from "./AvatarPicker";
 import { useFeedInteractions } from "../feed/useFeedInteractions";
 import { ProfilePostsSection } from "./ProfilePostsSection";
 import { ProfileCareerTimeline } from "./ProfileCareerTimeline";
+import { LabelProfileScreen } from "./LabelProfileScreen";
 import { ProfileTypeBadge } from "./ProfileTypeBadge";
 import "./profile.css";
 import "./profile-completeness.css";
@@ -167,6 +168,18 @@ export function ProfileScreen() {
     return <Navigate to="/profile" replace />;
   }
 
+  if (isOwnProfile && authUser?.role === "label") {
+    return (
+      <LabelProfileScreen
+        user={authUser}
+        onSaved={(nextUser) => {
+          setUser(nextUser);
+          setLocalUser(nextUser);
+        }}
+      />
+    );
+  }
+
   if (isLoading) {
     return <p className="app-page__hint">Загрузка профиля…</p>;
   }
@@ -213,6 +226,7 @@ export function ProfileScreen() {
               blockStatuses={blockStatuses}
               isOwnProfile={isOwnProfile}
               canOpenRoadmap={isOwnProfile && authUser?.role === "musician"}
+              viewerRole={authUser?.role}
               onEdit={() => setEditOpen(true)}
               onManageContent={() => setContentEditOpen(true)}
               onAvatarUpdated={handleProfileSaved}
@@ -266,6 +280,7 @@ function ProfileSummary(props: {
   blockStatuses: ProfileBlockStatus[];
   isOwnProfile: boolean;
   canOpenRoadmap: boolean;
+  viewerRole?: ApiUser["role"];
   onEdit: () => void;
   onManageContent: () => void;
   onAvatarUpdated: (user: ApiUser) => void;
@@ -303,6 +318,12 @@ function ProfileSummary(props: {
                 <ProfileTypeBadge profileType={props.profileType} />
                 <img className="profile-card__verified" src={verifiedBadgeIcon} alt="" />
               </div>
+              {props.viewerRole === "label" && props.user.musicianProfile ? (
+                <p className="profile-card__label-note">
+                  Roadmap: {props.user.musicianProfile.roadmapProgress}% · смотрите карьерный путь и
+                  публикации ниже
+                </p>
+              ) : null}
               <div className="profile-card__actions">
               {props.isOwnProfile ? (
                 props.canOpenRoadmap ? (

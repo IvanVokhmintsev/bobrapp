@@ -14,6 +14,14 @@ type PublicMusicianProfile = {
   roadmapProgress: number;
 };
 
+type PublicLabelProfile = {
+  id: string;
+  companyName: string;
+  description: string | null;
+  genres: string[];
+  onboardedAt: Date | null;
+};
+
 type PublicAchievement = {
   id: string;
   title: string;
@@ -30,6 +38,7 @@ type UserWithProfile = {
   createdAt: Date;
   updatedAt: Date;
   musicianProfile?: PublicMusicianProfile | null;
+  labelProfile?: PublicLabelProfile | null;
   achievements?: PublicAchievement[];
 };
 
@@ -54,6 +63,15 @@ export function toPublicUser(user: UserWithProfile) {
           socialLinks: user.musicianProfile.socialLinks ?? {},
           points: user.musicianProfile.points,
           roadmapProgress: user.musicianProfile.roadmapProgress,
+        }
+      : null,
+    labelProfile: user.labelProfile
+      ? {
+          id: user.labelProfile.id,
+          companyName: user.labelProfile.companyName,
+          description: user.labelProfile.description,
+          genres: user.labelProfile.genres ?? [],
+          onboardedAt: user.labelProfile.onboardedAt?.toISOString() ?? null,
         }
       : null,
     createdAt: user.createdAt.toISOString(),

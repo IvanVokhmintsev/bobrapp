@@ -11,3 +11,9 @@ export type MusicianOnboardingBody = {
   profileType?: ProfileType;
   memberNames?: string[];
 };
+
+export type LabelOnboardingBody = {
+  companyName: string;
+  description?: string;
+  genres?: string[];
+};

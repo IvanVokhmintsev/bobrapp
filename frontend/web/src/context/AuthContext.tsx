@@ -28,7 +28,8 @@ export function AuthProvider(props: { children: ReactNode }) {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
 
   const needsOnboarding =
-    user?.role === "musician" && !user.musicianProfile?.level;
+    (user?.role === "musician" && !user.musicianProfile?.level) ||
+    (user?.role === "label" && !user.labelProfile?.onboardedAt);
 
   const refreshUser = useCallback(async () => {
     try {

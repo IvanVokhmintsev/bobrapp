@@ -22,3 +22,20 @@ export const musicianOnboardingSchema = {
     },
   },
 } as const;
+
+export const labelOnboardingSchema = {
+  body: {
+    type: "object",
+    required: ["companyName"],
+    additionalProperties: false,
+    properties: {
+      companyName: { type: "string", minLength: 1, maxLength: 120 },
+      description: { type: "string", maxLength: 1000 },
+      genres: {
+        type: "array",
+        maxItems: 20,
+        items: { type: "string", minLength: 1, maxLength: 60 },
+      },
+    },
+  },
+} as const;

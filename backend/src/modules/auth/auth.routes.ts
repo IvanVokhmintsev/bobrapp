@@ -44,6 +44,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         },
         include: {
           musicianProfile: true,
+          labelProfile: true,
         },
       });
 
@@ -70,6 +71,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         where: { email: normalizedEmail },
         include: {
           musicianProfile: true,
+          labelProfile: true,
         },
       });
 
@@ -111,6 +113,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         where: { id: request.user.userId },
         include: {
           musicianProfile: true,
+          labelProfile: true,
         },
       });
 

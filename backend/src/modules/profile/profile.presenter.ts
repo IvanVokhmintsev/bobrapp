@@ -4,6 +4,7 @@ import { toPublicUser } from "../users/user.presenter.js";
 
 export const profileInclude = {
   musicianProfile: true,
+  labelProfile: true,
   achievements: {
     orderBy: {
       createdAt: "desc",

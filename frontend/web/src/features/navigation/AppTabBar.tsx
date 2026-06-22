@@ -29,6 +29,15 @@ export function AppTabBar(props: AppTabBarProps) {
 }
 
 function buildTabItems(role: ApiUser["role"]) {
+  if (role === "label") {
+    return [
+      { to: "/feed", label: "Лента" },
+      { to: "/people", label: "Музыканты" },
+      { to: "/favorites", label: "Избранное" },
+      { to: "/profile", label: "Профиль" },
+    ] as const;
+  }
+
   const items = [
     { to: "/feed", label: "Лента" },
     { to: "/people", label: "Музыканты" },
@@ -73,6 +82,17 @@ function TabIcon(props: { label: string }) {
             stroke="currentColor"
             strokeWidth="1.5"
             strokeLinecap="round"
+            fill="none"
+          />
+        </svg>
+      );
+    case "Избранное":
+      return (
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+          <path
+            d="M6 4.5h10v13l-5-3.5L6 17.5V4.5Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
             fill="none"
           />
         </svg>

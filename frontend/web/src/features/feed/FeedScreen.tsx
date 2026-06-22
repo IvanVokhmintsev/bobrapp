@@ -5,8 +5,10 @@ import defaultAvatar from "../../assets/feed/card-cover.png";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
 import { FeedNewPostBlock } from "./FeedNewPostBlock";
 import { FeedFiltersPanel, type FeedPostTypeFilter } from "./FeedFiltersPanel";
+import { FeedLabelPanel } from "./FeedLabelPanel";
 import { FeedPostStream } from "./FeedPostStream";
 import "./feed.css";
+import "./feed-label.css";
 import { useFeedInteractions } from "./useFeedInteractions";
 
 export function FeedScreen() {
@@ -20,6 +22,7 @@ export function FeedScreen() {
 
   const avatarSrc = resolveAvatarUrl(user.musicianProfile?.avatarUrl, defaultAvatar);
   const isMusician = user.role === "musician";
+  const isLabel = user.role === "label";
 
   return (
     <div className="feed-page">
@@ -56,6 +59,7 @@ export function FeedScreen() {
       </main>
 
       <aside className="feed-aside" aria-label="Фильтры">
+        {isLabel ? <FeedLabelPanel posts={feed.posts} /> : null}
         <FeedFiltersPanel value={postTypeFilter} onChange={setPostTypeFilter} />
       </aside>
     </div>

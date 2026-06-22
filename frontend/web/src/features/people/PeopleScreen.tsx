@@ -85,6 +85,7 @@ export function PeopleScreen() {
     return null;
   }
 
+  const isLabelViewer = user.role === "label";
   const currentUserId = user.id;
 
   function profilePath(profileId: string) {
@@ -95,7 +96,9 @@ export function PeopleScreen() {
     <main className="app-page people-page">
       <h1>Музыканты</h1>
       <p className="app-page__intro">
-        Находите соло-музыкантов и группы, подписывайтесь и смотрите их профили.
+        {isLabelViewer
+          ? "Каталог артистов для оценки: смотрите профиль, roadmap-прогресс, ленту и сохраняйте перспективных в избранное."
+          : "Находите соло-музыкантов и группы, подписывайтесь и смотрите их профили."}
       </p>
 
       <div className="people-filters" role="tablist" aria-label="Тип профиля">
@@ -162,6 +165,9 @@ export function PeopleScreen() {
                   <span className="people-card__meta">
                     Подписчики: {profile.followersCount ?? 0} · Подписки:{" "}
                     {profile.followingCount ?? 0}
+                    {isLabelViewer && profile.musicianProfile
+                      ? ` · Roadmap: ${profile.musicianProfile.roadmapProgress}%`
+                      : ""}
                   </span>
                 </span>
                 <span className="people-card__level" aria-label={`Уровень ${level}`}>

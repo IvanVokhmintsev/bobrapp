@@ -2,6 +2,7 @@ export type ProfileType = "solo" | "band";
 
 export type UpdateProfileBody = {
   name?: string;
+  companyName?: string;
   bio?: string;
   avatarUrl?: string;
   location?: string;

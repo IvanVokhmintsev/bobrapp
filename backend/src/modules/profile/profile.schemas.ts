@@ -9,6 +9,7 @@ export const updateProfileSchema = {
     additionalProperties: false,
     properties: {
       name: { type: "string", minLength: 1, maxLength: 100 },
+      companyName: { type: "string", minLength: 1, maxLength: 120 },
       bio: { type: "string", maxLength: 1000 },
       avatarUrl: { type: "string", maxLength: 2000 },
       location: { type: "string", maxLength: 120 },

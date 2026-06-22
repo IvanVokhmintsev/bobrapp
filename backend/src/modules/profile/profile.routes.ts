@@ -161,6 +161,7 @@ export async function registerProfileRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const {
         name,
+        companyName,
         bio,
         avatarUrl,
         location,
@@ -174,6 +175,7 @@ export async function registerProfileRoutes(app: FastifyInstance) {
 
       if (
         name === undefined &&
+        companyName === undefined &&
         bio === undefined &&
         avatarUrl === undefined &&
         location === undefined &&
@@ -194,6 +196,7 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         where: { id: request.user.userId },
         include: {
           musicianProfile: true,
+          labelProfile: true,
         },
       });
 
@@ -201,6 +204,44 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         return reply.status(404).send({
           error: "User not found",
           statusCode: 404,
+        });
+      }
+
+      if (existingUser.role === "label") {
+        const user = await prisma.user.update({
+          where: {
+            id: request.user.userId,
+          },
+          data: {
+            name: name?.trim(),
+            labelProfile:
+              companyName !== undefined ||
+              bio !== undefined ||
+              genres !== undefined
+                ? {
+                    upsert: {
+                      create: {
+                        companyName: companyName?.trim() || existingUser.name,
+                        description: bio?.trim() ?? null,
+                        genres: cleanStringArray(genres) ?? [],
+                        onboardedAt: new Date(),
+                      },
+                      update: {
+                        companyName:
+                          companyName !== undefined ? companyName.trim() : undefined,
+                        description:
+                          bio !== undefined ? bio.trim() || null : undefined,
+                        genres: cleanStringArray(genres),
+                      },
+                    },
+                  }
+                : undefined,
+          },
+          include: profileInclude,
+        });
+
+        return reply.send({
+          user: toProfileResponse(user),
         });
       }
 

@@ -110,6 +110,13 @@
   gap: 6px;
 }
 
+.profile-card__label-note {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .profile-card__name-row h1 {
   overflow: hidden;
   max-width: 210px;

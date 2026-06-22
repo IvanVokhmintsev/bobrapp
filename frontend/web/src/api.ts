@@ -23,6 +23,13 @@ export type ApiUser = {
     points: number;
     roadmapProgress: number;
   };
+  labelProfile: null | {
+    id: string;
+    companyName: string;
+    description: string | null;
+    genres: string[];
+    onboardedAt: string | null;
+  };
   achievements: Array<{
     id: string;
     title: string;
@@ -192,12 +199,23 @@ export const api = {
       },
     );
   },
+  onboardLabel(input: {
+    companyName: string;
+    description?: string;
+    genres?: string[];
+  }) {
+    return request<{ user: ApiUser }>("/onboarding/label", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
   getProfile() {
     return request<{ user: ApiUser }>("/profile/me");
   },
   updateProfile(
     input: {
       name?: string;
+      companyName?: string;
       bio?: string;
       avatarUrl?: string;
       location?: string;

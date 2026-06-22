@@ -1,0 +1,82 @@
+.feed-label-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(57, 216, 240, 0.2);
+  border-radius: 18px;
+  background: rgba(57, 216, 240, 0.06);
+}
+
+.feed-label-panel__head h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.feed-label-panel__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.feed-label-panel__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.feed-label-panel__stats article {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+}
+
+.feed-label-panel__stats strong {
+  font-size: 22px;
+}
+
+.feed-label-panel__stats span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 12px;
+}
+
+.feed-label-panel__activity {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.feed-label-panel__activity--active {
+  color: #8ef0b8;
+}
+
+.feed-label-panel__activity--stale {
+  color: #ffd27a;
+}
+
+.feed-label-panel__activity--empty {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.feed-label-panel__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feed-label-panel__links a {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}

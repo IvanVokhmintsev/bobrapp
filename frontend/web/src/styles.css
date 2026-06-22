@@ -119,6 +119,30 @@ label {
   width: 100%;
 }
 
+.auth-role-picker {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+}
+
+.auth-role-picker legend {
+  margin-bottom: 4px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.auth-role-picker label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: #ffffff;
+  font-size: 14px;
+}
+
 .auth-field {
   display: block;
   margin: 0 0 7px;

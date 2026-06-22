@@ -143,6 +143,17 @@
   line-height: 1;
 }
 
+.app-sidebar__badge {
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: #39d8f0;
+  background: rgba(57, 216, 240, 0.14);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
 .app-sidebar__nav {
   display: flex;
   flex-direction: column;

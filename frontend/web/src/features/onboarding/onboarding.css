@@ -37,6 +37,22 @@
   margin-bottom: 16px;
 }
 
+.onboarding-members input,
+.onboarding-members textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+  font: inherit;
+}
+
+.onboarding-members textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
 .onboarding-back {
   margin-bottom: 12px;
   padding: 0;

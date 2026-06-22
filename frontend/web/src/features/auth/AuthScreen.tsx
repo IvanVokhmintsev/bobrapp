@@ -14,12 +14,13 @@ export function AuthScreen() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role] = useState<UserRole>("musician");
+  const [role, setRole] = useState<UserRole>("musician");
   const [error, setError] = useState("");
 
   function redirectAfterAuth(nextUser: ApiUser) {
     const target =
-      nextUser.role === "musician" && !nextUser.musicianProfile?.level
+      (nextUser.role === "musician" && !nextUser.musicianProfile?.level) ||
+      (nextUser.role === "label" && !nextUser.labelProfile?.onboardedAt)
         ? "/onboarding"
         : "/feed";
     navigate(target, { replace: true });
@@ -89,6 +90,32 @@ export function AuthScreen() {
                 />
               </label>
             </>
+          ) : null}
+
+          {mode === "register" ? (
+            <fieldset className="auth-role-picker">
+              <legend>Тип аккаунта</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="role"
+                  value="musician"
+                  checked={role === "musician"}
+                  onChange={() => setRole("musician")}
+                />
+                Музыкант / группа
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="role"
+                  value="label"
+                  checked={role === "label"}
+                  onChange={() => setRole("label")}
+                />
+                Лейбл / продюсер
+              </label>
+            </fieldset>
           ) : null}
 
           <label className="auth-field">

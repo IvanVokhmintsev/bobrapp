@@ -79,6 +79,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   musicianProfile MusicianProfile?
+  labelProfile    LabelProfile?
   posts           Post[]
   postLikes       PostLike[]
   comments        Comment[]
@@ -113,6 +114,19 @@ model MusicianProfile {
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   albums   ProfileAlbum[]
   concerts ProfileConcert[]
+}
+
+model LabelProfile {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  companyName String
+  description String?
+  genres      String[]  @default([])
+  onboardedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Post {
