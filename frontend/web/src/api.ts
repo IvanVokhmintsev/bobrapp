@@ -36,6 +36,8 @@ export type ApiPost = {
   id: string;
   text: string;
   type: PostType;
+  imageUrl: string | null;
+  audioUrl: string | null;
   likesCount: number;
   commentsCount: number;
   repostsCount: number;
@@ -249,14 +251,26 @@ export const api = {
       },
     );
   },
-  createPost(input: { text: string; type: PostType }) {
-    return request<{ post: ApiPost }>(
-      "/posts",
-      {
-        method: "POST",
-        body: JSON.stringify(input),
-      },
-    );
+  createPost(input: {
+    text: string;
+    type: PostType;
+    image?: File | null;
+    audio?: File | null;
+  }) {
+    const formData = new FormData();
+    formData.append("type", input.type);
+    formData.append("text", input.text);
+    if (input.image) {
+      formData.append("image", input.image);
+    }
+    if (input.audio) {
+      formData.append("audio", input.audio);
+    }
+
+    return request<{ post: ApiPost }>("/posts", {
+      method: "POST",
+      body: formData,
+    });
   },
   deletePost(id: string) {
     return request<void>(

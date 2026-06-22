@@ -33,7 +33,6 @@ export function FeedScreen() {
               key={post.id}
               post={post}
               currentUser={user}
-              media={feed.postMediaById[post.id]}
               commentsOpen={feed.expandedCommentPostIds.has(post.id)}
               commentsLoading={feed.loadingCommentPostIds.has(post.id)}
               comments={feed.commentsByPost[post.id]}
@@ -66,7 +65,7 @@ export function FeedScreen() {
               onTextChange={feed.setText}
               onImageChange={feed.setComposerImage}
               onAudioChange={feed.setComposerAudio}
-              onSubmit={() => void feed.createPost(user)}
+              onSubmit={() => void feed.createPost()}
             />
           </section>
         ) : null}

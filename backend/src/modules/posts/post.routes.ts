@@ -1,13 +1,20 @@
+import { randomUUID } from "node:crypto";
+
 import type { FastifyInstance } from "fastify";
 
+import { deleteManagedPostMediaSet } from "../../lib/postMedia.js";
 import { prisma } from "../../lib/prisma.js";
 import { authenticate } from "../auth/auth.middleware.js";
 import { requireRole } from "../roles/role.middleware.js";
+import {
+  parseCreatePostForm,
+  saveCreatePostMedia,
+  validateCreatePostForm,
+} from "./postMedia.service.js";
 import { toPublicPost } from "./post.presenter.js";
 import {
   commentParamsSchema,
   commentPostSchema,
-  createPostSchema,
   feedQuerySchema,
   likePostSchema,
   postIdParamsSchema,
@@ -15,7 +22,6 @@ import {
 import type {
   CommentParams,
   CreateCommentBody,
-  CreatePostBody,
   FeedQuery,
   PostIdParams,
 } from "./post.types.js";
@@ -108,25 +114,48 @@ export async function registerPostRoutes(app: FastifyInstance) {
     },
   );
 
-  app.post<{ Body: CreatePostBody }>(
+  app.post(
     "/posts",
     {
       preHandler: [authenticate, requireRole("musician")],
-      schema: createPostSchema,
     },
     async (request, reply) => {
-      const post = await prisma.post.create({
-        data: {
-          authorId: request.user.userId,
-          text: request.body.text.trim(),
-          type: request.body.type,
-        },
-        include: postInclude,
-      });
+      const form = await parseCreatePostForm(request.parts());
+      const validationError = validateCreatePostForm(form);
 
-      return reply.status(201).send({
-        post: toPublicPost(post, request.user.userId),
-      });
+      if (validationError) {
+        return reply.status(400).send({
+          error: validationError,
+          statusCode: 400,
+        });
+      }
+
+      const postId = randomUUID();
+      let imageUrl: string | null = null;
+      let audioUrl: string | null = null;
+
+      try {
+        ({ imageUrl, audioUrl } = await saveCreatePostMedia(postId, form));
+
+        const post = await prisma.post.create({
+          data: {
+            id: postId,
+            authorId: request.user.userId,
+            text: form.text.trim(),
+            type: form.type,
+            imageUrl,
+            audioUrl,
+          },
+          include: postInclude,
+        });
+
+        return reply.status(201).send({
+          post: toPublicPost(post, request.user.userId),
+        });
+      } catch (error) {
+        await deleteManagedPostMediaSet(imageUrl, audioUrl);
+        throw error;
+      }
     },
   );
 
@@ -142,6 +171,8 @@ export async function registerPostRoutes(app: FastifyInstance) {
         select: {
           id: true,
           authorId: true,
+          imageUrl: true,
+          audioUrl: true,
         },
       });
 
@@ -158,6 +189,8 @@ export async function registerPostRoutes(app: FastifyInstance) {
           statusCode: 403,
         });
       }
+
+      await deleteManagedPostMediaSet(post.imageUrl, post.audioUrl);
 
       await prisma.post.delete({
         where: { id: post.id },

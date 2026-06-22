@@ -1,14 +1,7 @@
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const backendRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "..",
-);
-
-export const uploadsRoot = path.join(backendRoot, "uploads");
+import { uploadsRoot } from "./backendRoot.js";
 export const avatarsDir = path.join(uploadsRoot, "avatars");
 
 const allowedMimeTypes = new Map<string, string>([

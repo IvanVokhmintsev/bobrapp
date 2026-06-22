@@ -8,7 +8,8 @@ import playIcon from "../../assets/feed/play-button.png";
 import levelFlagIcon from "../../assets/profile/level-flag.svg";
 import { getMusicianLevel } from "../../lib/musicianLevel";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
-import { getPostDisplayMode, type FeedPostMedia } from "./feedPostMedia";
+import { getPostDisplayMode } from "./feedPostMedia";
+import { resolveUploadUrl } from "../../lib/mediaUrl";
 import type { FeedPostCardHandlers, FeedPostCardState } from "./useFeedInteractions";
 import { formatPostTime } from "./useFeedInteractions";
 
@@ -16,14 +17,13 @@ type FeedPostCardProps = FeedPostCardHandlers &
   FeedPostCardState & {
     post: ApiPost;
     currentUser: ApiUser;
-    media?: FeedPostMedia;
   };
 
 export function FeedPostCard(props: FeedPostCardProps) {
   const canDelete = props.post.author.id === props.currentUser.id;
   const avatarSrc = resolveAvatarUrl(props.post.author.avatarUrl, defaultAvatar);
   const level = getAuthorLevel(props.post, props.currentUser);
-  const displayMode = getPostDisplayMode(props.post, props.media);
+  const displayMode = getPostDisplayMode(props.post);
   const caption = getPostCaption(props.post, displayMode);
 
   return (
@@ -74,11 +74,7 @@ export function FeedPostCard(props: FeedPostCardProps) {
         {displayMode === "roadmap" ? (
           <RoadmapBody post={props.post} coverSrc={avatarSrc} />
         ) : displayMode === "demo" ? (
-          <DemoBody
-            post={props.post}
-            media={props.media}
-            caption={caption}
-          />
+          <DemoBody post={props.post} caption={caption} />
         ) : (
           <p className="feed-card__caption feed-card__caption--solo">{caption}</p>
         )}
@@ -127,15 +123,14 @@ export function FeedPostCard(props: FeedPostCardProps) {
   );
 }
 
-function DemoBody(props: {
-  post: ApiPost;
-  media?: FeedPostMedia;
-  caption: string;
-}) {
+function DemoBody(props: { post: ApiPost; caption: string }) {
+  const imageUrl = resolveUploadUrl(props.post.imageUrl);
+  const audioUrl = resolveUploadUrl(props.post.audioUrl);
+
   return (
     <div className="feed-card__body feed-card__body--demo">
       <p className="feed-card__caption">{props.caption}</p>
-      <DemoCover imageUrl={props.media?.imageUrl} audioUrl={props.media?.audioUrl} />
+      <DemoCover imageUrl={imageUrl} audioUrl={audioUrl} />
     </div>
   );
 }

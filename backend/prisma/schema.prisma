@@ -74,15 +74,17 @@ model MusicianProfile {
 }
 
 model Post {
-  id         String   @id @default(uuid())
-  authorId   String
-  text       String
-  type       PostType
-  likesCount Int      @default(0)
-  commentsCount Int   @default(0)
-  repostsCount Int    @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(uuid())
+  authorId      String
+  text          String
+  type          PostType
+  imageUrl      String?
+  audioUrl      String?
+  likesCount    Int      @default(0)
+  commentsCount Int      @default(0)
+  repostsCount  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   author User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   postLikes PostLike[]

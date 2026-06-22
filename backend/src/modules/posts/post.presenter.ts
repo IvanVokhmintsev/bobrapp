@@ -2,6 +2,8 @@ type PostWithAuthor = {
   id: string;
   text: string;
   type: "professional" | "roadmap";
+  imageUrl: string | null;
+  audioUrl: string | null;
   likesCount: number;
   commentsCount: number;
   repostsCount: number;
@@ -37,6 +39,8 @@ export function toPublicPost(post: PostWithAuthor, currentUserId?: string) {
     id: post.id,
     text: post.text,
     type: post.type,
+    imageUrl: post.imageUrl,
+    audioUrl: post.audioUrl,
     likesCount: post.likesCount,
     commentsCount: post.commentsCount,
     repostsCount: post.repostsCount,

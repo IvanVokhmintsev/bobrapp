@@ -1,12 +1,9 @@
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 
 import { env } from "./config/env.js";
-import {
-  avatarsDir,
-  ensureUploadDirs,
-  maxAvatarBytes,
-  uploadsRoot,
-} from "./lib/avatars.js";
+import { avatarsDir, ensureUploadDirs } from "./lib/avatars.js";
+import { uploadsRoot } from "./lib/backendRoot.js";
+import { ensurePostMediaDirs, maxPostMediaBytes } from "./lib/postMedia.js";
 import { registerRoutes } from "./routes/index.js";
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -15,6 +12,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   await ensureUploadDirs();
+  await ensurePostMediaDirs();
 
   void app.register(import("@fastify/jwt"), {
     secret: env.jwtSecret,
@@ -33,8 +31,8 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   void app.register(import("@fastify/multipart"), {
     limits: {
-      fileSize: maxAvatarBytes,
-      files: 1,
+      fileSize: maxPostMediaBytes,
+      files: 2,
     },
   });
 
@@ -49,7 +47,11 @@ export async function buildApp(): Promise<FastifyInstance> {
 
     const statusCode = error.statusCode ?? 500;
     const message =
-      statusCode >= 500 ? "Internal server error" : error.message;
+      statusCode >= 500
+        ? env.nodeEnv === "development"
+          ? error.message
+          : "Internal server error"
+        : error.message;
 
     void reply.status(statusCode).send({
       error: message,

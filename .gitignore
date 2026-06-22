@@ -21,6 +21,8 @@ _docpress
 backend/uploads/**
 !backend/uploads/avatars/
 !backend/uploads/avatars/.gitkeep
+!backend/uploads/posts/
+!backend/uploads/posts/.gitkeep
 
 /lib
 /dist
