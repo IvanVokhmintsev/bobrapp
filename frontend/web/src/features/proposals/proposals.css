@@ -1,0 +1,146 @@
+.contact-proposal__intro {
+  margin: 0 0 1rem;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.5;
+}
+
+.contact-proposal__warning {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 193, 7, 0.12);
+  border: 1px solid rgba(255, 193, 7, 0.28);
+  color: #ffe082;
+  font-size: 0.92rem;
+}
+
+.contact-proposal__warning ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.proposals-page__hint {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.proposals-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.proposals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.proposals-list__item {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.proposals-list__item strong {
+  font-size: 0.95rem;
+}
+
+.proposals-list__item span,
+.proposals-list__item time {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.85rem;
+}
+
+.proposals-list__item.is-active {
+  border-color: rgba(120, 255, 180, 0.45);
+  background: rgba(120, 255, 180, 0.08);
+}
+
+.proposals-list__item.is-unread strong {
+  color: #fff;
+}
+
+.proposals-detail {
+  min-height: 280px;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.proposals-detail__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.proposals-detail__header h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+}
+
+.proposals-detail__header p,
+.proposals-detail__header time {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.9rem;
+}
+
+.proposals-detail__header a {
+  color: #9ef0c0;
+}
+
+.proposals-detail__status {
+  align-self: flex-start;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.proposals-detail__status--pending {
+  background: rgba(255, 193, 7, 0.16);
+  color: #ffd54f;
+}
+
+.proposals-detail__status--read {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.proposals-detail__message {
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.proposals-detail__link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #9ef0c0;
+}
+
+.app-sidebar__nav-badge {
+  margin-left: auto;
+  min-width: 1.25rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: #ff5252;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .proposals-layout {
+    grid-template-columns: 1fr;
+  }
+}

@@ -22,6 +22,7 @@ import { useFeedInteractions } from "../feed/useFeedInteractions";
 import { ProfilePostsSection } from "./ProfilePostsSection";
 import { ProfileCareerTimeline } from "./ProfileCareerTimeline";
 import { LabelProfileScreen } from "./LabelProfileScreen";
+import { ContactProposalSheet } from "../proposals/ContactProposalSheet";
 import { ProfileTypeBadge } from "./ProfileTypeBadge";
 import "./profile.css";
 import "./profile-completeness.css";
@@ -36,6 +37,7 @@ export function ProfileScreen() {
   const [user, setLocalUser] = useState<ApiUser | null>(isOwnProfile ? authUser : null);
   const [editOpen, setEditOpen] = useState(false);
   const [contentEditOpen, setContentEditOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const [albums, setAlbums] = useState<ApiProfileAlbum[]>([]);
   const [concerts, setConcerts] = useState<ApiProfileConcert[]>([]);
   const [isLoading, setIsLoading] = useState(!isOwnProfile);
@@ -204,8 +206,17 @@ export function ProfileScreen() {
     setUser(nextUser);
   }
 
-  function showComingSoon(feature: string) {
-    setNotice(`${feature} будет добавлено в следующей итерации.`);
+  function handleContact() {
+    if (!user || isOwnProfile) {
+      return;
+    }
+
+    if (user.musicianProfile?.acceptsProposals === false) {
+      setNotice("Артист не принимает предложения о сотрудничестве через платформу.");
+      return;
+    }
+
+    setContactOpen(true);
   }
 
   return (
@@ -231,7 +242,7 @@ export function ProfileScreen() {
               onManageContent={() => setContentEditOpen(true)}
               onAvatarUpdated={handleProfileSaved}
               onToggleFollow={() => void toggleFollow()}
-              onContact={() => showComingSoon("Связаться с артистом")}
+              onContact={handleContact}
               onFavorite={() => void toggleFavorite()}
             />
             <ProfileCareerTimeline user={user} posts={profileFeed.posts} />
@@ -263,6 +274,15 @@ export function ProfileScreen() {
             setConcerts(nextConcerts);
             setNotice("Альбомы и концерты обновлены");
           }}
+        />
+      ) : null}
+
+      {contactOpen && user && !isOwnProfile ? (
+        <ContactProposalSheet
+          artist={user}
+          incompleteBlocks={blockStatuses}
+          onClose={() => setContactOpen(false)}
+          onSent={() => setNotice("Предложение отправлено артисту")}
         />
       ) : null}
     </>
@@ -328,6 +348,9 @@ function ProfileSummary(props: {
               {props.isOwnProfile ? (
                 props.canOpenRoadmap ? (
                   <>
+                    <Link className="profile-header-action" to="/proposals">
+                      Предложения
+                    </Link>
                     <Link className="profile-header-action" to="/roadmap/map">
                       Карта развития
                     </Link>
@@ -338,9 +361,15 @@ function ProfileSummary(props: {
                 ) : null
               ) : (
                 <>
-                  <button type="button" className="profile-header-action" onClick={props.onContact}>
-                    Связаться с артистом
-                  </button>
+                  {props.user.musicianProfile?.acceptsProposals === false ? (
+                    <span className="profile-header-action profile-header-action--disabled">
+                      Контакт недоступен
+                    </span>
+                  ) : (
+                    <button type="button" className="profile-header-action" onClick={props.onContact}>
+                      Связаться с артистом
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={`profile-header-action ${

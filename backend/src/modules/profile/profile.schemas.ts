@@ -39,6 +39,7 @@ export const updateProfileSchema = {
         additionalProperties: { type: "string", minLength: 1, maxLength: 500 },
         maxProperties: 20,
       },
+      acceptsProposals: { type: "boolean" },
     },
   },
 } as const;

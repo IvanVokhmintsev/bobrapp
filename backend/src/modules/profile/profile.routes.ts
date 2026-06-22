@@ -171,6 +171,7 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         daw,
         memberNames,
         socialLinks,
+        acceptsProposals,
       } = request.body;
 
       if (
@@ -184,7 +185,8 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         instruments === undefined &&
         daw === undefined &&
         memberNames === undefined &&
-        socialLinks === undefined
+        socialLinks === undefined &&
+        acceptsProposals === undefined
       ) {
         return reply.status(400).send({
           error: "No profile fields provided",
@@ -268,7 +270,8 @@ export async function registerProfileRoutes(app: FastifyInstance) {
             instruments !== undefined ||
             daw !== undefined ||
             memberNames !== undefined ||
-            socialLinks !== undefined
+            socialLinks !== undefined ||
+            acceptsProposals !== undefined
               ? {
                   upsert: {
                     create: {
@@ -281,6 +284,7 @@ export async function registerProfileRoutes(app: FastifyInstance) {
                       daw: cleanStringArray(daw) ?? [],
                       memberNames: cleanStringArray(memberNames) ?? [],
                       socialLinks: (socialLinks ?? {}) as Prisma.InputJsonValue,
+                      acceptsProposals: acceptsProposals ?? true,
                     },
                     update: {
                       bio: bio !== undefined ? bio.trim() : undefined,
@@ -299,6 +303,7 @@ export async function registerProfileRoutes(app: FastifyInstance) {
                         socialLinks !== undefined
                           ? (socialLinks as Prisma.InputJsonValue)
                           : undefined,
+                      acceptsProposals,
                     },
                   },
                 }

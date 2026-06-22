@@ -12,6 +12,7 @@ export type UpdateProfileBody = {
   daw?: string[];
   memberNames?: string[];
   socialLinks?: Record<string, string>;
+  acceptsProposals?: boolean;
 };
 
 export type PublicProfileParams = {

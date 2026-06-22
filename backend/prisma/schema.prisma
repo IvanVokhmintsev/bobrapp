@@ -39,6 +39,12 @@ enum AchievementType {
   professional
 }
 
+enum CollaborationProposalStatus {
+  pending
+  read
+  archived
+}
+
 model ProfileAlbum {
   id                String   @id @default(uuid())
   musicianProfileId String
@@ -91,6 +97,8 @@ model User {
   favoritePosts   FavoritePost[]
   roadmapProgress UserRoadmapProgress[]
   achievements    Achievement[]
+  sentProposals     CollaborationProposal[] @relation("sent_proposals")
+  receivedProposals CollaborationProposal[] @relation("received_proposals")
 }
 
 model MusicianProfile {
@@ -106,6 +114,7 @@ model MusicianProfile {
   daw             String[]       @default([])
   memberNames     String[]       @default([])
   socialLinks     Json           @default("{}")
+  acceptsProposals Boolean       @default(true)
   points          Int            @default(0)
   roadmapProgress Int            @default(0)
   createdAt       DateTime       @default(now())
@@ -127,6 +136,25 @@ model LabelProfile {
   updatedAt   DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CollaborationProposal {
+  id          String                      @id @default(uuid())
+  senderId    String
+  recipientId String
+  subject     String
+  message     String
+  linkUrl     String?
+  status      CollaborationProposalStatus @default(pending)
+  readAt      DateTime?
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+
+  sender    User @relation("sent_proposals", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("received_proposals", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, createdAt])
+  @@index([senderId, createdAt])
 }
 
 model Post {

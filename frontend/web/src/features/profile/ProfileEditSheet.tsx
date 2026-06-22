@@ -25,6 +25,9 @@ export function ProfileEditSheet(props: ProfileEditSheetProps) {
       .map(([key, value]) => `${key}: ${value}`)
       .join("\n"),
   );
+  const [acceptsProposals, setAcceptsProposals] = useState(
+    profile?.acceptsProposals ?? true,
+  );
   const [error, setError] = useState("");
 
   function handleAvatarUpdated(nextUser: ApiUser) {
@@ -45,6 +48,7 @@ export function ProfileEditSheet(props: ProfileEditSheetProps) {
         daw: profileType === "solo" ? splitList(daw) : [],
         memberNames: profileType === "band" ? splitList(memberNames) : [],
         socialLinks: parseSocialLinks(socialLinks),
+        acceptsProposals,
       });
       props.onSaved(result.user);
       props.onClose();
@@ -138,6 +142,14 @@ export function ProfileEditSheet(props: ProfileEditSheetProps) {
               onChange={(event) => setSocialLinks(event.target.value)}
               rows={3}
             />
+          </label>
+          <label className="profile-edit__checkbox">
+            <input
+              type="checkbox"
+              checked={acceptsProposals}
+              onChange={(event) => setAcceptsProposals(event.target.checked)}
+            />
+            Принимать предложения о сотрудничестве через платформу
           </label>
           {error ? <p className="profile-edit__error">{error}</p> : null}
         </div>

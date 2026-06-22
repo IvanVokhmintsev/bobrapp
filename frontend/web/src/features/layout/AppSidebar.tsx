@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
-import type { ApiUser } from "../../api";
+import { api, type ApiUser } from "../../api";
 import defaultAvatar from "../../assets/feed/card-cover.png";
 import levelFlagIcon from "../../assets/profile/level-flag.svg";
 import { BookmarkIcon } from "../../components/BookmarkIcon";
@@ -13,6 +14,7 @@ import { useAuth } from "../../context/AuthContext";
 import { getMusicianLevelFromUser } from "../../lib/musicianLevel";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
 import { ProPanel } from "./ProPanel";
+import "../proposals/proposals.css";
 
 type AppSidebarProps = {
   user: ApiUser;
@@ -45,6 +47,7 @@ function buildNavItems(role: ApiUser["role"]) {
     baseNavItems[0],
     baseNavItems[1],
     baseNavItems[2],
+    { to: "/proposals", label: "Предложения", icon: "proposals" as const },
     { to: "/roadmap/map", label: "Roadmap", icon: "roadmap" as const },
     baseNavItems[3],
     baseNavItems[4],
@@ -55,6 +58,7 @@ function buildNavItems(role: ApiUser["role"]) {
 export function AppSidebar(props: AppSidebarProps) {
   const location = useLocation();
   const { logout } = useAuth();
+  const [unreadProposals, setUnreadProposals] = useState(0);
   const avatarSrc = resolveAvatarUrl(
     props.user.musicianProfile?.avatarUrl,
     defaultAvatar,
@@ -62,6 +66,19 @@ export function AppSidebar(props: AppSidebarProps) {
   const level = getMusicianLevelFromUser(props.user);
   const navItems = buildNavItems(props.user.role);
   const isLabel = props.user.role === "label";
+
+  useEffect(() => {
+    if (props.user.role !== "musician") {
+      return;
+    }
+
+    void api
+      .getProposalUnreadCount()
+      .then((result) => setUnreadProposals(result.unreadCount))
+      .catch(() => {
+        /* optional badge */
+      });
+  }, [props.user.role, location.pathname]);
 
   return (
     <aside className="app-sidebar" aria-label="Навигация">
@@ -87,7 +104,8 @@ export function AppSidebar(props: AppSidebarProps) {
         {navItems.map((item) => {
           const isActive =
             location.pathname === item.to ||
-            (item.to === "/roadmap/map" && location.pathname.startsWith("/roadmap"));
+            (item.to === "/roadmap/map" && location.pathname.startsWith("/roadmap")) ||
+            (item.to === "/proposals" && location.pathname.startsWith("/proposals"));
 
           return (
             <Link
@@ -103,10 +121,15 @@ export function AppSidebar(props: AppSidebarProps) {
                 />
               ) : item.icon === "roadmap" ? (
                 <RoadmapNavIcon active={isActive} />
+              ) : item.icon === "proposals" ? (
+                <ProposalsNavIcon active={isActive} />
               ) : (
                 <img className="app-sidebar__nav-icon" src={item.icon} alt="" />
               )}
               <span>{item.label}</span>
+              {item.icon === "proposals" && unreadProposals > 0 ? (
+                <span className="app-sidebar__nav-badge">{unreadProposals}</span>
+              ) : null}
             </Link>
           );
         })}
@@ -146,6 +169,33 @@ function RoadmapNavIcon(props: { active: boolean }) {
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ProposalsNavIcon(props: { active: boolean }) {
+  return (
+    <svg
+      className="app-sidebar__nav-icon"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+    >
+      <path
+        d="M3 5.5h14v9H3v-9Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        fill={props.active ? "currentColor" : "none"}
+        fillOpacity={props.active ? 0.18 : 0}
+      />
+      <path
+        d="M3 6.5 10 11l7-4.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
       />
     </svg>
   );

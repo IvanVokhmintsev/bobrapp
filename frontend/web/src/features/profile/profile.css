@@ -730,6 +730,17 @@
   gap: 8px;
 }
 
+.profile-edit__checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.4;
+}
+
+.profile-edit__checkbox input {
+  margin-top: 2px;
+}
+
 .profile-edit__body input,
 .profile-edit__body textarea {
   width: 100%;

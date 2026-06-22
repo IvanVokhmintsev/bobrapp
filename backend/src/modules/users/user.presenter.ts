@@ -10,6 +10,7 @@ type PublicMusicianProfile = {
   daw?: string[];
   memberNames?: string[];
   socialLinks?: unknown;
+  acceptsProposals?: boolean;
   points: number;
   roadmapProgress: number;
 };
@@ -61,6 +62,7 @@ export function toPublicUser(user: UserWithProfile) {
           daw: user.musicianProfile.daw ?? [],
           memberNames: user.musicianProfile.memberNames ?? [],
           socialLinks: user.musicianProfile.socialLinks ?? {},
+          acceptsProposals: user.musicianProfile.acceptsProposals ?? true,
           points: user.musicianProfile.points,
           roadmapProgress: user.musicianProfile.roadmapProgress,
         }

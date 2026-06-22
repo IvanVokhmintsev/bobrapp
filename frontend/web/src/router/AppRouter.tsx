@@ -12,6 +12,7 @@ import { AppLoading } from "../features/layout/AppLoading";
 import "../features/layout/app-shell.css";
 import { OnboardingScreen } from "../features/onboarding/OnboardingScreen";
 import { RoadmapMapScreen } from "../features/roadmap/RoadmapMapScreen";
+import { ProposalsScreen } from "../features/proposals/ProposalsScreen";
 import { ProfileScreen } from "../features/profile/ProfileScreen";
 import { RoadmapScreen } from "../features/roadmap/RoadmapScreen";
 
@@ -67,6 +68,7 @@ export function AppRouter() {
               <Route path="/feed" element={<FeedScreen />} />
               <Route path="/people" element={<PeopleScreen />} />
               <Route path="/favorites" element={<FavoritesScreen />} />
+              <Route path="/proposals" element={<ProposalsScreen />} />
               <Route path="/booking" element={<BookingScreen />} />
               <Route path="/events" element={<EventsScreen />} />
               <Route path="/profile" element={<ProfileScreen />} />
