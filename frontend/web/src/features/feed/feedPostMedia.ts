@@ -1,4 +1,4 @@
-import { parseBlob } from "music-metadata";
+import { parseBlob, parseBuffer, selectCover, type IPicture } from "music-metadata";
 
 import type { ApiPost } from "../../api";
 import defaultCover from "../../assets/feed/cover.png";
@@ -38,8 +38,11 @@ export function getPostDisplayMode(
   return "demo";
 }
 
-export function getDemoCoverSrc(media?: FeedPostMedia) {
-  return media?.imageUrl ?? defaultCover;
+export function getDemoCoverSrc(
+  media?: FeedPostMedia,
+  extractedCoverUrl?: string | null,
+) {
+  return media?.imageUrl ?? extractedCoverUrl ?? defaultCover;
 }
 
 export function formatAudioDuration(seconds: number | null | undefined) {
@@ -55,6 +58,57 @@ export function formatAudioDuration(seconds: number | null | undefined) {
 
 export function stripFileExtension(fileName: string) {
   return fileName.replace(/\.[^.]+$/, "");
+}
+
+function normalizeImageMimeType(format: string) {
+  const normalized = format.trim().toLowerCase();
+
+  if (!normalized) {
+    return "image/jpeg";
+  }
+
+  if (normalized.startsWith("image/")) {
+    return normalized;
+  }
+
+  if (normalized === "jpg" || normalized === "jpeg") {
+    return "image/jpeg";
+  }
+
+  if (normalized === "png") {
+    return "image/png";
+  }
+
+  return `image/${normalized}`;
+}
+
+function guessAudioMimeType(file: File) {
+  if (file.type) {
+    return file.type;
+  }
+
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const byExtension: Record<string, string> = {
+    mp3: "audio/mpeg",
+    m4a: "audio/mp4",
+    mp4: "audio/mp4",
+    flac: "audio/flac",
+    ogg: "audio/ogg",
+    opus: "audio/ogg",
+    wav: "audio/wav",
+    aiff: "audio/aiff",
+    aif: "audio/aiff",
+  };
+
+  return byExtension[extension ?? ""] ?? "application/octet-stream";
+}
+
+function pictureToObjectUrl(picture: IPicture) {
+  return URL.createObjectURL(
+    new Blob([Uint8Array.from(picture.data)], {
+      type: normalizeImageMimeType(picture.format),
+    }),
+  );
 }
 
 export async function readAudioDuration(file: File) {
@@ -81,19 +135,15 @@ export async function readAudioDuration(file: File) {
 
 export async function readAudioFileMetadata(file: File): Promise<AudioFileMetadata> {
   try {
-    const metadata = await parseBlob(file);
-    const picture = metadata.common.picture?.[0];
+    const metadata = await readMetadataFromFile(file);
+    const picture = selectCover(metadata.common.picture);
     const duration = metadata.format.duration;
 
     return {
       durationSec: duration && duration > 0 ? duration : null,
       title: metadata.common.title?.trim() || null,
       artist: metadata.common.artist?.trim() || null,
-      coverUrl: picture
-        ? URL.createObjectURL(
-            new Blob([Uint8Array.from(picture.data)], { type: picture.format }),
-          )
-        : null,
+      coverUrl: picture ? pictureToObjectUrl(picture) : null,
     };
   } catch {
     return {
@@ -102,6 +152,32 @@ export async function readAudioFileMetadata(file: File): Promise<AudioFileMetada
       artist: null,
       coverUrl: null,
     };
+  }
+}
+
+async function readMetadataFromFile(file: File) {
+  try {
+    return await parseBlob(file);
+  } catch {
+    const buffer = new Uint8Array(await file.arrayBuffer());
+    return parseBuffer(buffer, {
+      mimeType: guessAudioMimeType(file),
+      size: file.size,
+    });
+  }
+}
+
+export async function readAudioCoverFromUrl(audioUrl: string) {
+  try {
+    const response = await fetch(audioUrl);
+    const blob = await response.blob();
+    const file = new File([blob], "track", {
+      type: blob.type || "audio/mpeg",
+    });
+    const metadata = await readAudioFileMetadata(file);
+    return metadata.coverUrl;
+  } catch {
+    return null;
   }
 }
 

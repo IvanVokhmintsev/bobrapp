@@ -139,14 +139,29 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
       return;
     }
 
-    const audioCoverForPost = !composerImage ? composerAudioCoverUrl : null;
+    const audioMetadata = composerAudio
+      ? await readAudioFileMetadata(composerAudio)
+      : null;
+
+    if (
+      audioMetadata?.coverUrl &&
+      composerAudioCoverUrl &&
+      audioMetadata.coverUrl !== composerAudioCoverUrl
+    ) {
+      revokeObjectUrl(composerAudioCoverUrl);
+    }
+
+    const audioCoverForPost = !composerImage ? audioMetadata?.coverUrl ?? null : null;
     const imageUrl = composerImage
       ? URL.createObjectURL(composerImage)
       : audioCoverForPost;
     const audioUrl = composerAudio ? URL.createObjectURL(composerAudio) : null;
     const audioTitle = composerAudio
       ? buildAudioTitleFromMetadata(
-          composerAudioTags,
+          {
+            title: audioMetadata?.title ?? composerAudioTags.title,
+            artist: audioMetadata?.artist ?? composerAudioTags.artist,
+          },
           composerAudio.name,
           currentUser.name,
         )
@@ -156,7 +171,8 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
       imageUrl,
       audioUrl,
       audioTitle,
-      audioDurationSec: composerAudioDurationSec,
+      audioDurationSec:
+        audioMetadata?.durationSec ?? composerAudioDurationSec,
     };
 
     try {

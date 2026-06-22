@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { ApiComment, ApiPost, ApiUser } from "../../api";
 import commentIcon from "../../assets/feed/comment-action.png";
@@ -12,6 +12,8 @@ import {
   formatAudioDuration,
   getDemoCoverSrc,
   getPostDisplayMode,
+  readAudioCoverFromUrl,
+  revokeObjectUrl,
   type FeedPostMedia,
 } from "./feedPostMedia";
 import type { FeedPostCardHandlers, FeedPostCardState } from "./useFeedInteractions";
@@ -140,7 +142,8 @@ function DemoBody(props: {
   media?: FeedPostMedia;
   caption: string;
 }) {
-  const coverSrc = getDemoCoverSrc(props.media);
+  const extractedCoverUrl = useAudioCoverFallback(props.media);
+  const coverSrc = getDemoCoverSrc(props.media, extractedCoverUrl);
   const audioTitle =
     props.media?.audioTitle ??
     (props.media?.audioUrl ? "Демо-трек" : DEMO_AUDIO_TITLE);
@@ -293,4 +296,49 @@ function getAuthorLevel(post: ApiPost, currentUser: ApiUser) {
   }
 
   return getMusicianLevel(null);
+}
+
+function useAudioCoverFallback(media?: FeedPostMedia) {
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const coverUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    coverUrlRef.current = coverUrl;
+  }, [coverUrl]);
+
+  useEffect(() => {
+    if (media?.imageUrl || !media?.audioUrl) {
+      revokeObjectUrl(coverUrlRef.current);
+      setCoverUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    void readAudioCoverFromUrl(media.audioUrl).then((nextCoverUrl) => {
+      if (cancelled) {
+        revokeObjectUrl(nextCoverUrl);
+        return;
+      }
+
+      setCoverUrl((current) => {
+        if (current && current !== nextCoverUrl) {
+          revokeObjectUrl(current);
+        }
+        return nextCoverUrl;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [media?.audioUrl, media?.imageUrl]);
+
+  useEffect(() => {
+    return () => {
+      revokeObjectUrl(coverUrlRef.current);
+    };
+  }, []);
+
+  return coverUrl;
 }
