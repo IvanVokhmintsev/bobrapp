@@ -1,4 +1,4 @@
-const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+import { apiUrl } from "./apiUrl.js";
 
 export function resolveAvatarUrl(
   avatarUrl: string | null | undefined,

@@ -4,6 +4,7 @@ import { env } from "./config/env.js";
 import { avatarsDir, ensureUploadDirs } from "./lib/avatars.js";
 import { ensureProfileCoverDirs, profileCoversDir } from "./lib/profileCovers.js";
 import { uploadsRoot } from "./lib/backendRoot.js";
+import { registerFrontendStatic } from "./lib/frontendStatic.js";
 import { ensurePostMediaDirs, maxPostMediaBytes } from "./lib/postMedia.js";
 import { registerRoutes } from "./routes/index.js";
 
@@ -62,6 +63,14 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   void registerRoutes(app);
+
+  const servingFrontend = await registerFrontendStatic(app);
+
+  if (env.nodeEnv === "production" && !servingFrontend) {
+    app.log.warn(
+      "Frontend dist not found; run `pnpm build` from the repo root before starting in production",
+    );
+  }
 
   app.log.info({ avatarsDir, profileCoversDir }, "Upload directories ready");
 

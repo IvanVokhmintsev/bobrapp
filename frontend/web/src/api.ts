@@ -20,6 +20,7 @@ export type ApiUser = {
     daw: string[];
     memberNames: string[];
     socialLinks: Record<string, string>;
+    acceptsProposals: boolean;
     points: number;
     roadmapProgress: number;
   };
@@ -128,7 +129,26 @@ export type RoadmapLesson = RoadmapStep & {
   }>;
 };
 
-const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+export type ApiProposal = {
+  id: string;
+  subject: string;
+  message: string;
+  linkUrl: string | null;
+  status: "pending" | "read" | "archived";
+  readAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  sender: {
+    id: string;
+    name: string;
+    role: UserRole;
+    companyName: string | null;
+  };
+};
+
+import { apiUrl } from "./lib/apiUrl.js";
+
+const API_PREFIX = "/api";
 
 async function request<T>(
   path: string,
@@ -137,7 +157,7 @@ async function request<T>(
   const hasBody = options.body !== undefined;
   const isFormData = options.body instanceof FormData;
 
-  const response = await fetch(`${apiUrl}${path}`, {
+  const response = await fetch(`${apiUrl}${API_PREFIX}${path}`, {
     ...options,
     credentials: "include",
     headers: {
@@ -225,6 +245,7 @@ export const api = {
       daw?: string[];
       memberNames?: string[];
       socialLinks?: Record<string, string>;
+      acceptsProposals?: boolean;
     },
   ) {
     return request<{ user: ApiUser }>(
@@ -580,5 +601,28 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ checkedIndices }),
     });
+  },
+  sendProposal(
+    artistId: string,
+    input: { subject: string; message: string; linkUrl?: string },
+  ) {
+    return request<{ proposal: ApiProposal }>(`/profiles/${artistId}/proposals`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+  getProposals() {
+    return request<{ proposals: ApiProposal[] }>("/profile/me/proposals");
+  },
+  getProposalUnreadCount() {
+    return request<{ unreadCount: number }>("/profile/me/proposals/unread-count");
+  },
+  markProposalRead(proposalId: string) {
+    return request<{ proposal: ApiProposal }>(
+      `/profile/me/proposals/${proposalId}`,
+      {
+        method: "PATCH",
+      },
+    );
   },
 };

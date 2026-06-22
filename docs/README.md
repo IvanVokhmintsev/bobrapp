@@ -78,21 +78,28 @@ Backend разрабатывается первым как отдельное AP
 
 ## Getting Started
 
-После инициализации проекта команды запуска могут выглядеть так:
+### Локальная разработка (два сервера)
 
 ```bash
-cd backend
 pnpm install
 pnpm dev
 ```
 
-Для production-сборки backend:
+Backend: `http://localhost:3000`, frontend: `http://localhost:5173`.
+
+### Production / Railway (один сервис)
+
+Из корня репозитория:
 
 ```bash
-cd backend
+pnpm install
 pnpm build
 pnpm start
 ```
+
+Backend поднимается на `PORT` (по умолчанию 3000), отдаёт API на `/api/*`, статику SPA из `frontend/web/dist` и применяет миграции Prisma перед стартом.
+
+Переменные окружения для деплоя: `DATABASE_URL`, `JWT_SECRET`, `COOKIE_SECRET`, `NODE_ENV=production`.
 
 ## Development Approach
 

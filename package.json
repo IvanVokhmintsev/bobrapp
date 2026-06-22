@@ -1,0 +1,12 @@
+{
+  "name": "bobrapp",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "build": "pnpm --filter bobrapp-web build && pnpm --filter bobrapp-backend build",
+    "start": "pnpm --filter bobrapp-backend start",
+    "dev": "pnpm --parallel --filter bobrapp-backend --filter bobrapp-web dev",
+    "dev:backend": "pnpm --filter bobrapp-backend dev",
+    "dev:frontend": "pnpm --filter bobrapp-web dev"
+  }
+}
