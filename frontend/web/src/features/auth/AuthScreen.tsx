@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { api, type ApiUser, type UserRole } from "../../api";
 import registrationBg from "../../assets/auth/registration-bg.png";
+import { AuthRolePicker } from "../../components/AuthRolePicker";
 import { useAuth } from "../../context/AuthContext";
 
 export function AuthScreen() {
@@ -92,31 +93,7 @@ export function AuthScreen() {
             </>
           ) : null}
 
-          {mode === "register" ? (
-            <fieldset className="auth-role-picker">
-              <legend>Тип аккаунта</legend>
-              <label>
-                <input
-                  type="radio"
-                  name="role"
-                  value="musician"
-                  checked={role === "musician"}
-                  onChange={() => setRole("musician")}
-                />
-                Музыкант / группа
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="role"
-                  value="label"
-                  checked={role === "label"}
-                  onChange={() => setRole("label")}
-                />
-                Лейбл / продюсер
-              </label>
-            </fieldset>
-          ) : null}
+          {mode === "register" ? <AuthRolePicker value={role} onChange={setRole} /> : null}
 
           <label className="auth-field">
             <span>Email</span>

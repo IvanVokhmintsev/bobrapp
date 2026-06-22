@@ -122,25 +122,120 @@ label {
 .auth-role-picker {
   display: grid;
   gap: 10px;
-  margin: 0 0 10px;
-  padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 0 0 14px;
+}
+
+.auth-role-picker__label {
+  display: block;
+  margin: 0 0 2px 8px;
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.auth-role-picker__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.auth-role-picker__option {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 12px;
+  align-items: start;
+  min-height: 88px;
+  padding: 14px 14px 14px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
+  color: #ffffff;
+  text-align: left;
+  background: rgba(138, 138, 138, 0.12);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
-.auth-role-picker legend {
-  margin-bottom: 4px;
+.auth-role-picker__option:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(138, 138, 138, 0.18);
+}
+
+.auth-role-picker__option:focus-visible {
+  outline: 2px solid rgba(57, 216, 240, 0.75);
+  outline-offset: 2px;
+}
+
+.auth-role-picker__option.is-selected {
+  border-color: rgba(255, 15, 22, 0.72);
+  background: rgba(255, 15, 22, 0.1);
+  box-shadow: 0 0 0 1px rgba(255, 15, 22, 0.18);
+}
+
+.auth-role-picker__icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
   color: #ffffff;
-  font-size: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.auth-role-picker__option.is-selected .auth-role-picker__icon {
+  color: #ff5a60;
+  background: rgba(255, 15, 22, 0.16);
+}
+
+.auth-role-picker__copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding-right: 18px;
+}
+
+.auth-role-picker__copy strong {
+  font-size: 15px;
   font-weight: 650;
+  line-height: 1.2;
 }
 
-.auth-role-picker label {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: #ffffff;
-  font-size: 14px;
+.auth-role-picker__copy span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.auth-role-picker__indicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.auth-role-picker__option.is-selected .auth-role-picker__indicator {
+  border-color: #ff0f16;
+  background: #ff0f16;
+  box-shadow: inset 0 0 0 3px #171717;
+}
+
+@media (max-width: 520px) {
+  .auth-role-picker__options {
+    grid-template-columns: 1fr;
+  }
 }
 
 .auth-field {
