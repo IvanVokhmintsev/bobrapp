@@ -19,7 +19,7 @@ export function ProfilePostsSection(props: ProfilePostsSectionProps) {
       <h2>Публикации</h2>
       {feed.error ? <p className="feed__error">{feed.error}</p> : null}
       {feed.posts.length ? (
-        <div className="profile-posts-feed">
+        <div className="profile-posts-feed feed__stream">
           {feed.posts.map((post) => (
             <FeedPostCard
               key={post.id}

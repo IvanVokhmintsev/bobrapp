@@ -7,9 +7,10 @@
   --profile-text: #ffffff;
   --profile-red: #ff3038;
   --profile-pro: rgba(57, 216, 240, 0.2);
+  --profile-column-width: min(100%, 560px);
+  --profile-main-width: min(100%, 882px);
 
-  width: min(100%, 720px);
-  margin: 0 auto;
+  width: 100%;
   min-height: calc(100vh - 60px);
   color: var(--profile-text);
   font-family: inherit;
@@ -25,26 +26,32 @@
 
 .profile-page__main {
   display: flex;
+  width: var(--profile-main-width);
   min-height: calc(100vh - 60px);
   flex-direction: column;
   align-items: center;
-  gap: 0;
-  padding: 42px 32px;
+  margin: 0 auto;
+  padding: 30px 16px;
   overflow-y: auto;
   border-radius: 22px;
   background: var(--profile-panel);
 }
 
+.profile-page__column {
+  display: flex;
+  width: var(--profile-column-width);
+  flex-direction: column;
+}
+
 .profile-summary {
   display: flex;
-  width: min(100%, 420px);
+  width: 100%;
   flex-direction: column;
   gap: 0;
 }
 
 .profile-card {
   width: 100%;
-  max-width: 420px;
 }
 
 .profile-card__header-row {

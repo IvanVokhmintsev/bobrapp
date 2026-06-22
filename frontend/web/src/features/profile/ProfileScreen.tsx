@@ -178,31 +178,33 @@ export function ProfileScreen() {
       {notice ? <p className="app-page__hint">{notice}</p> : null}
       <div className="profile-page">
         <main className="profile-page__main">
-          <ProfileSummary
-            user={user}
-            members={members}
-            tags={tags}
-            albums={albums}
-            concerts={concerts}
-            bio={bio}
-            profileType={profileType}
-            blockStatuses={blockStatuses}
-            isOwnProfile={isOwnProfile}
-            canOpenRoadmap={isOwnProfile && authUser?.role === "musician"}
-            onEdit={() => setEditOpen(true)}
-            onManageContent={() => setContentEditOpen(true)}
-            onAvatarUpdated={handleProfileSaved}
-            onToggleFollow={() => void toggleFollow()}
-            onContact={() => showComingSoon("Связаться с артистом")}
-            onFavorite={() => showComingSoon("Избранное")}
-          />
-          {authUser ? (
-            <ProfilePostsSection
-              profileUser={user}
-              currentUser={authUser}
-              feed={profileFeed}
+          <div className="profile-page__column">
+            <ProfileSummary
+              user={user}
+              members={members}
+              tags={tags}
+              albums={albums}
+              concerts={concerts}
+              bio={bio}
+              profileType={profileType}
+              blockStatuses={blockStatuses}
+              isOwnProfile={isOwnProfile}
+              canOpenRoadmap={isOwnProfile && authUser?.role === "musician"}
+              onEdit={() => setEditOpen(true)}
+              onManageContent={() => setContentEditOpen(true)}
+              onAvatarUpdated={handleProfileSaved}
+              onToggleFollow={() => void toggleFollow()}
+              onContact={() => showComingSoon("Связаться с артистом")}
+              onFavorite={() => showComingSoon("Избранное")}
             />
-          ) : null}
+            {authUser ? (
+              <ProfilePostsSection
+                profileUser={user}
+                currentUser={authUser}
+                feed={profileFeed}
+              />
+            ) : null}
+          </div>
         </main>
       </div>
 
