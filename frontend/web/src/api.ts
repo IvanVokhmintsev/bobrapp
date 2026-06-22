@@ -138,12 +138,55 @@ export type ApiProposal = {
   readAt: string | null;
   createdAt: string;
   updatedAt: string;
+  unreadByMe: boolean;
   sender: {
     id: string;
     name: string;
     role: UserRole;
     companyName: string | null;
   };
+};
+
+export type ApiSentProposal = {
+  id: string;
+  subject: string;
+  message: string;
+  linkUrl: string | null;
+  status: "pending" | "read" | "archived";
+  readAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  unreadByMe: boolean;
+  recipient: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+  };
+};
+
+export type ApiProposalMessage = {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorRole: UserRole;
+  text: string;
+  createdAt: string;
+};
+
+export type ApiProposalThread = {
+  id: string;
+  subject: string;
+  linkUrl: string | null;
+  status: "pending" | "read" | "archived";
+  unreadByMe: boolean;
+  counterpart: {
+    id: string;
+    name: string;
+    displayName: string;
+    avatarUrl: string | null;
+    companyName: string | null;
+  };
+  messages: ApiProposalMessage[];
 };
 
 import { apiUrl } from "./lib/apiUrl.js";
@@ -614,8 +657,25 @@ export const api = {
   getProposals() {
     return request<{ proposals: ApiProposal[] }>("/profile/me/proposals");
   },
+  getSentProposals() {
+    return request<{ proposals: ApiSentProposal[] }>("/profile/me/proposals/sent");
+  },
   getProposalUnreadCount() {
     return request<{ unreadCount: number }>("/profile/me/proposals/unread-count");
+  },
+  getProposalThread(proposalId: string) {
+    return request<{ thread: ApiProposalThread }>(
+      `/profile/me/proposals/${proposalId}/thread`,
+    );
+  },
+  sendProposalMessage(proposalId: string, input: { text: string }) {
+    return request<{ message: ApiProposalMessage }>(
+      `/profile/me/proposals/${proposalId}/messages`,
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+    );
   },
   markProposalRead(proposalId: string) {
     return request<{ proposal: ApiProposal }>(

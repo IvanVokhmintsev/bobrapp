@@ -4,6 +4,10 @@ export type SendProposalBody = {
   linkUrl?: string;
 };
 
+export type SendProposalMessageBody = {
+  text: string;
+};
+
 export type ProposalParams = {
   proposalId: string;
 };

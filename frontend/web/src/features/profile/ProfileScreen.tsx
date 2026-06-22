@@ -282,7 +282,7 @@ export function ProfileScreen() {
           artist={user}
           incompleteBlocks={blockStatuses}
           onClose={() => setContactOpen(false)}
-          onSent={() => setNotice("Предложение отправлено артисту")}
+          onSent={() => setNotice("Предложение отправлено. Смотрите статус в разделе «Предложения».")}
         />
       ) : null}
     </>

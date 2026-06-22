@@ -35,6 +35,7 @@ function buildNavItems(role: ApiUser["role"]) {
       baseNavItems[0],
       baseNavItems[1],
       baseNavItems[2],
+      { to: "/proposals", label: "Предложения", icon: "proposals" as const },
       baseNavItems[5],
     ];
   }
@@ -68,10 +69,6 @@ export function AppSidebar(props: AppSidebarProps) {
   const isLabel = props.user.role === "label";
 
   useEffect(() => {
-    if (props.user.role !== "musician") {
-      return;
-    }
-
     void api
       .getProposalUnreadCount()
       .then((result) => setUnreadProposals(result.unreadCount))

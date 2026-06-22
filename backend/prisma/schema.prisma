@@ -99,6 +99,7 @@ model User {
   achievements    Achievement[]
   sentProposals     CollaborationProposal[] @relation("sent_proposals")
   receivedProposals CollaborationProposal[] @relation("received_proposals")
+  proposalMessages  ProposalMessage[]
 }
 
 model MusicianProfile {
@@ -145,16 +146,34 @@ model CollaborationProposal {
   subject     String
   message     String
   linkUrl     String?
-  status      CollaborationProposalStatus @default(pending)
-  readAt      DateTime?
-  createdAt   DateTime                    @default(now())
-  updatedAt   DateTime                    @updatedAt
+  status                CollaborationProposalStatus @default(pending)
+  readAt                DateTime?
+  lastMessageAt         DateTime?
+  lastMessageAuthorId   String?
+  lastReadBySenderAt    DateTime?
+  lastReadByRecipientAt DateTime?
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
 
-  sender    User @relation("sent_proposals", fields: [senderId], references: [id], onDelete: Cascade)
-  recipient User @relation("received_proposals", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender    User              @relation("sent_proposals", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User              @relation("received_proposals", fields: [recipientId], references: [id], onDelete: Cascade)
+  messages  ProposalMessage[]
 
   @@index([recipientId, createdAt])
   @@index([senderId, createdAt])
+}
+
+model ProposalMessage {
+  id         String   @id @default(uuid())
+  proposalId String
+  authorId   String
+  text       String
+  createdAt  DateTime @default(now())
+
+  proposal CollaborationProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  author   User                  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId, createdAt])
 }
 
 model Post {

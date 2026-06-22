@@ -15,7 +15,8 @@ export function AppTabBar(props: AppTabBarProps) {
       {navItems.map((item) => {
         const isActive =
           location.pathname === item.to ||
-          (item.to === "/roadmap/map" && location.pathname.startsWith("/roadmap"));
+          (item.to === "/roadmap/map" && location.pathname.startsWith("/roadmap")) ||
+          (item.to === "/proposals" && location.pathname.startsWith("/proposals"));
 
         return (
           <Link key={item.label} to={item.to} className={isActive ? "is-active" : undefined}>
@@ -33,7 +34,7 @@ function buildTabItems(role: ApiUser["role"]) {
     return [
       { to: "/feed", label: "Лента" },
       { to: "/people", label: "Музыканты" },
-      { to: "/favorites", label: "Избранное" },
+      { to: "/proposals", label: "Предложения" },
       { to: "/profile", label: "Профиль" },
     ] as const;
   }
@@ -93,6 +94,24 @@ function TabIcon(props: { label: string }) {
             d="M6 4.5h10v13l-5-3.5L6 17.5V4.5Z"
             stroke="currentColor"
             strokeWidth="1.5"
+            fill="none"
+          />
+        </svg>
+      );
+    case "Предложения":
+      return (
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+          <path
+            d="M3 6h16v10H3V6Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            fill="none"
+          />
+          <path
+            d="M3 7l8 5 8-5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
             fill="none"
           />
         </svg>

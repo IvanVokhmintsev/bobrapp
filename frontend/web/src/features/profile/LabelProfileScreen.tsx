@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import { api, type ApiUser } from "../../api";
 import "./label-profile.css";
@@ -43,7 +44,9 @@ export function LabelProfileScreen(props: LabelProfileScreenProps) {
     <main className="app-page label-profile-page">
       <h1>Профиль лейбла</h1>
       <p className="app-page__intro">
-        Здесь данные вашей компании. Для оценки артистов используйте ленту, каталог музыкантов и избранное.
+        Здесь данные вашей компании. Для оценки артистов используйте ленту, каталог музыкантов и
+        избранное.{" "}
+        <Link to="/proposals">Отправленные предложения</Link> — в отдельном разделе навигации.
       </p>
 
       <section className="label-profile-page__panel app-page__panel">

@@ -29,3 +29,15 @@ export const proposalParamsSchema = {
     },
   },
 } as const;
+
+export const sendProposalMessageSchema = {
+  params: proposalParamsSchema.params,
+  body: {
+    type: "object",
+    required: ["text"],
+    additionalProperties: false,
+    properties: {
+      text: { type: "string", minLength: 1, maxLength: 2000 },
+    },
+  },
+} as const;
