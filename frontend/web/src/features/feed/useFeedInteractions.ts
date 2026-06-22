@@ -1,15 +1,20 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   api,
   type ApiComment,
   type ApiPost,
   type ApiUser,
-  type PostType,
 } from "../../api";
+import {
+  buildAudioTitle,
+  type FeedPostMedia,
+  readAudioDuration,
+} from "./feedPostMedia";
 
 type CommentsByPost = Record<string, ApiComment[]>;
 type CommentTextByPost = Record<string, string>;
+type PostMediaById = Record<string, FeedPostMedia>;
 
 function toggleInSet(values: Set<string>, id: string) {
   const next = new Set(values);
@@ -28,7 +33,12 @@ type UseFeedInteractionsOptions = {
 export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [text, setText] = useState("");
-  const [type, setType] = useState<PostType>("professional");
+  const [composerImage, setComposerImage] = useState<File | null>(null);
+  const [composerAudio, setComposerAudio] = useState<File | null>(null);
+  const [composerAudioDurationSec, setComposerAudioDurationSec] = useState<
+    number | null
+  >(null);
+  const [postMediaById, setPostMediaById] = useState<PostMediaById>({});
   const [error, setError] = useState("");
   const [commentsByPost, setCommentsByPost] = useState<CommentsByPost>({});
   const [expandedCommentPostIds, setExpandedCommentPostIds] = useState(
@@ -53,18 +63,160 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
     });
   }, [loadPosts]);
 
-  async function createPost() {
+  useEffect(() => {
+    if (!composerAudio) {
+      setComposerAudioDurationSec(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    void readAudioDuration(composerAudio).then((duration) => {
+      if (!cancelled) {
+        setComposerAudioDurationSec(duration);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [composerAudio]);
+
+  const visiblePosts = useMemo(() => posts, [posts]);
+
+  function resetComposer() {
+    setText("");
+    setComposerImage(null);
+    setComposerAudio(null);
+    setComposerAudioDurationSec(null);
+  }
+
+  async function createPost(currentUser: ApiUser) {
+    const trimmedText = text.trim();
+    const hasAttachments = Boolean(composerImage || composerAudio);
+
+    if (!trimmedText && !hasAttachments) {
+      setError("Добавьте текст, фото или аудио");
+      return;
+    }
+
+    const imageUrl = composerImage ? URL.createObjectURL(composerImage) : null;
+    const audioUrl = composerAudio ? URL.createObjectURL(composerAudio) : null;
+    const audioTitle = composerAudio
+      ? buildAudioTitle(composerAudio.name, currentUser.name)
+      : null;
+
+    const localMedia: FeedPostMedia = {
+      imageUrl,
+      audioUrl,
+      audioTitle,
+      audioDurationSec: composerAudioDurationSec,
+    };
+
     try {
       setError("");
-      await api.createPost({ text, type });
-      setText("");
-      await loadPosts();
+
+      if (trimmedText || !hasAttachments) {
+        const result = await api.createPost({
+          text: trimmedText,
+          type: "professional",
+        });
+
+        if (hasAttachments) {
+          setPostMediaById((current) => ({
+            ...current,
+            [result.post.id]: localMedia,
+          }));
+        }
+
+        resetComposer();
+        await loadPosts();
+        return;
+      }
+
+      const optimisticPost: ApiPost = {
+        id: `local-${crypto.randomUUID()}`,
+        text: trimmedText,
+        type: "professional",
+        likesCount: 0,
+        commentsCount: 0,
+        repostsCount: 0,
+        likedByMe: false,
+        repostedByMe: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        author: {
+          id: currentUser.id,
+          name: currentUser.name,
+          role: currentUser.role,
+          avatarUrl: currentUser.musicianProfile?.avatarUrl ?? null,
+        },
+      };
+
+      setPostMediaById((current) => ({
+        ...current,
+        [optimisticPost.id]: localMedia,
+      }));
+      setPosts((currentPosts) => [optimisticPost, ...currentPosts]);
+      resetComposer();
     } catch (caught) {
+      if (hasAttachments) {
+        const optimisticPost: ApiPost = {
+          id: `local-${crypto.randomUUID()}`,
+          text: trimmedText,
+          type: "professional",
+          likesCount: 0,
+          commentsCount: 0,
+          repostsCount: 0,
+          likedByMe: false,
+          repostedByMe: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          author: {
+            id: currentUser.id,
+            name: currentUser.name,
+            role: currentUser.role,
+            avatarUrl: currentUser.musicianProfile?.avatarUrl ?? null,
+          },
+        };
+
+        setPostMediaById((current) => ({
+          ...current,
+          [optimisticPost.id]: localMedia,
+        }));
+        setPosts((currentPosts) => [optimisticPost, ...currentPosts]);
+        resetComposer();
+        setError(
+          caught instanceof Error
+            ? `${caught.message}. Пост сохранён только локально.`
+            : "Пост сохранён только локально.",
+        );
+        return;
+      }
+
       setError(caught instanceof Error ? caught.message : "Не удалось опубликовать пост");
     }
   }
 
   async function likePost(id: string) {
+    if (id.startsWith("local-")) {
+      setPosts((currentPosts) =>
+        currentPosts.map((post) => {
+          if (post.id !== id) {
+            return post;
+          }
+
+          const likedByMe = !post.likedByMe;
+          return {
+            ...post,
+            likedByMe,
+            likesCount: Math.max(0, post.likesCount + (likedByMe ? 1 : -1)),
+          };
+        }),
+      );
+      return;
+    }
+
     const target = posts.find((post) => post.id === id);
     if (!target) {
       return;
@@ -84,10 +236,25 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   }
 
   async function deletePost(id: string) {
+    if (id.startsWith("local-")) {
+      setPosts((currentPosts) => currentPosts.filter((post) => post.id !== id));
+      setPostMediaById((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+      return;
+    }
+
     try {
       setError("");
       await api.deletePost(id);
       setPosts((currentPosts) => currentPosts.filter((post) => post.id !== id));
+      setPostMediaById((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
       setCommentsByPost((current) => {
         const next = { ...current };
         delete next[id];
@@ -109,6 +276,11 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   }
 
   async function toggleComments(postId: string) {
+    if (postId.startsWith("local-")) {
+      setExpandedCommentPostIds((current) => toggleInSet(current, postId));
+      return;
+    }
+
     if (expandedCommentPostIds.has(postId)) {
       setExpandedCommentPostIds((current) => toggleInSet(current, postId));
       return;
@@ -146,6 +318,14 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   async function createComment(postId: string) {
     const commentText = commentTextByPost[postId]?.trim();
     if (!commentText) {
+      return;
+    }
+
+    if (postId.startsWith("local-")) {
+      setCommentTextByPost((current) => ({
+        ...current,
+        [postId]: "",
+      }));
       return;
     }
 
@@ -209,11 +389,14 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   }
 
   return {
-    posts,
+    posts: visiblePosts,
+    postMediaById,
     text,
     setText,
-    type,
-    setType,
+    composerImage,
+    setComposerImage,
+    composerAudio,
+    setComposerAudio,
     error,
     createPost,
     likePost,

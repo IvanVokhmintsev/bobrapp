@@ -1,30 +1,38 @@
+import { useRef } from "react";
+
 import type { ApiComment, ApiPost, ApiUser } from "../../api";
-import bookmarkIcon from "../../assets/feed/bookmark-action.png";
-import defaultCover from "../../assets/feed/card-cover.png";
 import commentIcon from "../../assets/feed/comment-action.png";
+import defaultAvatar from "../../assets/feed/card-cover.png";
 import likeIcon from "../../assets/feed/like-action.png";
-import playIcon from "../../assets/feed/play-button.png";
-import shareIcon from "../../assets/feed/share-action.png";
+import musicNoteIcon from "../../assets/feed/music-note.svg";
+import levelFlagIcon from "../../assets/profile/level-flag.svg";
+import { getMusicianLevel } from "../../lib/musicianLevel";
+import { resolveAvatarUrl } from "../../lib/avatarUrl";
+import {
+  formatAudioDuration,
+  getDemoCoverSrc,
+  getPostDisplayMode,
+  type FeedPostMedia,
+} from "./feedPostMedia";
 import type { FeedPostCardHandlers, FeedPostCardState } from "./useFeedInteractions";
 import { formatPostTime } from "./useFeedInteractions";
 
-const presaveLinks = [
-  { id: "vk", label: "Пресейв", brand: "vk" },
-  { id: "apple", label: "Пресейв", brand: "apple" },
-  { id: "spotify", label: "Пресейв", brand: "spotify" },
-] as const;
+const DEMO_AUDIO_TITLE = "Любим Древесину – Крутые бобры";
+const DEMO_AUDIO_DURATION_SEC = 172;
 
 type FeedPostCardProps = FeedPostCardHandlers &
   FeedPostCardState & {
     post: ApiPost;
     currentUser: ApiUser;
+    media?: FeedPostMedia;
   };
 
 export function FeedPostCard(props: FeedPostCardProps) {
   const canDelete = props.post.author.id === props.currentUser.id;
-  const coverSrc = props.post.author.avatarUrl ?? defaultCover;
+  const avatarSrc = resolveAvatarUrl(props.post.author.avatarUrl, defaultAvatar);
   const level = getAuthorLevel(props.post, props.currentUser);
-  const caption = getPostCaption(props.post);
+  const displayMode = getPostDisplayMode(props.post, props.media);
+  const caption = getPostCaption(props.post, displayMode);
 
   return (
     <article className="feed-card" data-post-type={props.post.type}>
@@ -33,20 +41,21 @@ export function FeedPostCard(props: FeedPostCardProps) {
           <div className="feed-card__avatar-stack" aria-hidden="true">
             <span className="feed-card__avatar-ring feed-card__avatar-ring--dark" />
             <span className="feed-card__avatar-ring feed-card__avatar-ring--muted" />
-            <img className="feed-card__avatar" src={coverSrc} alt="" />
+            <img className="feed-card__avatar" src={avatarSrc} alt="" />
           </div>
           <div className="feed-card__meta">
             <div className="feed-card__name-row">
               <span className="feed-card__name">{props.post.author.name}</span>
               {props.post.author.role === "musician" ? (
                 <span className="feed-card__level" aria-label={`Уровень ${level}`}>
-                  {level}
+                  <img src={levelFlagIcon} alt="" />
+                  <strong>{level}</strong>
                 </span>
               ) : null}
+              <time className="feed-card__time" dateTime={props.post.createdAt}>
+                {formatPostTime(props.post.createdAt)}
+              </time>
             </div>
-            <time className="feed-card__time" dateTime={props.post.createdAt}>
-              {formatPostTime(props.post.createdAt)}
-            </time>
           </div>
         </div>
         <div className="feed-card__menu">
@@ -70,21 +79,29 @@ export function FeedPostCard(props: FeedPostCardProps) {
       </header>
 
       <div className="feed-card__panel">
-        {props.post.type === "roadmap" ? (
-          <RoadmapBody post={props.post} coverSrc={coverSrc} />
+        {displayMode === "roadmap" ? (
+          <RoadmapBody post={props.post} coverSrc={avatarSrc} />
+        ) : displayMode === "demo" ? (
+          <DemoBody
+            post={props.post}
+            media={props.media}
+            caption={caption}
+          />
         ) : (
-          <ProfessionalBody post={props.post} coverSrc={coverSrc} />
+          <p className="feed-card__caption feed-card__caption--solo">{caption}</p>
         )}
-        <p className="feed-card__caption">{caption}</p>
       </div>
 
       <footer className="feed-card__footer">
         <div className="feed-card__stats">
           <button
             type="button"
-            className={`feed-card__stat ${props.post.likedByMe ? "is-active" : ""}`}
+            className={`feed-card__stat feed-card__stat--like ${
+              props.post.likedByMe ? "is-active" : ""
+            }`}
             onClick={props.onLike}
             aria-label={`Лайки: ${props.post.likesCount}`}
+            aria-pressed={props.post.likedByMe}
           >
             <img src={likeIcon} alt="" />
             <span>{props.post.likesCount}</span>
@@ -99,22 +116,7 @@ export function FeedPostCard(props: FeedPostCardProps) {
             <img src={commentIcon} alt="" />
             <span>{props.post.commentsCount}</span>
           </button>
-          <button
-            type="button"
-            className="feed-card__stat"
-            aria-label={`Репосты: ${props.post.repostsCount}`}
-          >
-            <img src={shareIcon} alt="" />
-            <span>{props.post.repostsCount}</span>
-          </button>
         </div>
-        <button type="button" className="feed-card__roadmap">
-          <img src={bookmarkIcon} alt="" />
-          <span>Роудмап</span>
-          <span className="feed-card__roadmap-chevron" aria-hidden="true">
-            ›
-          </span>
-        </button>
       </footer>
 
       {props.commentsOpen ? (
@@ -133,24 +135,72 @@ export function FeedPostCard(props: FeedPostCardProps) {
   );
 }
 
-function ProfessionalBody(props: { post: ApiPost; coverSrc: string }) {
+function DemoBody(props: {
+  post: ApiPost;
+  media?: FeedPostMedia;
+  caption: string;
+}) {
+  const coverSrc = getDemoCoverSrc(props.media);
+  const audioTitle =
+    props.media?.audioTitle ??
+    (props.media?.audioUrl ? "Демо-трек" : DEMO_AUDIO_TITLE);
+  const audioDurationSec =
+    props.media?.audioDurationSec ??
+    (props.media?.audioUrl ? null : DEMO_AUDIO_DURATION_SEC);
+  const showAudio = Boolean(props.media?.audioUrl) || !props.post.text.trim();
+
   return (
     <div className="feed-card__body feed-card__body--demo">
+      <p className="feed-card__caption">{props.caption}</p>
       <div className="feed-card__demo-cover">
-        <img src={props.coverSrc} alt="" />
-        <img className="feed-card__play" src={playIcon} alt="" />
+        <img src={coverSrc} alt="" />
       </div>
-      <div className="feed-card__services">
-        {presaveLinks.map((link) => (
-          <button key={link.id} type="button" className="feed-card__service">
-            <span className={`feed-card__service-icon feed-card__service-icon--${link.brand}`} />
-            <span className="feed-card__service-label">{link.label}</span>
-            <span className="feed-card__service-chevron" aria-hidden="true">
-              ›
-            </span>
-          </button>
-        ))}
+      {showAudio ? (
+        <AudioBar
+          audioUrl={props.media?.audioUrl}
+          title={audioTitle}
+          durationSec={audioDurationSec}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function AudioBar(props: {
+  audioUrl?: string | null;
+  title: string;
+  durationSec: number | null;
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  return (
+    <div className="feed-card__audio">
+      <button
+        type="button"
+        className="feed-card__audio-play"
+        aria-label="Воспроизвести"
+        onClick={() => {
+          const audio = audioRef.current;
+          if (!audio) {
+            return;
+          }
+
+          if (audio.paused) {
+            void audio.play();
+          } else {
+            audio.pause();
+          }
+        }}
+      >
+        <img src={musicNoteIcon} alt="" />
+      </button>
+      <div className="feed-card__audio-meta">
+        <span className="feed-card__audio-title">{props.title}</span>
+        <span className="feed-card__audio-duration">
+          {formatAudioDuration(props.durationSec)}
+        </span>
       </div>
+      {props.audioUrl ? <audio ref={audioRef} src={props.audioUrl} preload="metadata" /> : null}
     </div>
   );
 }
@@ -181,7 +231,7 @@ function CommentsBlock(props: {
 }) {
   return (
     <section className="feed-card__comments" aria-label="Комментарии">
-      {props.loading ? <p className="feed-card__comments-empty">Загрузка…</p> : null}
+      {props.loading ? <p className="feed-card__comments-empty">Загрузка...</p> : null}
       {!props.loading && props.comments.length === 0 ? (
         <p className="feed-card__comments-empty">Пока нет комментариев</p>
       ) : null}
@@ -225,12 +275,12 @@ function CommentsBlock(props: {
   );
 }
 
-function getPostCaption(post: ApiPost) {
+function getPostCaption(post: ApiPost, displayMode: "demo" | "text" | "roadmap") {
   if (post.text.trim()) {
     return post.text;
   }
 
-  if (post.type === "roadmap") {
+  if (displayMode === "roadmap") {
     return `${post.author.name} достигли нового уровня`;
   }
 
@@ -238,10 +288,9 @@ function getPostCaption(post: ApiPost) {
 }
 
 function getAuthorLevel(post: ApiPost, currentUser: ApiUser) {
-  if (post.author.id === currentUser.id && currentUser.musicianProfile) {
-    const points = currentUser.musicianProfile.points;
-    return Math.min(9, Math.max(1, Math.floor(points / 15) + 1));
+  if (post.author.id === currentUser.id) {
+    return getMusicianLevel(currentUser.musicianProfile?.points);
   }
 
-  return 7;
+  return getMusicianLevel(null);
 }

@@ -1,89 +1,110 @@
-import type { PostType } from "../../api";
+import { useRef } from "react";
 
-export function FeedTopBar() {
-  return (
-    <header className="feed-topbar">
-      <div className="feed-topbar__title-wrap">
-        <p className="feed-topbar__kicker">Bobrapp</p>
-        <h1 className="feed-topbar__title">Лента</h1>
-      </div>
-      <div className="feed-topbar__tools" aria-label="Действия ленты">
-        <button type="button" className="feed-topbar__tool" aria-label="Поиск">
-          <SearchIcon />
-        </button>
-        <button type="button" className="feed-topbar__tool" aria-label="Фильтры">
-          <FilterIcon />
-        </button>
-      </div>
-    </header>
-  );
-}
+import attachAudioIcon from "../../assets/feed/attach-audio.svg";
+import attachPhotoIcon from "../../assets/feed/attach-photo.svg";
+import sendArrowIcon from "../../assets/feed/send-arrow.svg";
 
 export function FeedComposer(props: {
   text: string;
-  type: PostType;
+  imageFile: File | null;
+  audioFile: File | null;
   onTextChange: (value: string) => void;
-  onTypeChange: (value: PostType) => void;
+  onImageChange: (file: File | null) => void;
+  onAudioChange: (file: File | null) => void;
   onSubmit: () => void;
 }) {
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+
   return (
     <section className="feed-composer" aria-label="Новый пост">
       <textarea
         value={props.text}
         onChange={(event) => props.onTextChange(event.target.value)}
-        placeholder="Что нового у вас в музыке?"
+        placeholder="Введите текст"
         rows={3}
       />
-      <div className="feed-composer__actions">
-        <select
-          value={props.type}
-          onChange={(event) => props.onTypeChange(event.target.value as PostType)}
-          aria-label="Тип поста"
+
+      {props.imageFile || props.audioFile ? (
+        <div className="feed-composer__attachments" aria-label="Вложения">
+          {props.imageFile ? (
+            <span className="feed-composer__attachment">
+              Фото: {props.imageFile.name}
+              <button
+                type="button"
+                onClick={() => props.onImageChange(null)}
+                aria-label="Убрать фото"
+              >
+                ×
+              </button>
+            </span>
+          ) : null}
+          {props.audioFile ? (
+            <span className="feed-composer__attachment">
+              Аудио: {props.audioFile.name}
+              <button
+                type="button"
+                onClick={() => props.onAudioChange(null)}
+                aria-label="Убрать аудио"
+              >
+                ×
+              </button>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="feed-composer__toolbar">
+        <div className="feed-composer__tools">
+          <button
+            type="button"
+            className={`feed-composer__tool ${props.imageFile ? "is-active" : ""}`}
+            onClick={() => imageInputRef.current?.click()}
+          >
+            <img src={attachPhotoIcon} alt="" />
+            <span>Фото</span>
+          </button>
+          <button
+            type="button"
+            className={`feed-composer__tool ${props.audioFile ? "is-active" : ""}`}
+            onClick={() => audioInputRef.current?.click()}
+          >
+            <img src={attachAudioIcon} alt="" />
+            <span>Аудио</span>
+          </button>
+        </div>
+        <button
+          type="button"
+          className="feed-composer__send"
+          onClick={props.onSubmit}
+          aria-label="Опубликовать"
         >
-          <option value="professional">Проф. пост</option>
-          <option value="roadmap">Роудмап</option>
-        </select>
-        <button type="button" onClick={props.onSubmit}>
-          Опубликовать
+          <img src={sendArrowIcon} alt="" />
         </button>
       </div>
-    </section>
-  );
-}
 
-export function FeedProBanner() {
-  return (
-    <section className="feed-pro" aria-label="Подписка Pro">
-      <button type="button" className="feed-pro__close" aria-label="Закрыть">
-        ×
-      </button>
-      <p>
-        Оформите подписку Pro, чтобы повысить видимость ваших постов и
-        разблокировать дополнительный функционал
-      </p>
-      <strong>попробовать от 199₽/мес ›</strong>
-    </section>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-      <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <path d="M11.5 11.5L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function FilterIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-      <path
-        d="M2 4h14M5 9h8M7 14h4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0] ?? null;
+          props.onImageChange(file);
+          event.target.value = "";
+        }}
       />
-    </svg>
+      <input
+        ref={audioInputRef}
+        type="file"
+        accept="audio/*"
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0] ?? null;
+          props.onAudioChange(file);
+          event.target.value = "";
+        }}
+      />
+    </section>
   );
 }
