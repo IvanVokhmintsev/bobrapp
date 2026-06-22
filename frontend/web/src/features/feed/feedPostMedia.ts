@@ -1,3 +1,5 @@
+import { parseBlob } from "music-metadata";
+
 import type { ApiPost } from "../../api";
 import defaultCover from "../../assets/feed/cover.png";
 
@@ -6,6 +8,13 @@ export type FeedPostMedia = {
   audioUrl: string | null;
   audioTitle: string | null;
   audioDurationSec: number | null;
+};
+
+export type AudioFileMetadata = {
+  durationSec: number | null;
+  title: string | null;
+  artist: string | null;
+  coverUrl: string | null;
 };
 
 export type FeedPostDisplayMode = "demo" | "text" | "roadmap";
@@ -70,7 +79,55 @@ export async function readAudioDuration(file: File) {
   }
 }
 
+export async function readAudioFileMetadata(file: File): Promise<AudioFileMetadata> {
+  try {
+    const metadata = await parseBlob(file);
+    const picture = metadata.common.picture?.[0];
+    const duration = metadata.format.duration;
+
+    return {
+      durationSec: duration && duration > 0 ? duration : null,
+      title: metadata.common.title?.trim() || null,
+      artist: metadata.common.artist?.trim() || null,
+      coverUrl: picture
+        ? URL.createObjectURL(
+            new Blob([Uint8Array.from(picture.data)], { type: picture.format }),
+          )
+        : null,
+    };
+  } catch {
+    return {
+      durationSec: await readAudioDuration(file),
+      title: null,
+      artist: null,
+      coverUrl: null,
+    };
+  }
+}
+
 export function buildAudioTitle(fileName: string, authorName: string) {
   const trackName = stripFileExtension(fileName);
   return `${trackName} – ${authorName}`;
+}
+
+export function buildAudioTitleFromMetadata(
+  metadata: Pick<AudioFileMetadata, "title" | "artist">,
+  fileName: string,
+  authorName: string,
+) {
+  if (metadata.title && metadata.artist) {
+    return `${metadata.title} – ${metadata.artist}`;
+  }
+
+  if (metadata.title) {
+    return `${metadata.title} – ${authorName}`;
+  }
+
+  return buildAudioTitle(fileName, authorName);
+}
+
+export function revokeObjectUrl(url: string | null | undefined) {
+  if (url?.startsWith("blob:")) {
+    URL.revokeObjectURL(url);
+  }
 }

@@ -7,9 +7,10 @@ import {
   type ApiUser,
 } from "../../api";
 import {
-  buildAudioTitle,
+  buildAudioTitleFromMetadata,
   type FeedPostMedia,
-  readAudioDuration,
+  readAudioFileMetadata,
+  revokeObjectUrl,
 } from "./feedPostMedia";
 
 type CommentsByPost = Record<string, ApiComment[]>;
@@ -38,6 +39,13 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   const [composerAudioDurationSec, setComposerAudioDurationSec] = useState<
     number | null
   >(null);
+  const [composerAudioCoverUrl, setComposerAudioCoverUrl] = useState<string | null>(
+    null,
+  );
+  const [composerAudioTags, setComposerAudioTags] = useState<{
+    title: string | null;
+    artist: string | null;
+  }>({ title: null, artist: null });
   const [postMediaById, setPostMediaById] = useState<PostMediaById>({});
   const [error, setError] = useState("");
   const [commentsByPost, setCommentsByPost] = useState<CommentsByPost>({});
@@ -66,15 +74,31 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   useEffect(() => {
     if (!composerAudio) {
       setComposerAudioDurationSec(null);
+      setComposerAudioTags({ title: null, artist: null });
+      setComposerAudioCoverUrl((current) => {
+        revokeObjectUrl(current);
+        return null;
+      });
       return;
     }
 
     let cancelled = false;
 
-    void readAudioDuration(composerAudio).then((duration) => {
-      if (!cancelled) {
-        setComposerAudioDurationSec(duration);
+    void readAudioFileMetadata(composerAudio).then((metadata) => {
+      if (cancelled) {
+        revokeObjectUrl(metadata.coverUrl);
+        return;
       }
+
+      setComposerAudioCoverUrl((current) => {
+        revokeObjectUrl(current);
+        return metadata.coverUrl;
+      });
+      setComposerAudioDurationSec(metadata.durationSec);
+      setComposerAudioTags({
+        title: metadata.title,
+        artist: metadata.artist,
+      });
     });
 
     return () => {
@@ -82,13 +106,28 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
     };
   }, [composerAudio]);
 
+  function setComposerAudioFile(file: File | null) {
+    setComposerAudio(file);
+  }
+
+  function setComposerImageFile(file: File | null) {
+    setComposerImage(file);
+  }
+
   const visiblePosts = useMemo(() => posts, [posts]);
 
-  function resetComposer() {
+  function resetComposer(transferredCoverUrl: string | null = null) {
     setText("");
     setComposerImage(null);
     setComposerAudio(null);
     setComposerAudioDurationSec(null);
+    setComposerAudioTags({ title: null, artist: null });
+    setComposerAudioCoverUrl((current) => {
+      if (current && current !== transferredCoverUrl) {
+        revokeObjectUrl(current);
+      }
+      return null;
+    });
   }
 
   async function createPost(currentUser: ApiUser) {
@@ -100,10 +139,17 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
       return;
     }
 
-    const imageUrl = composerImage ? URL.createObjectURL(composerImage) : null;
+    const audioCoverForPost = !composerImage ? composerAudioCoverUrl : null;
+    const imageUrl = composerImage
+      ? URL.createObjectURL(composerImage)
+      : audioCoverForPost;
     const audioUrl = composerAudio ? URL.createObjectURL(composerAudio) : null;
     const audioTitle = composerAudio
-      ? buildAudioTitle(composerAudio.name, currentUser.name)
+      ? buildAudioTitleFromMetadata(
+          composerAudioTags,
+          composerAudio.name,
+          currentUser.name,
+        )
       : null;
 
     const localMedia: FeedPostMedia = {
@@ -129,7 +175,7 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
           }));
         }
 
-        resetComposer();
+        resetComposer(audioCoverForPost);
         await loadPosts();
         return;
       }
@@ -158,7 +204,7 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
         [optimisticPost.id]: localMedia,
       }));
       setPosts((currentPosts) => [optimisticPost, ...currentPosts]);
-      resetComposer();
+      resetComposer(audioCoverForPost);
     } catch (caught) {
       if (hasAttachments) {
         const optimisticPost: ApiPost = {
@@ -185,7 +231,7 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
           [optimisticPost.id]: localMedia,
         }));
         setPosts((currentPosts) => [optimisticPost, ...currentPosts]);
-        resetComposer();
+        resetComposer(audioCoverForPost);
         setError(
           caught instanceof Error
             ? `${caught.message}. Пост сохранён только локально.`
@@ -394,9 +440,9 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
     text,
     setText,
     composerImage,
-    setComposerImage,
+    setComposerImage: setComposerImageFile,
     composerAudio,
-    setComposerAudio,
+    setComposerAudio: setComposerAudioFile,
     error,
     createPost,
     likePost,
