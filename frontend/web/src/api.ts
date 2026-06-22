@@ -99,12 +99,13 @@ async function request<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const hasBody = options.body !== undefined;
+  const isFormData = options.body instanceof FormData;
 
   const response = await fetch(`${apiUrl}${path}`, {
     ...options,
     credentials: "include",
     headers: {
-      ...(hasBody ? { "Content-Type": "application/json" } : {}),
+      ...(hasBody && !isFormData ? { "Content-Type": "application/json" } : {}),
       ...options.headers,
     },
   });
@@ -180,6 +181,20 @@ export const api = {
         body: JSON.stringify(input),
       },
     );
+  },
+  uploadAvatar(file: File) {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    return request<{ user: ApiUser }>("/profile/me/avatar", {
+      method: "POST",
+      body: formData,
+    });
+  },
+  deleteAvatar() {
+    return request<{ user: ApiUser }>("/profile/me/avatar", {
+      method: "DELETE",
+    });
   },
   getPosts() {
     return request<{ posts: ApiPost[]; pageInfo: PageInfo }>("/posts");

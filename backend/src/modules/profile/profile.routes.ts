@@ -1,6 +1,15 @@
 import type { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 
+import {
+  buildAvatarFileName,
+  buildAvatarPublicPath,
+  deleteManagedAvatar,
+  isAllowedAvatarMimeType,
+  isManagedAvatarUrl,
+  maxAvatarBytes,
+  saveAvatarFile,
+} from "../../lib/avatars.js";
 import { prisma } from "../../lib/prisma.js";
 import { authenticate } from "../auth/auth.middleware.js";
 import { toPublicPost } from "../posts/post.presenter.js";
@@ -146,6 +155,28 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         });
       }
 
+      const existingUser = await prisma.user.findUnique({
+        where: { id: request.user.userId },
+        include: {
+          musicianProfile: true,
+        },
+      });
+
+      if (!existingUser) {
+        return reply.status(404).send({
+          error: "User not found",
+          statusCode: 404,
+        });
+      }
+
+      if (
+        avatarUrl !== undefined &&
+        avatarUrl.trim() === "" &&
+        isManagedAvatarUrl(existingUser.musicianProfile?.avatarUrl)
+      ) {
+        await deleteManagedAvatar(existingUser.musicianProfile?.avatarUrl);
+      }
+
       const user = await prisma.user.update({
         where: {
           id: request.user.userId,
@@ -164,7 +195,7 @@ export async function registerProfileRoutes(app: FastifyInstance) {
                   upsert: {
                     create: {
                       bio: bio?.trim() ?? null,
-                      avatarUrl: avatarUrl?.trim() ?? null,
+                      avatarUrl: avatarUrl?.trim() || null,
                       location: location?.trim() ?? null,
                       genres: cleanStringArray(genres) ?? [],
                       instruments: cleanStringArray(instruments) ?? [],
@@ -174,7 +205,9 @@ export async function registerProfileRoutes(app: FastifyInstance) {
                     update: {
                       bio: bio !== undefined ? bio.trim() : undefined,
                       avatarUrl:
-                        avatarUrl !== undefined ? avatarUrl.trim() : undefined,
+                        avatarUrl !== undefined
+                          ? avatarUrl.trim() || null
+                          : undefined,
                       location:
                         location !== undefined ? location.trim() : undefined,
                       genres: cleanStringArray(genres),
@@ -188,6 +221,135 @@ export async function registerProfileRoutes(app: FastifyInstance) {
                   },
                 }
               : undefined,
+        },
+        include: profileInclude,
+      });
+
+      return reply.send({
+        user: toProfileResponse(user),
+      });
+    },
+  );
+
+  app.post(
+    "/profile/me/avatar",
+    {
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      const file = await request.file();
+
+      if (!file) {
+        return reply.status(400).send({
+          error: "Avatar file is required",
+          statusCode: 400,
+        });
+      }
+
+      if (!isAllowedAvatarMimeType(file.mimetype)) {
+        return reply.status(400).send({
+          error: "Avatar must be a JPEG, PNG, WebP, or GIF image",
+          statusCode: 400,
+        });
+      }
+
+      let buffer: Buffer;
+      try {
+        buffer = await file.toBuffer();
+      } catch {
+        return reply.status(413).send({
+          error: `Avatar must be smaller than ${maxAvatarBytes / (1024 * 1024)}MB`,
+          statusCode: 413,
+        });
+      }
+
+      const currentUser = await prisma.user.findUnique({
+        where: { id: request.user.userId },
+        include: {
+          musicianProfile: true,
+        },
+      });
+
+      if (!currentUser) {
+        return reply.status(404).send({
+          error: "User not found",
+          statusCode: 404,
+        });
+      }
+
+      if (currentUser.role !== "musician") {
+        return reply.status(403).send({
+          error: "Only musician accounts can upload avatars",
+          statusCode: 403,
+        });
+      }
+
+      const fileName = buildAvatarFileName(request.user.userId, file.mimetype);
+      await saveAvatarFile(fileName, buffer);
+      const nextAvatarUrl = buildAvatarPublicPath(fileName);
+
+      await deleteManagedAvatar(currentUser.musicianProfile?.avatarUrl);
+
+      const user = await prisma.user.update({
+        where: { id: request.user.userId },
+        data: {
+          musicianProfile: {
+            upsert: {
+              create: {
+                avatarUrl: nextAvatarUrl,
+              },
+              update: {
+                avatarUrl: nextAvatarUrl,
+              },
+            },
+          },
+        },
+        include: profileInclude,
+      });
+
+      return reply.send({
+        user: toProfileResponse(user),
+      });
+    },
+  );
+
+  app.delete(
+    "/profile/me/avatar",
+    {
+      preHandler: authenticate,
+    },
+    async (request, reply) => {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: request.user.userId },
+        include: {
+          musicianProfile: true,
+        },
+      });
+
+      if (!currentUser) {
+        return reply.status(404).send({
+          error: "User not found",
+          statusCode: 404,
+        });
+      }
+
+      if (!currentUser.musicianProfile?.avatarUrl) {
+        return reply.status(400).send({
+          error: "Avatar is not set",
+          statusCode: 400,
+        });
+      }
+
+      await deleteManagedAvatar(currentUser.musicianProfile.avatarUrl);
+
+      const user = await prisma.user.update({
+        where: { id: request.user.userId },
+        data: {
+          musicianProfile: {
+            update: {
+              avatarUrl: null,
+            },
+          },
         },
         include: profileInclude,
       });

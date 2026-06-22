@@ -1,12 +1,20 @@
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 
 import { env } from "./config/env.js";
+import {
+  avatarsDir,
+  ensureUploadDirs,
+  maxAvatarBytes,
+  uploadsRoot,
+} from "./lib/avatars.js";
 import { registerRoutes } from "./routes/index.js";
 
-export function buildApp(): FastifyInstance {
+export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: true,
   });
+
+  await ensureUploadDirs();
 
   void app.register(import("@fastify/jwt"), {
     secret: env.jwtSecret,
@@ -23,6 +31,19 @@ export function buildApp(): FastifyInstance {
     allowedHeaders: ["Content-Type"],
   });
 
+  void app.register(import("@fastify/multipart"), {
+    limits: {
+      fileSize: maxAvatarBytes,
+      files: 1,
+    },
+  });
+
+  void app.register(import("@fastify/static"), {
+    root: uploadsRoot,
+    prefix: "/uploads/",
+    decorateReply: false,
+  });
+
   app.setErrorHandler((error: FastifyError, request, reply) => {
     request.log.error(error);
 
@@ -37,6 +58,8 @@ export function buildApp(): FastifyInstance {
   });
 
   void registerRoutes(app);
+
+  app.log.info({ avatarsDir }, "Avatar uploads directory ready");
 
   return app;
 }

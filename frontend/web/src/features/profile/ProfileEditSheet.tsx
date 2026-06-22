@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { api, type ApiUser } from "../../api";
+import { AvatarPicker } from "./AvatarPicker";
 
 type ProfileEditSheetProps = {
   user: ApiUser;
@@ -10,9 +11,9 @@ type ProfileEditSheetProps = {
 
 export function ProfileEditSheet(props: ProfileEditSheetProps) {
   const profile = props.user.musicianProfile;
+  const [user, setUser] = useState(props.user);
   const [name, setName] = useState(props.user.name);
   const [bio, setBio] = useState(profile?.bio ?? "");
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatarUrl ?? "");
   const [location, setLocation] = useState(profile?.location ?? "");
   const [genres, setGenres] = useState(profile?.genres.join(", ") ?? "");
   const [instruments, setInstruments] = useState(profile?.instruments.join(", ") ?? "");
@@ -24,13 +25,17 @@ export function ProfileEditSheet(props: ProfileEditSheetProps) {
   );
   const [error, setError] = useState("");
 
+  function handleAvatarUpdated(nextUser: ApiUser) {
+    setUser(nextUser);
+    props.onSaved(nextUser);
+  }
+
   async function save() {
     try {
       setError("");
       const result = await api.updateProfile({
         name,
         bio,
-        avatarUrl,
         location,
         genres: splitList(genres),
         instruments: splitList(instruments),
@@ -55,6 +60,7 @@ export function ProfileEditSheet(props: ProfileEditSheetProps) {
           </button>
         </header>
         <div className="profile-edit__body">
+          <AvatarPicker user={user} showActions onUpdated={handleAvatarUpdated} />
           <label>
             Имя
             <input value={name} onChange={(event) => setName(event.target.value)} />
@@ -62,13 +68,6 @@ export function ProfileEditSheet(props: ProfileEditSheetProps) {
           <label>
             О себе
             <textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} />
-          </label>
-          <label>
-            URL аватара
-            <input
-              value={avatarUrl}
-              onChange={(event) => setAvatarUrl(event.target.value)}
-            />
           </label>
           <label>
             Локация

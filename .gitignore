@@ -18,6 +18,10 @@ coverage
 _docpress
 .DS_Store
 
+backend/uploads/**
+!backend/uploads/avatars/
+!backend/uploads/avatars/.gitkeep
+
 /lib
 /dist
 **/dist/
