@@ -6,7 +6,7 @@ import { AppSidebar } from "./AppSidebar";
 import "./app-shell.css";
 
 export function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   if (!user) {
     return null;
@@ -21,9 +21,6 @@ export function AppLayout() {
         </div>
       </div>
       <AppTabBar />
-      <button type="button" className="app-layout__logout" onClick={() => void logout()}>
-        Выйти
-      </button>
     </div>
   );
 }

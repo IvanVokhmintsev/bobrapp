@@ -33,19 +33,27 @@
   min-width: 0;
 }
 
-.app-layout__logout {
-  position: fixed;
-  top: 12px;
-  right: 16px;
-  z-index: 20;
-  padding: 8px 12px;
+.app-sidebar__logout {
+  display: inline-flex;
+  width: min(100%, 270px);
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  margin-bottom: 14px;
+  padding: 8px 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 999px;
   color: #ffffff;
-  background: rgba(23, 23, 23, 0.92);
+  background: rgba(255, 255, 255, 0.04);
   font: inherit;
-  font-size: 13px;
+  font-size: 15px;
   cursor: pointer;
+}
+
+.app-sidebar__logout:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .app-sidebar {
@@ -168,6 +176,10 @@
   width: 15px;
   height: 15px;
   object-fit: contain;
+}
+
+.app-sidebar__nav-icon--bookmark {
+  color: currentColor;
 }
 
 .app-sidebar .app-pro {
@@ -341,9 +353,16 @@
   }
 
   .app-sidebar .app-pro,
-  .app-sidebar__copyright,
-  .app-layout__logout {
+  .app-sidebar__copyright {
     display: none;
+  }
+
+  .app-sidebar__logout {
+    width: auto;
+    min-height: 36px;
+    margin: 12px 0 0;
+    padding: 8px 18px;
+    font-size: 14px;
   }
 
   .app-sidebar__nav {
@@ -360,7 +379,7 @@
     left: 0;
     z-index: 30;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 4px;
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(255, 255, 255, 0.08);

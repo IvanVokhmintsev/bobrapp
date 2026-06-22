@@ -15,6 +15,13 @@ export async function registerOnboardingRoutes(app: FastifyInstance) {
       schema: musicianOnboardingSchema,
     },
     async (request) => {
+      const profileType = request.body.profileType ?? "solo";
+      const memberNames = [...new Set(
+        (request.body.memberNames ?? [])
+          .map((value) => value.trim())
+          .filter(Boolean),
+      )];
+
       const user = await prisma.user.update({
         where: { id: request.user.userId },
         data: {
@@ -22,9 +29,13 @@ export async function registerOnboardingRoutes(app: FastifyInstance) {
             upsert: {
               create: {
                 level: request.body.level,
+                profileType,
+                memberNames: profileType === "band" ? memberNames : [],
               },
               update: {
                 level: request.body.level,
+                profileType,
+                memberNames: profileType === "band" ? memberNames : [],
               },
             },
           },

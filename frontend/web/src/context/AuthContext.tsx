@@ -50,10 +50,20 @@ export function AuthProvider(props: { children: ReactNode }) {
   }, [navigate]);
 
   useEffect(() => {
+    let cancelled = false;
+
     void refreshUser().finally(() => {
-      setIsBootstrapping(false);
+      if (!cancelled) {
+        setIsBootstrapping(false);
+      }
     });
-  }, [refreshUser]);
+
+    return () => {
+      cancelled = true;
+    };
+    // Bootstrap session once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const value = useMemo(
     () => ({

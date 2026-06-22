@@ -1,5 +1,6 @@
 type PublicMusicianProfile = {
   id: string;
+  profileType: "solo" | "band";
   level: "nothing" | "beginner" | "advanced" | "professional" | null;
   bio: string | null;
   avatarUrl: string | null;
@@ -7,6 +8,7 @@ type PublicMusicianProfile = {
   genres?: string[];
   instruments?: string[];
   daw?: string[];
+  memberNames?: string[];
   socialLinks?: unknown;
   points: number;
   roadmapProgress: number;
@@ -40,6 +42,7 @@ export function toPublicUser(user: UserWithProfile) {
     musicianProfile: user.musicianProfile
       ? {
           id: user.musicianProfile.id,
+          profileType: user.musicianProfile.profileType,
           level: user.musicianProfile.level,
           bio: user.musicianProfile.bio,
           avatarUrl: user.musicianProfile.avatarUrl,
@@ -47,6 +50,7 @@ export function toPublicUser(user: UserWithProfile) {
           genres: user.musicianProfile.genres ?? [],
           instruments: user.musicianProfile.instruments ?? [],
           daw: user.musicianProfile.daw ?? [],
+          memberNames: user.musicianProfile.memberNames ?? [],
           socialLinks: user.musicianProfile.socialLinks ?? {},
           points: user.musicianProfile.points,
           roadmapProgress: user.musicianProfile.roadmapProgress,

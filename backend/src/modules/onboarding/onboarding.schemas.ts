@@ -10,6 +10,15 @@ export const musicianOnboardingSchema = {
     additionalProperties: false,
     properties: {
       level: musicianLevelSchema,
+      profileType: {
+        type: "string",
+        enum: ["solo", "band"],
+      },
+      memberNames: {
+        type: "array",
+        maxItems: 20,
+        items: { type: "string", minLength: 1, maxLength: 80 },
+      },
     },
   },
 } as const;

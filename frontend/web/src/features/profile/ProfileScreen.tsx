@@ -220,7 +220,6 @@ export function ProfileScreen() {
             />
             {authUser ? (
               <ProfilePostsSection
-                profileUser={user}
                 currentUser={authUser}
                 feed={profileFeed}
               />

@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import type { ApiUser } from "../../api";
 import defaultAvatar from "../../assets/feed/card-cover.png";
 import levelFlagIcon from "../../assets/profile/level-flag.svg";
-import bookmarkIcon from "../../assets/feed/bookmark-action.png";
+import { BookmarkIcon } from "../../components/BookmarkIcon";
 import navBookingIcon from "../../assets/profile/nav-booking.svg";
 import navEventsIcon from "../../assets/profile/nav-events.svg";
 import navFeedIcon from "../../assets/profile/nav-feed.svg";
@@ -21,11 +21,11 @@ type AppSidebarProps = {
 const navItems = [
   { to: "/feed", label: "Лента", icon: navFeedIcon },
   { to: "/people", label: "Музыканты", icon: navMusiciansIcon },
-  { to: "/favorites", label: "Избранное", icon: bookmarkIcon },
+  { to: "/favorites", label: "Избранное", icon: "bookmark" as const },
   { to: "/booking", label: "Букинг", icon: navBookingIcon },
   { to: "/events", label: "События", icon: navEventsIcon },
   { to: "/profile", label: "Профиль", icon: navProfileIcon },
-];
+] as const;
 
 export function AppSidebar(props: AppSidebarProps) {
   const location = useLocation();
@@ -62,7 +62,15 @@ export function AppSidebar(props: AppSidebarProps) {
               to={item.to}
               className={isActive ? "is-active" : undefined}
             >
-              <img className="app-sidebar__nav-icon" src={item.icon} alt="" />
+              {item.icon === "bookmark" ? (
+                <BookmarkIcon
+                  className="app-sidebar__nav-icon app-sidebar__nav-icon--bookmark"
+                  filled={isActive}
+                  size={20}
+                />
+              ) : (
+                <img className="app-sidebar__nav-icon" src={item.icon} alt="" />
+              )}
               <span>{item.label}</span>
             </Link>
           );
