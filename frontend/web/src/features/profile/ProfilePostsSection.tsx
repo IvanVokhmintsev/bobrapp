@@ -15,7 +15,7 @@ export function ProfilePostsSection(props: ProfilePostsSectionProps) {
   const { feed } = props;
 
   return (
-    <section className="profile-block profile-block--posts">
+    <section className="profile-block profile-block--posts profile-section">
       <h2>Публикации</h2>
       {feed.error ? <p className="feed__error">{feed.error}</p> : null}
       {feed.posts.length ? (

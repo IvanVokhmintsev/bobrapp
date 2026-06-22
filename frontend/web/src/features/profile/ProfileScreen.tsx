@@ -4,7 +4,6 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { api, type ApiProfileAlbum, type ApiProfileConcert, type ApiUser } from "../../api";
 import defaultAvatar from "../../assets/feed/card-cover.png";
 import albumCover from "../../assets/profile/album-cover.png";
-import chevronDownIcon from "../../assets/profile/chevron-down.svg";
 import concertPhoto from "../../assets/profile/concert-photo.png";
 import concertStadiumIcon from "../../assets/profile/concert-stadium.svg";
 import memberAvatarRing from "../../assets/profile/member-avatar-ring.svg";
@@ -261,34 +260,25 @@ function ProfileSummary(props: {
         <ProfileCompleteness blocks={props.blockStatuses} showHints />
       ) : null}
 
-      <section className="profile-card">
-        <header className="profile-card__hero">
-          {props.isOwnProfile ? (
-            <AvatarPicker
-              user={props.user}
-              size="large"
-              onUpdated={props.onAvatarUpdated}
-            />
-          ) : (
-            <img className="profile-card__avatar" src={avatarSrc} alt="" />
-          )}
-          <div className="profile-card__identity">
-            <div className="profile-card__name-row">
-              <h1>{props.user.name}</h1>
-              <ProfileTypeBadge profileType={props.profileType} />
-              <img className="profile-card__verified" src={verifiedBadgeIcon} alt="" />
-              {props.isOwnProfile ? (
-                <button
-                  type="button"
-                  className="profile-card__chevron-btn"
-                  onClick={props.onEdit}
-                  aria-label="Редактировать профиль"
-                >
-                  <img src={chevronDownIcon} alt="" />
-                </button>
-              ) : null}
-            </div>
-            <div className="profile-card__actions">
+      <section className="profile-card profile-section">
+        <div className="profile-card__header-row">
+          <div className="profile-card__hero">
+            {props.isOwnProfile ? (
+              <AvatarPicker
+                user={props.user}
+                size="large"
+                onUpdated={props.onAvatarUpdated}
+              />
+            ) : (
+              <img className="profile-card__avatar" src={avatarSrc} alt="" />
+            )}
+            <div className="profile-card__identity">
+              <div className="profile-card__name-row">
+                <h1>{props.user.name}</h1>
+                <ProfileTypeBadge profileType={props.profileType} />
+                <img className="profile-card__verified" src={verifiedBadgeIcon} alt="" />
+              </div>
+              <div className="profile-card__actions">
               {props.isOwnProfile ? (
                 props.canOpenRoadmap ? (
                   <>
@@ -330,7 +320,17 @@ function ProfileSummary(props: {
               <p className="profile-members__empty">Ссылки на музыку пока не добавлены</p>
             ) : null}
           </div>
-        </header>
+          </div>
+          {props.isOwnProfile ? (
+            <button
+              type="button"
+              className="profile-card__edit-btn"
+              onClick={props.onEdit}
+            >
+              Редактировать
+            </button>
+          ) : null}
+        </div>
 
         {bandProfile ? (
           <section className="profile-members" aria-label="Состав">
@@ -348,7 +348,7 @@ function ProfileSummary(props: {
         ) : null}
       </section>
 
-      <section className="profile-block">
+      <section className="profile-block profile-section">
         <h2>{bandProfile ? "О нас" : "О себе"}</h2>
         <p>{props.bio}</p>
         <div className="profile-tags">
@@ -360,7 +360,7 @@ function ProfileSummary(props: {
         </div>
       </section>
 
-      <section className="profile-block profile-block--albums">
+      <section className="profile-block profile-block--albums profile-section">
         <div className="profile-block__heading">
           <h2>Альбомы</h2>
           {props.isOwnProfile ? (
@@ -391,7 +391,7 @@ function ProfileSummary(props: {
         )}
       </section>
 
-      <section className="profile-block">
+      <section className="profile-block profile-section">
         <div className="profile-block__heading">
           <h2>Концерты</h2>
           {props.isOwnProfile ? (
