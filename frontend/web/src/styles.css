@@ -1,10 +1,14 @@
+:root {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-sans);
   background: #f5f5f5;
   color: #1f1f1f;
 }
@@ -37,6 +41,160 @@ textarea {
 label {
   display: block;
   margin: 10px 0;
+}
+
+.auth-screen {
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 30px 40px;
+  background: #9e0014;
+}
+
+.auth-screen__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.auth-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(100%, 470px);
+  min-height: 544px;
+  flex-direction: column;
+  align-items: center;
+  padding: 64px 82px 46px;
+  color: #ffffff;
+  background: #171717;
+  border-radius: 11px;
+  box-shadow: 0 22px 80px rgba(0, 0, 0, 0.24);
+}
+
+.auth-card__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  margin-bottom: 28px;
+}
+
+.auth-card__mark {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: #ff0f16;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.auth-card__brand-name {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.auth-card__title {
+  margin: 0 0 22px;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.auth-card__form {
+  width: 100%;
+}
+
+.auth-field {
+  display: block;
+  margin: 0 0 7px;
+}
+
+.auth-field span {
+  display: block;
+  margin: 0 0 6px 8px;
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.auth-field input {
+  width: 100%;
+  height: 34px;
+  margin: 0;
+  padding: 8px 15px;
+  color: #ffffff;
+  background: rgba(138, 138, 138, 0.2);
+  border: 0;
+  border-radius: 10px;
+  outline: 0;
+}
+
+.auth-field input::placeholder {
+  color: #828282;
+  opacity: 1;
+}
+
+.auth-field input:focus {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22);
+}
+
+.auth-card__error {
+  width: 100%;
+  margin: 8px 0 0;
+  color: #ff7272;
+  font-size: 14px;
+  text-align: center;
+}
+
+.auth-card__submit {
+  display: inline-flex;
+  min-width: 92px;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 20px;
+  padding: 8px 18px;
+  color: #ffffff;
+  background: rgba(138, 138, 138, 0.2);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.auth-card__submit span {
+  font-size: 22px;
+  line-height: 0.8;
+}
+
+.auth-card__submit:hover,
+.auth-card__mode:hover {
+  background: rgba(138, 138, 138, 0.3);
+}
+
+.auth-card__mode {
+  margin-top: 12px;
+  padding: 6px 10px;
+  color: #bdbdbd;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
 }
 
 header {
@@ -115,6 +273,25 @@ main {
 }
 
 @media (max-width: 720px) {
+  .auth-screen {
+    padding: 18px;
+  }
+
+  .auth-card {
+    min-height: auto;
+    padding: 42px 24px 32px;
+    border-radius: 14px;
+  }
+
+  .auth-card__brand-name,
+  .auth-card__title {
+    font-size: 22px;
+  }
+
+  .auth-field span {
+    font-size: 17px;
+  }
+
   header,
   .split {
     grid-template-columns: 1fr;
