@@ -80,6 +80,93 @@ export function readRoadmapQuiz(value: unknown): RoadmapQuizQuestion[] {
   });
 }
 
+export async function updateChecklistProgress(
+  userId: string,
+  stepId: string,
+  checkedIndices: number[],
+) {
+  const step = await prisma.roadmapStep.findUnique({
+    where: {
+      id: stepId,
+    },
+  });
+
+  if (!step) {
+    return {
+      status: "not_found" as const,
+      step: null,
+    };
+  }
+
+  const currentProgress = await prisma.userRoadmapProgress.findUnique({
+    where: {
+      userId_stepId: {
+        userId,
+        stepId: step.id,
+      },
+    },
+  });
+
+  if (!currentProgress || currentProgress.status === "locked") {
+    return {
+      status: "locked" as const,
+      step: null,
+    };
+  }
+
+  const checklist = readChecklistItems(step.checklist);
+  const normalizedIndices = [
+    ...new Set(
+      checkedIndices.filter(
+        (index) => Number.isInteger(index) && index >= 0 && index < checklist.length,
+      ),
+    ),
+  ].sort((left, right) => left - right);
+
+  await prisma.userRoadmapProgress.update({
+    where: {
+      userId_stepId: {
+        userId,
+        stepId: step.id,
+      },
+    },
+    data: {
+      checklistChecked: normalizedIndices,
+    },
+  });
+
+  const updatedStep = await prisma.roadmapStep.findUnique({
+    where: {
+      id: stepId,
+    },
+    include: {
+      userProgress: {
+        where: {
+          userId,
+        },
+        select: {
+          status: true,
+          completedAt: true,
+          checklistChecked: true,
+        },
+      },
+    },
+  });
+
+  return {
+    status: "updated" as const,
+    step: updatedStep,
+  };
+}
+
+function readChecklistItems(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string");
+}
+
 export async function completeRoadmapStep(userId: string, stepId: string) {
   const step = await prisma.roadmapStep.findUnique({
     where: {
@@ -222,6 +309,7 @@ export async function completeRoadmapStep(userId: string, stepId: string) {
         select: {
           status: true,
           completedAt: true,
+          checklistChecked: true,
         },
       },
     },

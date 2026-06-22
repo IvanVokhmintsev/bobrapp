@@ -225,13 +225,14 @@ model RoadmapStep {
 }
 
 model UserRoadmapProgress {
-  id          String            @id @default(uuid())
-  userId      String
-  stepId      String
-  status      RoadmapStepStatus
-  completedAt DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id               String            @id @default(uuid())
+  userId           String
+  stepId           String
+  status           RoadmapStepStatus
+  checklistChecked Json              @default("[]")
+  completedAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   step RoadmapStep @relation(fields: [stepId], references: [id], onDelete: Cascade)

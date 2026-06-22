@@ -18,7 +18,7 @@ type AppSidebarProps = {
   user: ApiUser;
 };
 
-const navItems = [
+const baseNavItems = [
   { to: "/feed", label: "Лента", icon: navFeedIcon },
   { to: "/people", label: "Музыканты", icon: navMusiciansIcon },
   { to: "/favorites", label: "Избранное", icon: "bookmark" as const },
@@ -26,6 +26,22 @@ const navItems = [
   { to: "/events", label: "События", icon: navEventsIcon },
   { to: "/profile", label: "Профиль", icon: navProfileIcon },
 ] as const;
+
+function buildNavItems(role: ApiUser["role"]) {
+  if (role !== "musician") {
+    return baseNavItems;
+  }
+
+  return [
+    baseNavItems[0],
+    baseNavItems[1],
+    baseNavItems[2],
+    { to: "/roadmap/map", label: "Roadmap", icon: "roadmap" as const },
+    baseNavItems[3],
+    baseNavItems[4],
+    baseNavItems[5],
+  ];
+}
 
 export function AppSidebar(props: AppSidebarProps) {
   const location = useLocation();
@@ -35,6 +51,7 @@ export function AppSidebar(props: AppSidebarProps) {
     defaultAvatar,
   );
   const level = getMusicianLevelFromUser(props.user);
+  const navItems = buildNavItems(props.user.role);
 
   return (
     <aside className="app-sidebar" aria-label="Навигация">
@@ -54,7 +71,9 @@ export function AppSidebar(props: AppSidebarProps) {
 
       <nav className="app-sidebar__nav">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.to;
+          const isActive =
+            location.pathname === item.to ||
+            (item.to === "/roadmap/map" && location.pathname.startsWith("/roadmap"));
 
           return (
             <Link
@@ -68,6 +87,8 @@ export function AppSidebar(props: AppSidebarProps) {
                   filled={isActive}
                   size={20}
                 />
+              ) : item.icon === "roadmap" ? (
+                <RoadmapNavIcon active={isActive} />
               ) : (
                 <img className="app-sidebar__nav-icon" src={item.icon} alt="" />
               )}
@@ -87,5 +108,31 @@ export function AppSidebar(props: AppSidebarProps) {
       </button>
       <p className="app-sidebar__copyright">© Bobr LLC 2026</p>
     </aside>
+  );
+}
+
+function RoadmapNavIcon(props: { active: boolean }) {
+  return (
+    <svg
+      className="app-sidebar__nav-icon"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+    >
+      <path
+        d="M4 3h12v14H4V3Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        fill={props.active ? "currentColor" : "none"}
+        fillOpacity={props.active ? 0.18 : 0}
+      />
+      <path
+        d="M7 7h6M7 10h6M7 13h4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

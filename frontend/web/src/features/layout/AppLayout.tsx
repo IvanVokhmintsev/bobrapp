@@ -20,7 +20,7 @@ export function AppLayout() {
           <Outlet />
         </div>
       </div>
-      <AppTabBar />
+      <AppTabBar user={user} />
     </div>
   );
 }

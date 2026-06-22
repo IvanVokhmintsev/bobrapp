@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { api, type RoadmapStep } from "../../api";
+import { useAuth } from "../../context/AuthContext";
+import { getCurrentStep, stepOrderToLevel } from "../../lib/roadmapLevels";
 import { ProfileRoadmapMap } from "../profile/ProfileRoadmapMap";
 import "../profile/profile.css";
 import "../profile/profile-roadmap.css";
@@ -21,8 +23,11 @@ const guideCards = [
 ];
 
 export function RoadmapMapScreen() {
+  const { user } = useAuth();
   const [roadmapSteps, setRoadmapSteps] = useState<RoadmapStep[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
+  const currentStep = useMemo(() => getCurrentStep(roadmapSteps), [roadmapSteps]);
+  const roadmapProgress = user?.musicianProfile?.roadmapProgress ?? 0;
 
   useEffect(() => {
     void api
@@ -37,6 +42,14 @@ export function RoadmapMapScreen() {
         <Link className="roadmap-map-page__back" to="/profile">
           ← Профиль
         </Link>
+        <div className="roadmap-map-page__meta">
+          <span className="roadmap-map-page__progress">Прогресс: {roadmapProgress}%</span>
+          {currentStep ? (
+            <span className="roadmap-map-page__current">
+              Текущий этап: {currentStep.order}. {currentStep.title}
+            </span>
+          ) : null}
+        </div>
         <div className="roadmap-map-page__links">
           <Link to="/roadmap">Уроки roadmap</Link>
         </div>
@@ -44,7 +57,10 @@ export function RoadmapMapScreen() {
 
       <div className="roadmap-map-page__panel">
         {selectedLevel === null ? (
-          <ProfileRoadmapMap onSelectLevel={setSelectedLevel} />
+          <ProfileRoadmapMap
+            steps={roadmapSteps}
+            onSelectLevel={setSelectedLevel}
+          />
         ) : (
           <RoadmapLevelDetail
             level={selectedLevel}
@@ -118,9 +134,11 @@ function buildMilestones(steps: RoadmapStep[], level: number) {
     }));
   }
 
-  return steps.slice(0, 7).map((step, index) => ({
-    id: step.id,
-    title: `Майлстоун «${step.title}»: ${step.description}`,
-    completed: step.status === "completed" || index < Math.max(1, 9 - level),
-  }));
+  return steps
+    .filter((step) => stepOrderToLevel(step.order) === level)
+    .map((step) => ({
+      id: step.id,
+      title: `Майлстоун «${step.title}»: ${step.description}`,
+      completed: step.status === "completed",
+    }));
 }

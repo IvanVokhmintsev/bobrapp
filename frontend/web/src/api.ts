@@ -110,6 +110,7 @@ export type RoadmapStep = {
 export type RoadmapLesson = RoadmapStep & {
   content: string;
   checklist: string[];
+  checklistChecked: number[];
   quiz: Array<{
     id: string;
     question: string;
@@ -555,5 +556,11 @@ export const api = {
         body: JSON.stringify({ answers }),
       },
     );
+  },
+  updateChecklist(stepId: string, checkedIndices: number[]) {
+    return request<{ step: RoadmapLesson }>(`/roadmap/${stepId}/checklist`, {
+      method: "PATCH",
+      body: JSON.stringify({ checkedIndices }),
+    });
   },
 };

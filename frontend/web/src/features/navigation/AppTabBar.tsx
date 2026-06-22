@@ -1,20 +1,21 @@
 import { Link, useLocation } from "react-router-dom";
 
-const navItems = [
-  { to: "/feed", label: "Лента" },
-  { to: "/people", label: "Музыканты" },
-  { to: "/booking", label: "Букинг" },
-  { to: "/events", label: "События" },
-  { to: "/profile", label: "Профиль" },
-] as const;
+import type { ApiUser } from "../../api";
 
-export function AppTabBar() {
+type AppTabBarProps = {
+  user: ApiUser;
+};
+
+export function AppTabBar(props: AppTabBarProps) {
   const location = useLocation();
+  const navItems = buildTabItems(props.user.role);
 
   return (
     <nav className="app-tabbar" aria-label="Основная навигация">
       {navItems.map((item) => {
-        const isActive = location.pathname === item.to;
+        const isActive =
+          location.pathname === item.to ||
+          (item.to === "/roadmap/map" && location.pathname.startsWith("/roadmap"));
 
         return (
           <Link key={item.label} to={item.to} className={isActive ? "is-active" : undefined}>
@@ -25,6 +26,28 @@ export function AppTabBar() {
       })}
     </nav>
   );
+}
+
+function buildTabItems(role: ApiUser["role"]) {
+  const items = [
+    { to: "/feed", label: "Лента" },
+    { to: "/people", label: "Музыканты" },
+    { to: "/booking", label: "Букинг" },
+    { to: "/events", label: "События" },
+    { to: "/profile", label: "Профиль" },
+  ] as const;
+
+  if (role !== "musician") {
+    return items;
+  }
+
+  return [
+    items[0],
+    items[1],
+    { to: "/roadmap/map", label: "Roadmap" },
+    items[2],
+    items[4],
+  ];
 }
 
 function TabIcon(props: { label: string }) {
@@ -51,6 +74,23 @@ function TabIcon(props: { label: string }) {
             strokeWidth="1.5"
             strokeLinecap="round"
             fill="none"
+          />
+        </svg>
+      );
+    case "Roadmap":
+      return (
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+          <path
+            d="M4 4h14v14H4V4Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            fill="none"
+          />
+          <path
+            d="M7 8h8M7 11h8M7 14h5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
           />
         </svg>
       );

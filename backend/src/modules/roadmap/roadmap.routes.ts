@@ -7,13 +7,18 @@ import {
   toPublicRoadmapLesson,
   toPublicRoadmapStep,
 } from "./roadmap.presenter.js";
-import { roadmapQuizSchema, roadmapStepParamsSchema } from "./roadmap.schemas.js";
+import { roadmapChecklistSchema, roadmapQuizSchema, roadmapStepParamsSchema } from "./roadmap.schemas.js";
 import {
   completeRoadmapStep,
   ensureUserRoadmapProgress,
   readRoadmapQuiz,
+  updateChecklistProgress,
 } from "./roadmap.service.js";
-import type { RoadmapQuizBody, RoadmapStepParams } from "./roadmap.types.js";
+import type {
+  RoadmapChecklistBody,
+  RoadmapQuizBody,
+  RoadmapStepParams,
+} from "./roadmap.types.js";
 
 function progressInclude(userId: string) {
   return {
@@ -24,6 +29,7 @@ function progressInclude(userId: string) {
       select: {
         status: true,
         completedAt: true,
+        checklistChecked: true,
       },
     },
   } as const;
@@ -197,6 +203,48 @@ export async function registerRoadmapRoutes(app: FastifyInstance) {
         passed: true,
         wrongQuestionIds: [],
         steps: result.steps.map(toPublicRoadmapStep),
+      };
+    },
+  );
+
+  app.patch<{ Params: RoadmapStepParams; Body: RoadmapChecklistBody }>(
+    "/roadmap/:stepId/checklist",
+    {
+      preHandler: [authenticate, requireRole("musician")],
+      schema: roadmapChecklistSchema,
+    },
+    async (request, reply) => {
+      await ensureUserRoadmapProgress(request.user.userId);
+
+      const result = await updateChecklistProgress(
+        request.user.userId,
+        request.params.stepId,
+        request.body.checkedIndices,
+      );
+
+      if (result.status === "not_found") {
+        return reply.status(404).send({
+          error: "Roadmap step not found",
+          statusCode: 404,
+        });
+      }
+
+      if (result.status === "locked") {
+        return reply.status(403).send({
+          error: "Roadmap step is locked",
+          statusCode: 403,
+        });
+      }
+
+      if (!result.step) {
+        return reply.status(404).send({
+          error: "Roadmap step not found",
+          statusCode: 404,
+        });
+      }
+
+      return {
+        step: toPublicRoadmapLesson(result.step),
       };
     },
   );

@@ -1,0 +1,114 @@
+.roadmap-page__steps {
+  display: grid;
+  gap: 12px;
+}
+
+.roadmap-step__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.roadmap-step.is-current {
+  border: 1px solid rgba(57, 216, 240, 0.45);
+  box-shadow: 0 0 0 1px rgba(57, 216, 240, 0.12);
+}
+
+.roadmap-step.is-completed {
+  opacity: 0.82;
+}
+
+.roadmap-step__status {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 28px;
+}
+
+.roadmap-step__status--available {
+  color: #39d8f0;
+  background: rgba(57, 216, 240, 0.14);
+}
+
+.roadmap-step__status--completed {
+  color: #8ef0b8;
+  background: rgba(142, 240, 184, 0.12);
+}
+
+.roadmap-step__status--locked {
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.roadmap-lesson {
+  margin-top: 18px;
+}
+
+.roadmap-checklist {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.roadmap-checklist__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.roadmap-checklist__head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.roadmap-checklist__head span {
+  font-size: 14px;
+  font-weight: 650;
+  color: #39d8f0;
+}
+
+.roadmap-checklist__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roadmap-checklist__item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+
+.roadmap-checklist__item input {
+  margin-top: 2px;
+}
+
+.roadmap-checklist__item span {
+  line-height: 1.45;
+}
+
+.roadmap-quiz {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+}
+
+.roadmap-quiz label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}

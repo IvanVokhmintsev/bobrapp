@@ -10,6 +10,7 @@ type RoadmapStepWithProgress = {
   userProgress: Array<{
     status: "locked" | "available" | "completed";
     completedAt: Date | null;
+    checklistChecked: unknown;
   }>;
 };
 
@@ -39,6 +40,22 @@ function toPublicQuiz(quiz: unknown) {
   }));
 }
 
+function readChecklist(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string");
+}
+
+function readChecklistChecked(value: unknown): number[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is number => typeof item === "number");
+}
+
 export function toPublicRoadmapStep(step: RoadmapStepWithProgress) {
   const progress = step.userProgress[0];
 
@@ -54,10 +71,13 @@ export function toPublicRoadmapStep(step: RoadmapStepWithProgress) {
 }
 
 export function toPublicRoadmapLesson(step: RoadmapStepWithProgress) {
+  const progress = step.userProgress[0];
+
   return {
     ...toPublicRoadmapStep(step),
     content: step.content,
-    checklist: step.checklist,
+    checklist: readChecklist(step.checklist),
+    checklistChecked: readChecklistChecked(progress?.checklistChecked),
     quiz: toPublicQuiz(step.quiz),
   };
 }

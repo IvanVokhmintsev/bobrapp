@@ -32,3 +32,21 @@ export const roadmapQuizSchema = {
     },
   },
 } as const;
+
+export const roadmapChecklistSchema = {
+  ...roadmapStepParamsSchema,
+  body: {
+    type: "object",
+    required: ["checkedIndices"],
+    additionalProperties: false,
+    properties: {
+      checkedIndices: {
+        type: "array",
+        items: {
+          type: "integer",
+          minimum: 0,
+        },
+      },
+    },
+  },
+} as const;

@@ -5,16 +5,35 @@ import {
   roadmapPaths,
   roadmapToolbar,
 } from "./roadmapLayout";
+import { getLevelStatus, type RoadmapLevelStatus } from "../../lib/roadmapLevels";
+import type { RoadmapStep } from "../../api";
 import "./profile-roadmap.css";
 
 type ProfileRoadmapMapProps = {
   selectedLevel?: number | null;
   compact?: boolean;
+  steps?: RoadmapStep[];
   onSelectLevel: (level: number) => void;
 };
 
 export function ProfileRoadmapMap(props: ProfileRoadmapMapProps) {
   const scale = props.compact ? 390 / ROADMAP_CANVAS.width : 1;
+  const steps = props.steps ?? [];
+
+  function levelClassName(level: number) {
+    const classes = ["profile-roadmap-figma__level"];
+
+    if (props.selectedLevel === level) {
+      classes.push("is-selected");
+    }
+
+    if (steps.length > 0) {
+      const status = getLevelStatus(level, steps);
+      classes.push(levelStatusClass(status));
+    }
+
+    return classes.join(" ");
+  }
 
   return (
     <section
@@ -97,9 +116,7 @@ export function ProfileRoadmapMap(props: ProfileRoadmapMapProps) {
             <button
               type="button"
               key={node.level}
-              className={`profile-roadmap-figma__level ${
-                props.selectedLevel === node.level ? "is-selected" : ""
-              }`}
+              className={levelClassName(node.level)}
               style={{
                 left: node.left,
                 top: node.top,
@@ -128,4 +145,15 @@ function hasMilestoneIcon(
   iconHeight: number;
 } {
   return "icon" in milestone;
+}
+
+function levelStatusClass(status: RoadmapLevelStatus) {
+  switch (status) {
+    case "current":
+      return "is-current";
+    case "completed":
+      return "is-completed";
+    default:
+      return "is-locked";
+  }
 }

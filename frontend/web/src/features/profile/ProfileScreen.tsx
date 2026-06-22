@@ -20,9 +20,11 @@ import { ProfileEditSheet } from "./ProfileEditSheet";
 import { AvatarPicker } from "./AvatarPicker";
 import { useFeedInteractions } from "../feed/useFeedInteractions";
 import { ProfilePostsSection } from "./ProfilePostsSection";
+import { ProfileCareerTimeline } from "./ProfileCareerTimeline";
 import { ProfileTypeBadge } from "./ProfileTypeBadge";
 import "./profile.css";
 import "./profile-completeness.css";
+import "./profile-career.css";
 
 import "./profile-content-edit.css";
 
@@ -218,6 +220,7 @@ export function ProfileScreen() {
               onContact={() => showComingSoon("Связаться с артистом")}
               onFavorite={() => void toggleFavorite()}
             />
+            <ProfileCareerTimeline user={user} posts={profileFeed.posts} />
             {authUser ? (
               <ProfilePostsSection
                 currentUser={authUser}

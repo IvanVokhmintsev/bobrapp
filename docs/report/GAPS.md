@@ -68,13 +68,13 @@ FR-PP-01…05 (без PP-06), FR-FEED-01…03 (без модерации), FR-RM
 | ID | Требование | Статус | Что есть | Чего не хватает |
 |----|------------|--------|----------|-----------------|
 | FR-RM-01.1 | Структура и связи этапов | ✅ | Seed 8 steps, map UI, `/roadmap` | Ошибка загрузки — generic |
-| FR-RM-01.2 | Текущий этап на карте | 🟡 | Progress %, statuses | Нет явной маркировки «текущий» на map |
+| FR-RM-01.2 | Текущий этап на карте | 🟡 | Progress %, current step badge, level highlight | Onboarding level не влияет на path |
 | FR-RM-02.1 | Определение текущего этапа | 🟡 | По progress в БД | Onboarding level не влияет на path |
 | FR-RM-02.2 | Задачи текущего этапа | 🟡 | Milestones в profile detail | Checklist не интерактивен |
 | FR-RM-03.1 | Критерии этапа | 🟡 | Quiz + checklist в lesson | Нет отдельного UI критериев |
 | FR-RM-03.2 | Сопоставление прогресса | 🟡 | Step status completed/locked | Нет % по этапу в UI |
 | FR-RM-04.1 | Материалы этапа | ✅ | Lesson content API + RoadmapScreen | — |
-| FR-RM-04.2 | Чек-листы | 🟡 | Checklist в lesson data | Только просмотр, без отметок |
+| FR-RM-04.2 | Чек-листы | 🟡 | Checklist в lesson + PATCH API, отметки в UI | Только просмотр % без блокировки квиза |
 | FR-RM-05.* | Фильтр заявок по этапу | ⏸ | — | Букинг/заявки |
 | FR-RM-06.* | CMS контента этапов | ⏸ | Seed only | Нет админки |
 
@@ -98,7 +98,7 @@ FR-PP-01…05 (без PP-06), FR-FEED-01…03 (без модерации), FR-RM
 | FR-MA-01.* | Предложения сотрудничества | ❌ | — | — |
 | FR-MA-02.1 | Поиск музыкантов | 🟡 | `/people`, search, filter solo/band | Нет расширенных фильтров, ранжирования |
 | FR-MA-02.2 | Сохранить музыканта | ✅ | favorite artist API, кнопки в people/profile | — |
-| FR-MA-03.1 | Карьерный таймлайн | 🟡 | Achievements, roadmap posts | Нет раздела «Карьерный путь» |
+| FR-MA-03.1 | Карьерный таймлайн | 🟡 | ProfileCareerTimeline: achievements + roadmap posts | Нет отдельного API |
 | FR-MA-04.1 | Отправка предложения | ❌ | Stub message button | Форма + API |
 | FR-MA-04.2 | Получение предложения артистом | ❌ | — | — |
 | FR-MA-05.* | Расширенный поиск | ❌ | — | Жанры, город, этап |
@@ -139,7 +139,7 @@ FR-PP-01…05 (без PP-06), FR-FEED-01…03 (без модерации), FR-RM
 | Profile posts API без UI | FR-PP-01.2, FR-PP-05.1 |
 | Demo albums/concerts/members | ~~FR-PP-03~~ albums/concerts в БД (ит. 2); members — текст |
 | Feed filters без логики | ~~FR-FEED-01.2~~ фильтр по типу в ит. 4 |
-| `/roadmap` не в навигации | FR-RM-01.1 (из профиля) |
+| `/roadmap` не в навигации | ~~FR-RM-01.1~~ sidebar + tab bar в ит. 5 |
 | Нет favorites | ~~FR-FEED-03.2~~ закрыто в ит. 3 | FR-MA-02.2, FR-PP-01.2 |
 
 ---
@@ -241,3 +241,15 @@ FR-PP-01…05 (без PP-06), FR-FEED-01…03 (без модерации), FR-RM
 - [x] SVG-иконки лайка и избранного с заливкой
 
 Не трогали: расширенные фильтры (уровень, год, ценности).
+
+---
+
+## Итерация 5 — Roadmap polish (выполнено 2026-05-25)
+
+Закрыто:
+- [x] FR-RM-01.2 — текущий этап на карте (подсветка уровня, badge в toolbar)
+- [x] FR-RM-04.2 — интерактивный чек-лист в уроке (PATCH API + UI)
+- [x] FR-RM-01.1 — Roadmap в сайдбаре и tab bar (musician)
+- [x] FR-MA-03.1 — раздел «Карьерный путь» на профиле
+
+Не трогали: onboarding level → стартовый этап; критерии этапа отдельным UI.

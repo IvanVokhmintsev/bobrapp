@@ -8,3 +8,7 @@ export type RoadmapQuizBody = {
     optionId: string;
   }>;
 };
+
+export type RoadmapChecklistBody = {
+  checkedIndices: number[];
+};
