@@ -140,6 +140,27 @@ export function ProfileScreen() {
     }
   }
 
+  async function toggleFavorite() {
+    if (!user || isOwnProfile) {
+      return;
+    }
+
+    try {
+      setError("");
+      if (user.favoritedByMe) {
+        await api.unfavoriteArtist(user.id);
+        setNotice("Артист убран из избранного");
+      } else {
+        await api.favoriteArtist(user.id);
+        setNotice("Артист добавлен в избранное");
+      }
+      const result = await api.getPublicProfile(user.id);
+      setLocalUser(result.user);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Не удалось обновить избранное");
+    }
+  }
+
   if (shouldRedirectToOwnProfile) {
     return <Navigate to="/profile" replace />;
   }
@@ -195,7 +216,7 @@ export function ProfileScreen() {
               onAvatarUpdated={handleProfileSaved}
               onToggleFollow={() => void toggleFollow()}
               onContact={() => showComingSoon("Связаться с артистом")}
-              onFavorite={() => showComingSoon("Избранное")}
+              onFavorite={() => void toggleFavorite()}
             />
             {authUser ? (
               <ProfilePostsSection
@@ -297,8 +318,14 @@ function ProfileSummary(props: {
                   <button type="button" className="profile-header-action" onClick={props.onContact}>
                     Связаться с артистом
                   </button>
-                  <button type="button" className="profile-header-action" onClick={props.onFavorite}>
-                    В избранное
+                  <button
+                    type="button"
+                    className={`profile-header-action ${
+                      props.user.favoritedByMe ? "profile-header-action--active" : ""
+                    }`}
+                    onClick={props.onFavorite}
+                  >
+                    {props.user.favoritedByMe ? "В избранном" : "В избранное"}
                   </button>
                   <button
                     type="button"

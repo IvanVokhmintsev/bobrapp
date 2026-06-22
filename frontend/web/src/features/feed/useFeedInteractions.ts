@@ -23,11 +23,13 @@ function toggleInSet(values: Set<string>, id: string) {
 type UseFeedInteractionsOptions = {
   profileUserId?: string;
   enabled?: boolean;
+  source?: "feed" | "profile" | "favorites";
 };
 
 export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
   const enabled = options?.enabled ?? true;
   const profileUserId = options?.profileUserId;
+  const source = options?.source ?? (profileUserId ? "profile" : "feed");
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [text, setText] = useState("");
   const [composerImage, setComposerImage] = useState<File | null>(null);
@@ -49,11 +51,14 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
       return;
     }
 
-    const result = profileUserId
-      ? await api.getProfilePosts(profileUserId)
-      : await api.getPosts();
+    const result =
+      source === "favorites"
+        ? await api.getFavoritePosts()
+        : profileUserId
+          ? await api.getProfilePosts(profileUserId)
+          : await api.getPosts();
     setPosts(result.posts);
-  }, [enabled, profileUserId]);
+  }, [enabled, profileUserId, source]);
 
   useEffect(() => {
     void loadPosts().catch((caught) => {
@@ -69,13 +74,13 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
     setComposerAudio(null);
   }
 
-  async function createPost() {
+  async function createPost(): Promise<boolean> {
     const trimmedText = text.trim();
     const hasAttachments = Boolean(composerImage || composerAudio);
 
     if (!trimmedText && !hasAttachments) {
       setError("Добавьте текст, фото или аудио");
-      return;
+      return false;
     }
 
     try {
@@ -95,8 +100,10 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
       ]);
       resetComposer();
       await loadPosts();
+      return true;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Не удалось опубликовать пост");
+      return false;
     } finally {
       setIsPublishing(false);
     }
@@ -118,6 +125,32 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Не удалось обновить лайк");
+    }
+  }
+
+  async function favoritePost(id: string) {
+    const target = posts.find((post) => post.id === id);
+    if (!target) {
+      return;
+    }
+
+    try {
+      setError("");
+      const result = target.favoritedByMe
+        ? await api.unfavoritePost(id)
+        : await api.favoritePost(id);
+
+      if (source === "favorites" && target.favoritedByMe) {
+        setPosts((currentPosts) => currentPosts.filter((post) => post.id !== id));
+      } else {
+        setPosts((currentPosts) =>
+          currentPosts.map((post) => (post.id === id ? result.post : post)),
+        );
+      }
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Не удалось обновить избранное",
+      );
     }
   }
 
@@ -258,6 +291,7 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
     error,
     createPost,
     likePost,
+    favoritePost,
     deletePost,
     toggleComments,
     createComment,
@@ -272,6 +306,7 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
 
 export type FeedPostCardHandlers = {
   onLike: () => void;
+  onFavorite?: () => void;
   onDeletePost: () => void;
   onToggleComments: () => void;
   onCommentTextChange: (value: string) => void;

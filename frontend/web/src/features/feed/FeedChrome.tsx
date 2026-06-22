@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import attachAudioIcon from "../../assets/feed/attach-audio.svg";
 import attachPhotoIcon from "../../assets/feed/attach-photo.svg";
@@ -8,6 +8,8 @@ export function FeedComposer(props: {
   text: string;
   imageFile: File | null;
   audioFile: File | null;
+  isPublishing?: boolean;
+  autoFocus?: boolean;
   onTextChange: (value: string) => void;
   onImageChange: (file: File | null) => void;
   onAudioChange: (file: File | null) => void;
@@ -15,13 +17,21 @@ export function FeedComposer(props: {
 }) {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const textInputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (props.autoFocus) {
+      textInputRef.current?.focus();
+    }
+  }, [props.autoFocus]);
 
   return (
     <section className="feed-composer" aria-label="Новый пост">
       <textarea
+        ref={textInputRef}
         value={props.text}
         onChange={(event) => props.onTextChange(event.target.value)}
-        placeholder="Введите текст"
+        placeholder="Что нового?"
         rows={3}
       />
 
@@ -77,7 +87,8 @@ export function FeedComposer(props: {
           type="button"
           className="feed-composer__send"
           onClick={props.onSubmit}
-          aria-label="Опубликовать"
+          disabled={props.isPublishing}
+          aria-label={props.isPublishing ? "Публикация…" : "Опубликовать"}
         >
           <img src={sendArrowIcon} alt="" />
         </button>

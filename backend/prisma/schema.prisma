@@ -85,6 +85,9 @@ model User {
   reposts         Repost[]
   following       Follow[] @relation("user_follows")
   followers       Follow[] @relation("user_followers")
+  favoriteArtists FavoriteArtist[] @relation("user_favorite_artists")
+  favoritedBy     FavoriteArtist[] @relation("artist_favorited_by")
+  favoritePosts   FavoritePost[]
   roadmapProgress UserRoadmapProgress[]
   achievements    Achievement[]
 }
@@ -129,6 +132,7 @@ model Post {
   postLikes PostLike[]
   comments Comment[]
   reposts  Repost[]
+  favoritePosts FavoritePost[]
 }
 
 model PostLike {
@@ -177,6 +181,32 @@ model Follow {
   following User @relation("user_followers", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
+}
+
+model FavoriteArtist {
+  id        String   @id @default(uuid())
+  userId    String
+  artistId  String
+  createdAt DateTime @default(now())
+
+  user   User @relation("user_favorite_artists", fields: [userId], references: [id], onDelete: Cascade)
+  artist User @relation("artist_favorited_by", fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, artistId])
+  @@index([userId, createdAt])
+}
+
+model FavoritePost {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId, createdAt])
 }
 
 model RoadmapStep {

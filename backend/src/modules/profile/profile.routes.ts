@@ -22,7 +22,10 @@ import {
 import { prisma } from "../../lib/prisma.js";
 import { authenticate } from "../auth/auth.middleware.js";
 import { toPublicPost } from "../posts/post.presenter.js";
-import { toPublicUser } from "../users/user.presenter.js";
+import {
+  profileInclude,
+  toProfileResponse,
+} from "./profile.presenter.js";
 import {
   achievementParamsSchema,
   createAchievementSchema,
@@ -62,25 +65,6 @@ import type {
   UpdateProfileBody,
 } from "./profile.types.js";
 
-const profileInclude = {
-  musicianProfile: true,
-  achievements: {
-    orderBy: {
-      createdAt: "desc",
-    },
-  },
-  _count: {
-    select: {
-      followers: true,
-      following: true,
-    },
-  },
-} as const;
-
-type ProfileUser = Prisma.UserGetPayload<{
-  include: typeof profileInclude;
-}>;
-
 const postInclude = {
   author: {
     select: {
@@ -90,6 +74,7 @@ const postInclude = {
       musicianProfile: {
         select: {
           avatarUrl: true,
+          profileType: true,
         },
       },
     },
@@ -104,16 +89,12 @@ const postInclude = {
       userId: true,
     },
   },
+  favoritePosts: {
+    select: {
+      userId: true,
+    },
+  },
 } as const;
-
-function toProfileResponse(user: ProfileUser, followingByMe = false) {
-  return {
-    ...toPublicUser(user),
-    followersCount: user._count.followers,
-    followingCount: user._count.following,
-    followingByMe,
-  };
-}
 
 function cleanStringArray(values: string[] | undefined) {
   if (values === undefined) {
@@ -491,10 +472,27 @@ export async function registerProfileRoutes(app: FastifyInstance) {
       const followingIds = new Set(
         followingRelations.map((relation) => relation.followingId),
       );
+      const favoriteRelations = await prisma.favoriteArtist.findMany({
+        where: {
+          userId: request.user.userId,
+          artistId: {
+            in: pageItems.map((user) => user.id),
+          },
+        },
+        select: {
+          artistId: true,
+        },
+      });
+      const favoritedIds = new Set(
+        favoriteRelations.map((relation) => relation.artistId),
+      );
 
       return {
         users: pageItems.map((user) =>
-          toProfileResponse(user, followingIds.has(user.id)),
+          toProfileResponse(user, {
+            followingByMe: followingIds.has(user.id),
+            favoritedByMe: favoritedIds.has(user.id),
+          }),
         ),
         pageInfo: {
           hasNextPage,
@@ -533,9 +531,20 @@ export async function registerProfileRoutes(app: FastifyInstance) {
           },
         },
       });
+      const favorite = await prisma.favoriteArtist.findUnique({
+        where: {
+          userId_artistId: {
+            userId: request.user.userId,
+            artistId: request.params.userId,
+          },
+        },
+      });
 
       return reply.send({
-        user: toProfileResponse(user, relation !== null),
+        user: toProfileResponse(user, {
+          followingByMe: relation !== null,
+          favoritedByMe: favorite !== null,
+        }),
       });
     },
   );
@@ -635,7 +644,7 @@ export async function registerProfileRoutes(app: FastifyInstance) {
 
       return {
         users: pageItems.map((relation) =>
-          toProfileResponse(relation.following, true),
+          toProfileResponse(relation.following, { followingByMe: true }),
         ),
         pageInfo: {
           hasNextPage,
@@ -711,10 +720,9 @@ export async function registerProfileRoutes(app: FastifyInstance) {
 
       return {
         users: pageItems.map((relation) =>
-          toProfileResponse(
-            relation.follower,
-            followingIds.has(relation.follower.id),
-          ),
+          toProfileResponse(relation.follower, {
+            followingByMe: followingIds.has(relation.follower.id),
+          }),
         ),
         pageInfo: {
           hasNextPage,

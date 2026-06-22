@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "../context/AuthContext";
 import { AuthScreen } from "../features/auth/AuthScreen";
 import { BookingScreen } from "../features/booking/BookingScreen";
 import { EventsScreen } from "../features/events/EventsScreen";
+import { FavoritesScreen } from "../features/favorites/FavoritesScreen";
 import { FeedScreen } from "../features/feed/FeedScreen";
 import { PeopleScreen } from "../features/people/PeopleScreen";
 import { AppLayout } from "../features/layout/AppLayout";
@@ -65,6 +66,7 @@ export function AppRouter() {
             <Route element={<AppLayout />}>
               <Route path="/feed" element={<FeedScreen />} />
               <Route path="/people" element={<PeopleScreen />} />
+              <Route path="/favorites" element={<FavoritesScreen />} />
               <Route path="/booking" element={<BookingScreen />} />
               <Route path="/events" element={<EventsScreen />} />
               <Route path="/profile" element={<ProfileScreen />} />

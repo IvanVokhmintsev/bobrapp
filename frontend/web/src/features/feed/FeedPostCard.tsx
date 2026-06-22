@@ -2,12 +2,14 @@ import { useRef, useState } from "react";
 
 import type { ApiComment, ApiPost, ApiUser } from "../../api";
 import commentIcon from "../../assets/feed/comment-action.png";
+import bookmarkIcon from "../../assets/feed/bookmark-action.png";
 import defaultAvatar from "../../assets/feed/card-cover.png";
 import likeIcon from "../../assets/feed/like-action.png";
 import playIcon from "../../assets/feed/play-button.png";
 import levelFlagIcon from "../../assets/profile/level-flag.svg";
 import { getMusicianLevel } from "../../lib/musicianLevel";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
+import { ProfileTypeBadge } from "../profile/ProfileTypeBadge";
 import { getPostDisplayMode } from "./feedPostMedia";
 import { resolveUploadUrl } from "../../lib/mediaUrl";
 import type { FeedPostCardHandlers, FeedPostCardState } from "./useFeedInteractions";
@@ -21,6 +23,7 @@ type FeedPostCardProps = FeedPostCardHandlers &
 
 export function FeedPostCard(props: FeedPostCardProps) {
   const canDelete = props.post.author.id === props.currentUser.id;
+  const canFavorite = props.post.author.id !== props.currentUser.id && props.onFavorite;
   const avatarSrc = resolveAvatarUrl(props.post.author.avatarUrl, defaultAvatar);
   const level = getAuthorLevel(props.post, props.currentUser);
   const displayMode = getPostDisplayMode(props.post);
@@ -38,6 +41,7 @@ export function FeedPostCard(props: FeedPostCardProps) {
           <div className="feed-card__meta">
             <div className="feed-card__name-row">
               <span className="feed-card__name">{props.post.author.name}</span>
+              <ProfileTypeBadge profileType={props.post.author.profileType ?? "solo"} />
               {props.post.author.role === "musician" ? (
                 <span className="feed-card__level" aria-label={`Уровень ${level}`}>
                   <img src={levelFlagIcon} alt="" />
@@ -104,6 +108,19 @@ export function FeedPostCard(props: FeedPostCardProps) {
             <img src={commentIcon} alt="" />
             <span>{props.post.commentsCount}</span>
           </button>
+          {canFavorite ? (
+            <button
+              type="button"
+              className={`feed-card__stat feed-card__stat--favorite ${
+                props.post.favoritedByMe ? "is-active" : ""
+              }`}
+              onClick={props.onFavorite}
+              aria-label={props.post.favoritedByMe ? "Убрать из избранного" : "В избранное"}
+              aria-pressed={props.post.favoritedByMe}
+            >
+              <img src={bookmarkIcon} alt="" />
+            </button>
+          ) : null}
         </div>
       </footer>
 

@@ -15,12 +15,16 @@ type PostWithAuthor = {
     role: "musician" | "label";
     musicianProfile?: {
       avatarUrl: string | null;
+      profileType?: "solo" | "band";
     } | null;
   };
   postLikes?: Array<{
     userId: string;
   }>;
   reposts?: Array<{
+    userId: string;
+  }>;
+  favoritePosts?: Array<{
     userId: string;
   }>;
 };
@@ -34,6 +38,10 @@ export function toPublicPost(post: PostWithAuthor, currentUserId?: string) {
     currentUserId !== undefined
       ? (post.reposts ?? []).some((repost) => repost.userId === currentUserId)
       : false;
+  const favoritedByMe =
+    currentUserId !== undefined
+      ? (post.favoritePosts ?? []).some((favorite) => favorite.userId === currentUserId)
+      : false;
 
   return {
     id: post.id,
@@ -46,6 +54,7 @@ export function toPublicPost(post: PostWithAuthor, currentUserId?: string) {
     repostsCount: post.repostsCount,
     likedByMe,
     repostedByMe,
+    favoritedByMe,
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
     author: {
@@ -53,6 +62,7 @@ export function toPublicPost(post: PostWithAuthor, currentUserId?: string) {
       name: post.author.name,
       role: post.author.role,
       avatarUrl: post.author.musicianProfile?.avatarUrl ?? null,
+      profileType: post.author.musicianProfile?.profileType ?? "solo",
     },
   };
 }

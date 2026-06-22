@@ -3,10 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import type { ApiUser } from "../../api";
 import defaultAvatar from "../../assets/feed/card-cover.png";
 import levelFlagIcon from "../../assets/profile/level-flag.svg";
+import bookmarkIcon from "../../assets/feed/bookmark-action.png";
 import navBookingIcon from "../../assets/profile/nav-booking.svg";
 import navEventsIcon from "../../assets/profile/nav-events.svg";
 import navFeedIcon from "../../assets/profile/nav-feed.svg";
+import navMusiciansIcon from "../../assets/profile/nav-musicians.svg";
 import navProfileIcon from "../../assets/profile/nav-profile.svg";
+import { useAuth } from "../../context/AuthContext";
 import { getMusicianLevelFromUser } from "../../lib/musicianLevel";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
 import { ProPanel } from "./ProPanel";
@@ -17,23 +20,16 @@ type AppSidebarProps = {
 
 const navItems = [
   { to: "/feed", label: "Лента", icon: navFeedIcon },
-  {
-    to: "/discover?section=booking",
-    label: "Букинг",
-    icon: navBookingIcon,
-    matchSearch: "?section=booking",
-  },
-  {
-    to: "/discover?section=events",
-    label: "События",
-    icon: navEventsIcon,
-    matchSearch: "?section=events",
-  },
+  { to: "/people", label: "Музыканты", icon: navMusiciansIcon },
+  { to: "/favorites", label: "Избранное", icon: bookmarkIcon },
+  { to: "/booking", label: "Букинг", icon: navBookingIcon },
+  { to: "/events", label: "События", icon: navEventsIcon },
   { to: "/profile", label: "Профиль", icon: navProfileIcon },
 ];
 
 export function AppSidebar(props: AppSidebarProps) {
   const location = useLocation();
+  const { logout } = useAuth();
   const avatarSrc = resolveAvatarUrl(
     props.user.musicianProfile?.avatarUrl,
     defaultAvatar,
@@ -58,9 +54,7 @@ export function AppSidebar(props: AppSidebarProps) {
 
       <nav className="app-sidebar__nav">
         {navItems.map((item) => {
-          const isActive = item.matchSearch
-            ? location.pathname === "/discover" && location.search === item.matchSearch
-            : location.pathname === item.to;
+          const isActive = location.pathname === item.to;
 
           return (
             <Link
@@ -76,6 +70,13 @@ export function AppSidebar(props: AppSidebarProps) {
       </nav>
 
       <ProPanel compact />
+      <button
+        type="button"
+        className="app-sidebar__logout"
+        onClick={() => void logout()}
+      >
+        Выйти
+      </button>
       <p className="app-sidebar__copyright">© Bobr LLC 2026</p>
     </aside>
   );

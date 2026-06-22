@@ -1,0 +1,94 @@
+.favorites-page {
+  max-width: 720px;
+}
+
+.favorites-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.favorites-tabs button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+
+.favorites-tabs button.is-active {
+  border-color: rgba(57, 216, 240, 0.45);
+  background: rgba(57, 216, 240, 0.14);
+}
+
+.favorites-page__hint {
+  margin: 0;
+  color: var(--app-muted);
+}
+
+.favorites-artists {
+  display: grid;
+  gap: 12px;
+}
+
+.favorites-artist {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.favorites-artist__main {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.favorites-artist__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.favorites-artist__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.favorites-artist__title-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.favorites-artist__bio {
+  color: var(--app-muted);
+  font-size: 14px;
+}
+
+.favorites-artist__level {
+  display: inline-grid;
+  place-items: center;
+}
+
+.favorites-artist > button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+.favorites-posts {
+  align-items: center;
+}

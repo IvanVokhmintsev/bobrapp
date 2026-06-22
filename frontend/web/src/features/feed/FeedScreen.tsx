@@ -1,9 +1,8 @@
 import { useAuth } from "../../context/AuthContext";
 import defaultAvatar from "../../assets/feed/card-cover.png";
-import { getMusicianLevelFromUser } from "../../lib/musicianLevel";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
 import { ProPanel } from "../layout/ProPanel";
-import { FeedComposer } from "./FeedChrome";
+import { FeedNewPostBlock } from "./FeedNewPostBlock";
 import { FeedPostCard } from "./FeedPostCard";
 import "./feed.css";
 import { useFeedInteractions } from "./useFeedInteractions";
@@ -17,7 +16,7 @@ export function FeedScreen() {
   }
 
   const avatarSrc = resolveAvatarUrl(user.musicianProfile?.avatarUrl, defaultAvatar);
-  const level = getMusicianLevelFromUser(user);
+  const isMusician = user.role === "musician";
 
   return (
     <div className="feed-page">
@@ -25,6 +24,21 @@ export function FeedScreen() {
         {feed.error ? <p className="feed__error">{feed.error}</p> : null}
 
         <section className="feed__stream" aria-label="Лента постов">
+          {isMusician ? (
+            <FeedNewPostBlock
+              user={user}
+              avatarSrc={avatarSrc}
+              text={feed.text}
+              imageFile={feed.composerImage}
+              audioFile={feed.composerAudio}
+              isPublishing={feed.isPublishing}
+              onTextChange={feed.setText}
+              onImageChange={feed.setComposerImage}
+              onAudioChange={feed.setComposerAudio}
+              onSubmit={() => feed.createPost()}
+            />
+          ) : null}
+
           {feed.posts.length === 0 ? (
             <p className="feed__empty">В ленте пока нет постов. Будьте первым!</p>
           ) : null}
@@ -38,6 +52,7 @@ export function FeedScreen() {
               comments={feed.commentsByPost[post.id]}
               commentText={feed.commentTextByPost[post.id] ?? ""}
               onLike={() => void feed.likePost(post.id)}
+              onFavorite={() => void feed.favoritePost(post.id)}
               onDeletePost={() => void feed.deletePost(post.id)}
               onToggleComments={() => void feed.toggleComments(post.id)}
               onCommentTextChange={(value) => feed.setCommentText(post.id, value)}
@@ -48,43 +63,9 @@ export function FeedScreen() {
         </section>
       </main>
 
-      <aside className="feed-aside" aria-label="Фильтры и публикация">
+      <aside className="feed-aside" aria-label="Фильтры">
         <FiltersPanel />
-        {user.role === "musician" ? (
-          <section className="feed-new-post" aria-label="Новый пост">
-            <div className="feed-new-post__header">
-              <UserLine user={user} avatarSrc={avatarSrc} level={level} short />
-              <button type="button" aria-label="Меню поста">
-                •••
-              </button>
-            </div>
-            <FeedComposer
-              text={feed.text}
-              imageFile={feed.composerImage}
-              audioFile={feed.composerAudio}
-              onTextChange={feed.setText}
-              onImageChange={feed.setComposerImage}
-              onAudioChange={feed.setComposerAudio}
-              onSubmit={() => void feed.createPost()}
-            />
-          </section>
-        ) : null}
       </aside>
-    </div>
-  );
-}
-
-function UserLine(props: {
-  user: { name: string };
-  avatarSrc: string;
-  level: number;
-  short?: boolean;
-}) {
-  return (
-    <div className={`feed-user ${props.short ? "feed-user--short" : ""}`}>
-      <img src={props.avatarSrc} alt="" />
-      <span>{props.short ? "Новый пост" : props.user.name}</span>
-      {!props.short ? <strong>{props.level}</strong> : null}
     </div>
   );
 }

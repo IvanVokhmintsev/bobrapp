@@ -33,6 +33,7 @@ export type ApiUser = {
   followersCount?: number;
   followingCount?: number;
   followingByMe?: boolean;
+  favoritedByMe?: boolean;
 };
 
 export type ApiPost = {
@@ -46,6 +47,7 @@ export type ApiPost = {
   repostsCount: number;
   likedByMe: boolean;
   repostedByMe: boolean;
+  favoritedByMe: boolean;
   createdAt: string;
   updatedAt: string;
   author: {
@@ -381,6 +383,62 @@ export const api = {
         method: "DELETE",
         body: JSON.stringify({}),
       },
+    );
+  },
+  favoriteArtist(userId: string) {
+    return request<{ favorited: boolean }>(`/profiles/${userId}/favorite`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  },
+  unfavoriteArtist(userId: string) {
+    return request<{ favorited: boolean }>(`/profiles/${userId}/favorite`, {
+      method: "DELETE",
+      body: JSON.stringify({}),
+    });
+  },
+  favoritePost(postId: string) {
+    return request<{ post: ApiPost; favorited: boolean }>(
+      `/posts/${postId}/favorite`,
+      {
+        method: "POST",
+      },
+    );
+  },
+  unfavoritePost(postId: string) {
+    return request<{ post: ApiPost; favorited: boolean }>(
+      `/posts/${postId}/favorite`,
+      {
+        method: "DELETE",
+      },
+    );
+  },
+  getFavoriteArtists(params?: { cursor?: string; limit?: number }) {
+    const search = new URLSearchParams();
+    if (params?.cursor) {
+      search.set("cursor", params.cursor);
+    }
+    if (params?.limit) {
+      search.set("limit", String(params.limit));
+    }
+    const query = search.toString();
+
+    return request<{ users: ApiUser[]; pageInfo: PageInfo }>(
+      `/profile/me/favorites/artists${query ? `?${query}` : ""}`,
+    );
+  },
+  getFavoritePosts(params?: { cursor?: string; limit?: number }) {
+    const search = new URLSearchParams();
+    if (params?.cursor) {
+      search.set("cursor", params.cursor);
+    }
+    if (params?.limit) {
+      search.set("limit", String(params.limit));
+    }
+    const query = search.toString();
+
+    return request<{ posts: ApiPost[]; pageInfo: PageInfo }>(
+      `/profile/me/favorites/posts${query ? `?${query}` : ""}`,
     );
   },
   createAchievement(input: { title: string; description?: string }) {

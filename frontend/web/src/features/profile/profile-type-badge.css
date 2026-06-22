@@ -1,0 +1,21 @@
+.profile-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.profile-type-badge--solo {
+  color: #b8d4ff;
+  background: rgba(88, 140, 255, 0.16);
+}
+
+.profile-type-badge--band {
+  color: #ffc9a8;
+  background: rgba(255, 132, 71, 0.16);
+}

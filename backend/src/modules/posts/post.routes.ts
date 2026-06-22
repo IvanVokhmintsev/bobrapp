@@ -35,6 +35,7 @@ const postInclude = {
       musicianProfile: {
         select: {
           avatarUrl: true,
+          profileType: true,
         },
       },
     },
@@ -45,6 +46,11 @@ const postInclude = {
     },
   },
   reposts: {
+    select: {
+      userId: true,
+    },
+  },
+  favoritePosts: {
     select: {
       userId: true,
     },
@@ -503,6 +509,7 @@ export async function registerPostRoutes(app: FastifyInstance) {
               musicianProfile: {
                 select: {
                   avatarUrl: true,
+                  profileType: true,
                 },
               },
             },
@@ -562,6 +569,7 @@ export async function registerPostRoutes(app: FastifyInstance) {
                 musicianProfile: {
                   select: {
                     avatarUrl: true,
+                    profileType: true,
                   },
                 },
               },

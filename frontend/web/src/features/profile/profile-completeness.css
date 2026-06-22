@@ -160,6 +160,11 @@
   border-color: rgba(255, 48, 56, 0.55);
 }
 
+.profile-header-action--active {
+  border-color: rgba(57, 216, 240, 0.45);
+  background: rgba(57, 216, 240, 0.12);
+}
+
 .profile-block--posts {
   width: 100%;
 }

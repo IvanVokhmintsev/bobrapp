@@ -30,6 +30,7 @@ export function ProfilePostsSection(props: ProfilePostsSectionProps) {
               comments={feed.commentsByPost[post.id]}
               commentText={feed.commentTextByPost[post.id] ?? ""}
               onLike={() => void feed.likePost(post.id)}
+              onFavorite={() => void feed.favoritePost(post.id)}
               onDeletePost={() => void feed.deletePost(post.id)}
               onToggleComments={() => void feed.toggleComments(post.id)}
               onCommentTextChange={(value) => feed.setCommentText(post.id, value)}
