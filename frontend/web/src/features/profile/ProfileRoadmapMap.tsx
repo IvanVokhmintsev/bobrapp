@@ -3,7 +3,6 @@ import {
   roadmapLevelNodes,
   roadmapMilestones,
   roadmapPaths,
-  roadmapToolbar,
 } from "./roadmapLayout";
 import {
   getLevelByMapNode,
@@ -43,20 +42,6 @@ export function ProfileRoadmapMap(props: ProfileRoadmapMapProps) {
       className={`profile-roadmap-figma ${props.compact ? "profile-roadmap-figma--compact" : ""}`}
       aria-label="Roadmap"
     >
-      {!props.compact ? (
-        <div className="profile-roadmap-figma__toolbar">
-          {roadmapToolbar.map((item) => (
-            <button key={item.id} type="button" aria-label={item.id} tabIndex={-1}>
-              <img
-                src={item.src}
-                alt=""
-                style={{ width: item.width, height: item.height }}
-              />
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       <div
         className="profile-roadmap-figma__viewport"
         style={{ height: ROADMAP_CANVAS.height * scale }}

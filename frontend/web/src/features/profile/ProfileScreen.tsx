@@ -23,6 +23,7 @@ import { AvatarPicker } from "./AvatarPicker";
 import { useFeedInteractions } from "../feed/useFeedInteractions";
 import { ProfilePostsSection } from "./ProfilePostsSection";
 import { ProfileCareerTimeline } from "./ProfileCareerTimeline";
+import { ProfileRoadmapPreview } from "./ProfileRoadmapPreview";
 import { LabelProfileScreen } from "./LabelProfileScreen";
 import { ContactProposalSheet } from "../proposals/ContactProposalSheet";
 import { ProfileTypeBadge } from "./ProfileTypeBadge";
@@ -258,6 +259,7 @@ export function ProfileScreen() {
               onContact={handleContact}
               onFavorite={() => void toggleFavorite()}
             />
+            <ProfileRoadmapPreview enabled={isOwnProfile && authUser?.role === "musician"} />
             <ProfileCareerTimeline user={user} posts={profileFeed.posts} />
             {authUser ? (
               <ProfilePostsSection

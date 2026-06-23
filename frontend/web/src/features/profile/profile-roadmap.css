@@ -1,3 +1,33 @@
+.profile-roadmap-preview {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-roadmap-preview__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-roadmap-preview__head h2 {
+  margin: 0;
+}
+
+.profile-roadmap-preview__meta {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 14px;
+}
+
+.profile-roadmap-preview__map {
+  min-height: 420px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #171717;
+}
+
 .profile-roadmap-figma {
   position: relative;
   width: 100%;

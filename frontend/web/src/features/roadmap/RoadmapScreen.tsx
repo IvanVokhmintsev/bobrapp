@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { api, type RoadmapLesson, type RoadmapLevel, type RoadmapMilestone } from "../../api";
 import { useAuth } from "../../context/AuthContext";
-import { getCurrentLevel, getLevelByMapNode } from "../../lib/roadmapLevels";
+import { getCurrentLevel, getLevelByMapNode, isLevelSelectable } from "../../lib/roadmapLevels";
 import { ProfileRoadmapMap } from "../profile/ProfileRoadmapMap";
 import "../profile/profile-roadmap.css";
 import "./roadmap.css";
 
 export function RoadmapScreen() {
+  const [searchParams] = useSearchParams();
   const { user, refreshUser } = useAuth();
   const [levels, setLevels] = useState<RoadmapLevel[]>([]);
   const [selectedMapNodeId, setSelectedMapNodeId] = useState<number | null>(null);
@@ -49,13 +51,24 @@ export function RoadmapScreen() {
 
   useEffect(() => {
     void loadRoadmap().then((loadedLevels) => {
+      const levelParam = searchParams.get("level");
+      const mapNodeId = levelParam ? Number(levelParam) : Number.NaN;
+      const levelFromQuery = Number.isInteger(mapNodeId)
+        ? getLevelByMapNode(loadedLevels, mapNodeId)
+        : null;
+
+      if (levelFromQuery && isLevelSelectable(levelFromQuery)) {
+        setSelectedMapNodeId(levelFromQuery.mapNodeId);
+        return;
+      }
+
       const current = getCurrentLevel(loadedLevels);
 
       if (current) {
         setSelectedMapNodeId(current.mapNodeId);
       }
     });
-  }, []);
+  }, [searchParams]);
 
   async function handleOpenMaterial(milestone: RoadmapMilestone) {
     if (milestone.status === "locked") {
