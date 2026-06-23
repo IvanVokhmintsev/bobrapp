@@ -15,7 +15,7 @@ export function AppTabBar(props: AppTabBarProps) {
       {navItems.map((item) => {
         const isActive =
           location.pathname === item.to ||
-          (item.to === "/roadmap/map" && location.pathname.startsWith("/roadmap")) ||
+          (item.to === "/roadmap" && location.pathname.startsWith("/roadmap")) ||
           (item.to === "/proposals" && location.pathname.startsWith("/proposals"));
 
         return (
@@ -54,7 +54,7 @@ function buildTabItems(role: ApiUser["role"]) {
   return [
     items[0],
     items[1],
-    { to: "/roadmap/map", label: "Roadmap" },
+    { to: "/roadmap", label: "Roadmap" },
     items[2],
     items[4],
   ];

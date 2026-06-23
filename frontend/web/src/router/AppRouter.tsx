@@ -11,7 +11,6 @@ import { AppLayout } from "../features/layout/AppLayout";
 import { AppLoading } from "../features/layout/AppLoading";
 import "../features/layout/app-shell.css";
 import { OnboardingScreen } from "../features/onboarding/OnboardingScreen";
-import { RoadmapMapScreen } from "../features/roadmap/RoadmapMapScreen";
 import { ProposalsScreen } from "../features/proposals/ProposalsScreen";
 import { ProfileScreen } from "../features/profile/ProfileScreen";
 import { RoadmapScreen } from "../features/roadmap/RoadmapScreen";
@@ -75,7 +74,7 @@ export function AppRouter() {
               <Route path="/profile/:userId" element={<ProfileScreen />} />
               <Route path="/discover" element={<Navigate to="/people" replace />} />
               <Route path="/roadmap" element={<RoadmapScreen />} />
-              <Route path="/roadmap/map" element={<RoadmapMapScreen />} />
+              <Route path="/roadmap/map" element={<Navigate to="/roadmap" replace />} />
             </Route>
           </Route>
 

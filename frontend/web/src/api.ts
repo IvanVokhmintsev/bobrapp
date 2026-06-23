@@ -107,28 +107,42 @@ export type PageInfo = {
   nextCursor: string | null;
 };
 
-export type RoadmapStep = {
+export type RoadmapCheckpoint = {
+  index: number;
+  label: string;
+  completed: boolean;
+};
+
+export type RoadmapMilestone = {
   id: string;
+  levelId: string;
+  mapNodeId: number | null;
   title: string;
   description: string;
   order: number;
   status: "locked" | "available" | "completed";
-  pointsReward: number;
   completedAt: string | null;
+  pointsReward: number;
+  checkpoints: RoadmapCheckpoint[];
+  materialTitle: string;
 };
 
-export type RoadmapLesson = RoadmapStep & {
+export type RoadmapLevel = {
+  id: string;
+  mapNodeId: number;
+  title: string;
+  order: number;
+  status: "completed" | "current" | "locked";
+  milestones: RoadmapMilestone[];
+};
+
+/** @deprecated Use RoadmapMilestone */
+export type RoadmapStep = RoadmapMilestone;
+
+export type RoadmapLesson = RoadmapMilestone & {
   content: string;
   checklist: string[];
   checklistChecked: number[];
-  quiz: Array<{
-    id: string;
-    question: string;
-    options: Array<{
-      id: string;
-      text: string;
-    }>;
-  }>;
 };
 
 export type ApiProposalConversation = {
@@ -653,7 +667,7 @@ export const api = {
     );
   },
   getRoadmap() {
-    return request<{ steps: RoadmapStep[] }>("/roadmap");
+    return request<{ levels: RoadmapLevel[]; steps: RoadmapMilestone[] }>("/roadmap");
   },
   getLesson(stepId: string) {
     return request<{ step: RoadmapLesson }>(
@@ -667,7 +681,8 @@ export const api = {
     return request<{
       passed: boolean;
       wrongQuestionIds: string[];
-      steps: RoadmapStep[];
+      levels: RoadmapLevel[];
+      steps: RoadmapMilestone[];
     }>(
       `/roadmap/${stepId}/quiz`,
       {
@@ -677,7 +692,11 @@ export const api = {
     );
   },
   updateChecklist(stepId: string, checkedIndices: number[]) {
-    return request<{ step: RoadmapLesson }>(`/roadmap/${stepId}/checklist`, {
+    return request<{
+      levels: RoadmapLevel[];
+      steps: RoadmapMilestone[];
+      milestoneCompleted: boolean;
+    }>(`/roadmap/${stepId}/checklist`, {
       method: "PATCH",
       body: JSON.stringify({ checkedIndices }),
     });

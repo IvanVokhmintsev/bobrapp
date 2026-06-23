@@ -1,37 +1,64 @@
-import type { RoadmapStep } from "../api";
+import type { RoadmapLevel, RoadmapMilestone } from "../api";
 
-/** Maps seed step order (1…8) to Figma map level nodes (7…3). */
+export type RoadmapLevelStatus = RoadmapLevel["status"];
+
+/** @deprecated Prefer level.mapNodeId from API */
 export function stepOrderToLevel(order: number): number {
-  return Math.max(3, 7 - Math.min(4, Math.floor(((order - 1) * 5) / 8)));
+  if (order <= 2) {
+    return 7;
+  }
+
+  if (order <= 4) {
+    return 6;
+  }
+
+  if (order <= 6) {
+    return 5;
+  }
+
+  if (order === 7) {
+    return 4;
+  }
+
+  return 3;
 }
 
-export function getCurrentStep(steps: RoadmapStep[]): RoadmapStep | null {
-  return steps.find((step) => step.status === "available") ?? null;
+export function getCurrentLevel(levels: RoadmapLevel[]): RoadmapLevel | null {
+  return levels.find((level) => level.status === "current") ?? null;
 }
 
-export type RoadmapLevelStatus = "completed" | "current" | "locked";
+export function getCurrentMilestone(levels: RoadmapLevel[]): RoadmapMilestone | null {
+  for (const level of levels) {
+    const milestone = level.milestones.find((item) => item.status === "available");
 
+    if (milestone) {
+      return milestone;
+    }
+  }
+
+  return null;
+}
+
+export function getLevelByMapNode(
+  levels: RoadmapLevel[],
+  mapNodeId: number,
+): RoadmapLevel | null {
+  return levels.find((level) => level.mapNodeId === mapNodeId) ?? null;
+}
+
+export function isLevelSelectable(level: RoadmapLevel) {
+  return level.status === "completed" || level.status === "current";
+}
+
+/** @deprecated Use getCurrentMilestone */
+export function getCurrentStep(milestones: RoadmapMilestone[]): RoadmapMilestone | null {
+  return milestones.find((milestone) => milestone.status === "available") ?? null;
+}
+
+/** @deprecated Use level.status from API */
 export function getLevelStatus(
-  level: number,
-  steps: RoadmapStep[],
+  mapNodeId: number,
+  levels: RoadmapLevel[],
 ): RoadmapLevelStatus {
-  const levelSteps = steps.filter((step) => stepOrderToLevel(step.order) === level);
-
-  if (levelSteps.length === 0) {
-    return "locked";
-  }
-
-  if (levelSteps.every((step) => step.status === "completed")) {
-    return "completed";
-  }
-
-  if (levelSteps.some((step) => step.status === "available")) {
-    return "current";
-  }
-
-  if (levelSteps.some((step) => step.status === "completed")) {
-    return "completed";
-  }
-
-  return "locked";
+  return getLevelByMapNode(levels, mapNodeId)?.status ?? "locked";
 }

@@ -49,7 +49,7 @@ function buildNavItems(role: ApiUser["role"]) {
     baseNavItems[1],
     baseNavItems[2],
     { to: "/proposals", label: "Предложения", icon: "proposals" as const },
-    { to: "/roadmap/map", label: "Roadmap", icon: "roadmap" as const },
+    { to: "/roadmap", label: "Roadmap", icon: "roadmap" as const },
     baseNavItems[3],
     baseNavItems[4],
     baseNavItems[5],
@@ -100,7 +100,7 @@ export function AppSidebar(props: AppSidebarProps) {
         {navItems.map((item) => {
           const isActive =
             location.pathname === item.to ||
-            (item.to === "/roadmap/map" && location.pathname.startsWith("/roadmap")) ||
+            (item.to === "/roadmap" && location.pathname.startsWith("/roadmap")) ||
             (item.to === "/proposals" && location.pathname.startsWith("/proposals"));
 
           return (

@@ -385,11 +385,8 @@ function ProfileSummary(props: {
                     <Link className="profile-header-action" to="/proposals">
                       Предложения
                     </Link>
-                    <Link className="profile-header-action" to="/roadmap/map">
-                      Карта развития
-                    </Link>
                     <Link className="profile-header-action profile-header-action--primary" to="/roadmap">
-                      Уроки roadmap
+                      Roadmap
                     </Link>
                   </>
                 ) : null

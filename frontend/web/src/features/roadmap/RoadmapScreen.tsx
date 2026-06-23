@@ -1,30 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
 
-import { api, type RoadmapLesson, type RoadmapStep } from "../../api";
-import { getCurrentStep } from "../../lib/roadmapLevels";
+import { api, type RoadmapLesson, type RoadmapLevel, type RoadmapMilestone } from "../../api";
+import { useAuth } from "../../context/AuthContext";
+import { getCurrentLevel, getLevelByMapNode } from "../../lib/roadmapLevels";
+import { ProfileRoadmapMap } from "../profile/ProfileRoadmapMap";
+import "../profile/profile-roadmap.css";
 import "./roadmap.css";
 
 export function RoadmapScreen() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [steps, setSteps] = useState<RoadmapStep[]>([]);
-  const [lesson, setLesson] = useState<RoadmapLesson | null>(null);
-  const [checkedIndices, setCheckedIndices] = useState<number[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [error, setError] = useState("");
+  const { user, refreshUser } = useAuth();
+  const [levels, setLevels] = useState<RoadmapLevel[]>([]);
+  const [selectedMapNodeId, setSelectedMapNodeId] = useState<number | null>(null);
+  const [openMaterial, setOpenMaterial] = useState<RoadmapLesson | null>(null);
   const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [notice, setNotice] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isSavingChecklist, setIsSavingChecklist] = useState(false);
+  const [isLoadingMaterial, setIsLoadingMaterial] = useState(false);
+  const [savingMilestoneId, setSavingMilestoneId] = useState<string | null>(null);
 
-  const currentStep = useMemo(() => getCurrentStep(steps), [steps]);
-  const completedSteps = useMemo(
-    () => steps.filter((step) => step.status === "completed"),
-    [steps],
+  const selectedLevel = useMemo(
+    () => (selectedMapNodeId == null ? null : getLevelByMapNode(levels, selectedMapNodeId)),
+    [levels, selectedMapNodeId],
   );
-  const lockedSteps = useMemo(
-    () => steps.filter((step) => step.status === "locked"),
-    [steps],
-  );
+  const currentLevel = useMemo(() => getCurrentLevel(levels), [levels]);
+  const roadmapProgress = user?.musicianProfile?.roadmapProgress ?? 0;
 
   async function loadRoadmap() {
     setIsLoading(true);
@@ -32,273 +32,258 @@ export function RoadmapScreen() {
 
     try {
       const result = await api.getRoadmap();
-      setSteps(result.steps);
+      setLevels(result.levels);
+      return result.levels;
     } catch (caught) {
-      setSteps([]);
+      setLevels([]);
       setLoadError(
         caught instanceof Error
           ? caught.message
           : "Не удалось загрузить roadmap. Нужна роль musician и запущенный backend.",
       );
+      return [];
     } finally {
       setIsLoading(false);
     }
   }
 
   useEffect(() => {
-    void loadRoadmap();
+    void loadRoadmap().then((loadedLevels) => {
+      const current = getCurrentLevel(loadedLevels);
+
+      if (current) {
+        setSelectedMapNodeId(current.mapNodeId);
+      }
+    });
   }, []);
 
-  async function openLesson(stepId: string) {
-    setError("");
-    setLoadError("");
+  async function handleOpenMaterial(milestone: RoadmapMilestone) {
+    if (milestone.status === "locked") {
+      return;
+    }
+
+    setIsLoadingMaterial(true);
+    setActionError("");
 
     try {
-      const result = await api.getLesson(stepId);
-      setLesson(result.step);
-      setCheckedIndices(result.step.checklistChecked);
-      setAnswers({});
+      const result = await api.getLesson(milestone.id);
+      setOpenMaterial(result.step);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Не удалось открыть урок");
-    }
-  }
-
-  useEffect(() => {
-    const stepId = searchParams.get("step");
-
-    if (!stepId || steps.length === 0) {
-      return;
-    }
-
-    const step = steps.find((item) => item.id === stepId);
-
-    if (!step || step.status === "locked") {
-      return;
-    }
-
-    void openLesson(stepId);
-    setSearchParams({}, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, steps]);
-
-  async function toggleChecklistItem(index: number) {
-    if (!lesson) {
-      return;
-    }
-
-    const previousChecked = checkedIndices;
-    const nextChecked = previousChecked.includes(index)
-      ? previousChecked.filter((item) => item !== index)
-      : [...previousChecked, index].sort((left, right) => left - right);
-
-    setCheckedIndices(nextChecked);
-    setIsSavingChecklist(true);
-    setError("");
-
-    try {
-      const result = await api.updateChecklist(lesson.id, nextChecked);
-      setLesson(result.step);
-      setCheckedIndices(result.step.checklistChecked);
-    } catch (caught) {
-      setCheckedIndices(previousChecked);
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "Не удалось сохранить чек-лист. Проверьте миграции backend.",
+      setActionError(
+        caught instanceof Error ? caught.message : "Не удалось открыть материал",
       );
     } finally {
-      setIsSavingChecklist(false);
+      setIsLoadingMaterial(false);
     }
   }
 
-  async function submitQuiz() {
-    if (!lesson) {
+  function closeMaterial() {
+    setOpenMaterial(null);
+    setActionError("");
+  }
+
+  async function toggleCheckpoint(milestone: RoadmapMilestone, index: number) {
+    if (milestone.status === "locked") {
       return;
     }
 
+    const checkedIndices = milestone.checkpoints
+      .filter((checkpoint) => checkpoint.completed)
+      .map((checkpoint) => checkpoint.index);
+
+    const nextChecked = checkedIndices.includes(index)
+      ? checkedIndices.filter((checkpointIndex) => checkpointIndex !== index)
+      : [...checkedIndices, index].sort((left, right) => left - right);
+
+    setSavingMilestoneId(milestone.id);
+    setActionError("");
+
     try {
-      const result = await api.submitQuiz(
-        lesson.id,
-        Object.entries(answers).map(([questionId, optionId]) => ({
-          questionId,
-          optionId,
-        })),
-      );
-      setSteps(result.steps);
-      setLesson(null);
-      setError("");
+      const result = await api.updateChecklist(milestone.id, nextChecked);
+      setLevels(result.levels);
+      setActionError("");
+
+      if (result.milestoneCompleted) {
+        setNotice("Мэйлстоун пройден. Открыт следующий этап.");
+        await refreshUser();
+        const nextCurrent = getCurrentLevel(result.levels);
+
+        if (nextCurrent) {
+          setSelectedMapNodeId(nextCurrent.mapNodeId);
+        }
+      }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Не удалось отправить ответы");
+      setActionError(
+        caught instanceof Error ? caught.message : "Не удалось сохранить чекпоинт",
+      );
+    } finally {
+      setSavingMilestoneId(null);
     }
   }
 
-  const checklistProgress =
-    lesson && lesson.checklist.length > 0
-      ? Math.round((checkedIndices.length / lesson.checklist.length) * 100)
-      : 0;
+  function handleSelectLevel(mapNodeId: number) {
+    setSelectedMapNodeId(mapNodeId);
+    setOpenMaterial(null);
+    setNotice("");
+  }
 
   return (
-    <main className="app-page roadmap-page">
-      <div className="roadmap-page__head">
+    <main className="app-page roadmap-workspace">
+      <header className="roadmap-workspace__head">
         <div>
           <h1>Roadmap</h1>
           <p className="app-page__intro">
-            Здесь проходят этапы: чек-лист и квиз в уроке. Карта — только обзор.
+            Выберите уровень на карте, отметьте чекпоинты и откройте гайд справа.
           </p>
         </div>
-        <Link className="roadmap-page__map-link" to="/roadmap/map">
-          Карта развития
-        </Link>
-      </div>
+        <div className="roadmap-workspace__meta">
+          <span className="roadmap-workspace__progress">Прогресс: {roadmapProgress}%</span>
+          {currentLevel ? (
+            <span className="roadmap-workspace__current">Текущий: {currentLevel.title}</span>
+          ) : null}
+        </div>
+      </header>
 
-      {isLoading ? <p className="app-page__hint">Загрузка этапов…</p> : null}
+      {isLoading ? <p className="app-page__hint">Загрузка roadmap…</p> : null}
       {loadError ? <p className="app-page__error">{loadError}</p> : null}
+      {actionError ? <p className="app-page__error">{actionError}</p> : null}
+      {notice ? <p className="app-page__hint">{notice}</p> : null}
 
-      {!isLoading && steps.length === 0 && !loadError ? (
-        <p className="app-page__hint">
-          Этапы не найдены. Запустите seed: <code>cd backend && pnpm prisma:seed</code>
-        </p>
-      ) : null}
+      {!isLoading && levels.length > 0 ? (
+        <div className="roadmap-workspace__layout">
+          <section className="roadmap-workspace__map-panel" aria-label="Карта уровней">
+            <ProfileRoadmapMap
+              levels={levels}
+              selectedLevel={selectedMapNodeId}
+              onSelectLevel={handleSelectLevel}
+            />
+          </section>
 
-      {currentStep ? (
-        <article className="roadmap-step roadmap-step--hero app-page__panel is-current">
-          <div className="roadmap-step__head">
-            <strong>
-              Текущий этап {currentStep.order}: {currentStep.title}
-            </strong>
-            <span className="roadmap-step__status roadmap-step__status--available">Текущий</span>
-          </div>
-          <p>{currentStep.description}</p>
-          <button type="button" onClick={() => void openLesson(currentStep.id)}>
-            Открыть урок и отметить чек-лист
-          </button>
-        </article>
-      ) : null}
-
-      {completedSteps.length > 0 ? (
-        <section className="roadmap-page__section">
-          <h2 className="roadmap-page__section-title">Пройденные этапы</h2>
-          <div className="roadmap-page__steps">
-            {completedSteps.map((step) => (
-              <RoadmapStepCard
-                key={step.id}
-                step={step}
-                onOpen={() => void openLesson(step.id)}
+          <aside className="roadmap-workspace__detail-panel" aria-label="Контент уровня">
+            {openMaterial ? (
+              <RoadmapMaterialView
+                lesson={openMaterial}
+                isLoading={isLoadingMaterial}
+                onBack={closeMaterial}
               />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {lockedSteps.length > 0 ? (
-        <section className="roadmap-page__section">
-          <h2 className="roadmap-page__section-title">Будущие этапы</h2>
-          <div className="roadmap-page__steps">
-            {lockedSteps.map((step) => (
-              <RoadmapStepCard key={step.id} step={step} onOpen={() => void openLesson(step.id)} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {lesson ? (
-        <section className="roadmap-lesson app-page__panel">
-          <div className="roadmap-lesson__head">
-            <h2>{lesson.title}</h2>
-            <button type="button" className="roadmap-lesson__close" onClick={() => setLesson(null)}>
-              Закрыть
-            </button>
-          </div>
-          <p>{lesson.content}</p>
-
-          <div className="roadmap-checklist">
-            <div className="roadmap-checklist__head">
-              <h3>Чек-лист этапа</h3>
-              <span>{checklistProgress}%</span>
-            </div>
-            <ul className="roadmap-checklist__list">
-              {lesson.checklist.map((item, index) => (
-                <li key={item}>
-                  <label className="roadmap-checklist__item">
-                    <input
-                      type="checkbox"
-                      checked={checkedIndices.includes(index)}
-                      disabled={isSavingChecklist}
-                      onChange={() => void toggleChecklistItem(index)}
-                    />
-                    <span>{item}</span>
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {lesson.quiz.map((question) => (
-            <fieldset className="roadmap-quiz" key={question.id}>
-              <legend>{question.question}</legend>
-              {question.options.map((option) => (
-                <label key={option.id}>
-                  <input
-                    type="radio"
-                    name={question.id}
-                    value={option.id}
-                    checked={answers[question.id] === option.id}
-                    onChange={() =>
-                      setAnswers((current) => ({
-                        ...current,
-                        [question.id]: option.id,
-                      }))
-                    }
-                  />
-                  {option.text}
-                </label>
-              ))}
-            </fieldset>
-          ))}
-          {error ? <p className="app-page__error">{error}</p> : null}
-          <button type="button" onClick={() => void submitQuiz()}>
-            Завершить этап (отправить ответы)
-          </button>
-        </section>
+            ) : selectedLevel ? (
+              <RoadmapLevelPanel
+                level={selectedLevel}
+                savingMilestoneId={savingMilestoneId}
+                onOpenMaterial={(milestone) => void handleOpenMaterial(milestone)}
+                onToggleCheckpoint={(milestone, index) =>
+                  void toggleCheckpoint(milestone, index)
+                }
+              />
+            ) : (
+              <p className="roadmap-workspace__placeholder">
+                Выберите доступный уровень на карте, чтобы увидеть мэйлстоуны и материалы.
+              </p>
+            )}
+          </aside>
+        </div>
       ) : null}
     </main>
   );
 }
 
-function RoadmapStepCard(props: { step: RoadmapStep; onOpen: () => void }) {
+function RoadmapLevelPanel(props: {
+  level: RoadmapLevel;
+  savingMilestoneId: string | null;
+  onOpenMaterial: (milestone: RoadmapMilestone) => void;
+  onToggleCheckpoint: (milestone: RoadmapMilestone, index: number) => void;
+}) {
   return (
-    <article
-      className={`roadmap-step app-page__panel ${
-        props.step.status === "available"
-          ? "is-current"
-          : props.step.status === "completed"
-            ? "is-completed"
-            : "is-locked"
-      }`}
-    >
-      <div className="roadmap-step__head">
-        <strong>
-          {props.step.order}. {props.step.title}
-        </strong>
-        <span className={`roadmap-step__status roadmap-step__status--${props.step.status}`}>
-          {stepStatusLabel(props.step.status)}
+    <div className="roadmap-level-panel">
+      <div className="roadmap-level-panel__head">
+        <h2>Уровень {props.level.mapNodeId}</h2>
+        <p>{props.level.title}</p>
+        <span className={`roadmap-level-panel__status roadmap-level-panel__status--${props.level.status}`}>
+          {levelStatusLabel(props.level.status)}
         </span>
       </div>
-      <p>{props.step.description}</p>
-      <button type="button" disabled={props.step.status === "locked"} onClick={props.onOpen}>
-        {props.step.status === "locked" ? "Сначала пройдите предыдущий этап" : "Открыть урок"}
+
+      <section className="roadmap-level-panel__milestones" aria-label="Мэйлстоуны">
+        {props.level.milestones.map((milestone) => (
+          <article
+            key={milestone.id}
+            className={`roadmap-milestone ${
+              milestone.status === "completed" ? "is-completed" : ""
+            } ${milestone.status === "available" ? "is-current" : ""}`}
+          >
+            <h3 className={milestone.status === "completed" ? "is-done" : undefined}>
+              {milestone.order}. {milestone.title}
+            </h3>
+            <p>{milestone.description}</p>
+
+            <ul className="roadmap-milestone__checkpoints">
+              {milestone.checkpoints.map((checkpoint) => (
+                <li key={checkpoint.index}>
+                  <label
+                    className={`roadmap-checkpoint ${
+                      checkpoint.completed ? "is-completed" : ""
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checkpoint.completed}
+                      disabled={
+                        milestone.status !== "available" ||
+                        props.savingMilestoneId === milestone.id
+                      }
+                      onChange={() => props.onToggleCheckpoint(milestone, checkpoint.index)}
+                    />
+                    <span className={checkpoint.completed ? "is-done" : undefined}>
+                      {checkpoint.label}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+
+            {milestone.status !== "locked" ? (
+              <button
+                type="button"
+                className="roadmap-material-card"
+                onClick={() => props.onOpenMaterial(milestone)}
+              >
+                <span className="roadmap-material-card__label">Гайд</span>
+                <strong>{milestone.materialTitle}</strong>
+              </button>
+            ) : (
+              <p className="roadmap-milestone__locked">Откроется после предыдущих мэйлстоунов</p>
+            )}
+          </article>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function RoadmapMaterialView(props: {
+  lesson: RoadmapLesson;
+  isLoading: boolean;
+  onBack: () => void;
+}) {
+  return (
+    <article className="roadmap-material-view">
+      <button type="button" className="roadmap-material-view__back" onClick={props.onBack}>
+        ← Назад к уровню
       </button>
+      <h2>{props.lesson.title}</h2>
+      {props.isLoading ? <p className="app-page__hint">Загрузка…</p> : null}
+      <div className="roadmap-material-view__content">{props.lesson.content}</div>
     </article>
   );
 }
 
-function stepStatusLabel(status: RoadmapStep["status"]) {
+function levelStatusLabel(status: RoadmapLevel["status"]) {
   switch (status) {
-    case "available":
-      return "Текущий";
     case "completed":
       return "Пройден";
+    case "current":
+      return "Текущий";
     default:
-      return "Закрыт";
+      return "Заблокирован";
   }
 }

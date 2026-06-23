@@ -5,31 +5,34 @@ import {
   roadmapPaths,
   roadmapToolbar,
 } from "./roadmapLayout";
-import { getLevelStatus, type RoadmapLevelStatus } from "../../lib/roadmapLevels";
-import type { RoadmapStep } from "../../api";
+import {
+  getLevelByMapNode,
+  isLevelSelectable,
+  type RoadmapLevelStatus,
+} from "../../lib/roadmapLevels";
+import type { RoadmapLevel } from "../../api";
 import "./profile-roadmap.css";
 
 type ProfileRoadmapMapProps = {
+  levels: RoadmapLevel[];
   selectedLevel?: number | null;
   compact?: boolean;
-  steps?: RoadmapStep[];
-  onSelectLevel: (level: number) => void;
+  onSelectLevel: (mapNodeId: number) => void;
 };
 
 export function ProfileRoadmapMap(props: ProfileRoadmapMapProps) {
   const scale = props.compact ? 390 / ROADMAP_CANVAS.width : 1;
-  const steps = props.steps ?? [];
 
-  function levelClassName(level: number) {
+  function levelClassName(mapNodeId: number) {
     const classes = ["profile-roadmap-figma__level"];
+    const level = getLevelByMapNode(props.levels, mapNodeId);
 
-    if (props.selectedLevel === level) {
+    if (props.selectedLevel === mapNodeId) {
       classes.push("is-selected");
     }
 
-    if (steps.length > 0) {
-      const status = getLevelStatus(level, steps);
-      classes.push(levelStatusClass(status));
+    if (level) {
+      classes.push(levelStatusClass(level.status));
     }
 
     return classes.join(" ");
@@ -112,23 +115,33 @@ export function ProfileRoadmapMap(props: ProfileRoadmapMapProps) {
             </div>
           ))}
 
-          {roadmapLevelNodes.map((node) => (
-            <button
-              type="button"
-              key={node.level}
-              className={levelClassName(node.level)}
-              style={{
-                left: node.left,
-                top: node.top,
-                width: node.width,
-                height: node.height,
-              }}
-              onClick={() => props.onSelectLevel(node.level)}
-              aria-label={`Открыть уровень ${node.level}`}
-            >
-              <img src={node.src} alt="" />
-            </button>
-          ))}
+          {roadmapLevelNodes.map((node) => {
+            const level = getLevelByMapNode(props.levels, node.level);
+            const selectable = level ? isLevelSelectable(level) : false;
+
+            return (
+              <button
+                type="button"
+                key={node.level}
+                className={levelClassName(node.level)}
+                style={{
+                  left: node.left,
+                  top: node.top,
+                  width: node.width,
+                  height: node.height,
+                }}
+                disabled={!selectable}
+                onClick={() => {
+                  if (selectable) {
+                    props.onSelectLevel(node.level);
+                  }
+                }}
+                aria-label={`Уровень ${node.level}`}
+              >
+                <img src={node.src} alt="" />
+              </button>
+            );
+          })}
         </div>
       </div>
     </section>
