@@ -271,8 +271,20 @@ model FavoritePost {
   @@index([userId, createdAt])
 }
 
+model RoadmapLevel {
+  id        String   @id @default(uuid())
+  mapNodeId Int      @unique
+  title     String
+  order     Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  steps RoadmapStep[]
+}
+
 model RoadmapStep {
   id           String   @id @default(uuid())
+  levelId      String
   title        String
   description  String
   order        Int      @unique
@@ -283,6 +295,7 @@ model RoadmapStep {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  level        RoadmapLevel          @relation(fields: [levelId], references: [id], onDelete: Cascade)
   userProgress UserRoadmapProgress[]
 }
 

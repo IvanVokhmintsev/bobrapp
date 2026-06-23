@@ -5,12 +5,13 @@ import { authenticate } from "../auth/auth.middleware.js";
 import { requireRole } from "../roles/role.middleware.js";
 import {
   toPublicRoadmapLesson,
-  toPublicRoadmapStep,
+  toPublicRoadmapResponse,
 } from "./roadmap.presenter.js";
 import { roadmapChecklistSchema, roadmapQuizSchema, roadmapStepParamsSchema } from "./roadmap.schemas.js";
 import {
   completeRoadmapStep,
   ensureUserRoadmapProgress,
+  fetchRoadmapForUser,
   readRoadmapQuiz,
   updateChecklistProgress,
 } from "./roadmap.service.js";
@@ -22,6 +23,14 @@ import type {
 
 function progressInclude(userId: string) {
   return {
+    level: {
+      select: {
+        id: true,
+        mapNodeId: true,
+        title: true,
+        order: true,
+      },
+    },
     userProgress: {
       where: {
         userId,
@@ -42,18 +51,9 @@ export async function registerRoadmapRoutes(app: FastifyInstance) {
       preHandler: [authenticate, requireRole("musician")],
     },
     async (request) => {
-      await ensureUserRoadmapProgress(request.user.userId);
+      const levels = await fetchRoadmapForUser(request.user.userId);
 
-      const steps = await prisma.roadmapStep.findMany({
-        orderBy: {
-          order: "asc",
-        },
-        include: progressInclude(request.user.userId),
-      });
-
-      return {
-        steps: steps.map(toPublicRoadmapStep),
-      };
+      return toPublicRoadmapResponse(levels);
     },
   );
 
@@ -137,9 +137,9 @@ export async function registerRoadmapRoutes(app: FastifyInstance) {
         });
       }
 
-      return {
-        steps: result.steps.map(toPublicRoadmapStep),
-      };
+      const levels = await fetchRoadmapForUser(request.user.userId);
+
+      return toPublicRoadmapResponse(levels);
     },
   );
 
@@ -199,10 +199,13 @@ export async function registerRoadmapRoutes(app: FastifyInstance) {
         request.params.stepId,
       );
 
+      const levels = await fetchRoadmapForUser(request.user.userId);
+      const roadmap = toPublicRoadmapResponse(levels);
+
       return {
         passed: true,
         wrongQuestionIds: [],
-        steps: result.steps.map(toPublicRoadmapStep),
+        ...roadmap,
       };
     },
   );
@@ -243,8 +246,11 @@ export async function registerRoadmapRoutes(app: FastifyInstance) {
         });
       }
 
+      const levels = await fetchRoadmapForUser(request.user.userId);
+
       return {
-        step: toPublicRoadmapLesson(result.step),
+        ...toPublicRoadmapResponse(levels),
+        milestoneCompleted: result.status === "completed",
       };
     },
   );

@@ -216,14 +216,72 @@ const roadmapSteps = [
   },
 ];
 
+const roadmapLevels = [
+  { mapNodeId: 7, order: 1, title: "Старт пути" },
+  { mapNodeId: 6, order: 2, title: "Основы продакшена" },
+  { mapNodeId: 5, order: 3, title: "Создание трека" },
+  { mapNodeId: 4, order: 4, title: "Запись и сведение" },
+  { mapNodeId: 3, order: 5, title: "Релиз" },
+] as const;
+
+function mapNodeIdForStepOrder(order: number) {
+  if (order <= 2) {
+    return 7;
+  }
+
+  if (order <= 4) {
+    return 6;
+  }
+
+  if (order <= 6) {
+    return 5;
+  }
+
+  if (order === 7) {
+    return 4;
+  }
+
+  return 3;
+}
+
 async function main() {
+  const levelIdByMapNode = new Map<number, string>();
+
+  for (const level of roadmapLevels) {
+    const record = await prisma.roadmapLevel.upsert({
+      where: {
+        mapNodeId: level.mapNodeId,
+      },
+      create: level,
+      update: {
+        title: level.title,
+        order: level.order,
+      },
+    });
+
+    levelIdByMapNode.set(level.mapNodeId, record.id);
+  }
+
   for (const step of roadmapSteps) {
+    const mapNodeId = mapNodeIdForStepOrder(step.order);
+    const levelId = levelIdByMapNode.get(mapNodeId);
+
+    if (!levelId) {
+      throw new Error(`Missing roadmap level for step order ${step.order}`);
+    }
+
     await prisma.roadmapStep.upsert({
       where: {
         order: step.order,
       },
-      create: step,
-      update: step,
+      create: {
+        ...step,
+        levelId,
+      },
+      update: {
+        ...step,
+        levelId,
+      },
     });
   }
 }

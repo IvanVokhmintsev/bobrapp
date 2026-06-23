@@ -239,6 +239,20 @@ export async function updateChecklistProgress(
     },
   });
 
+  const allCheckpointsCompleted =
+    checklist.length === 0 || normalizedIndices.length === checklist.length;
+
+  if (allCheckpointsCompleted && currentProgress.status === "available") {
+    const completion = await completeRoadmapStep(userId, step.id);
+
+    return {
+      status: "completed" as const,
+      step: completion.steps.find((item) => item.id === step.id) ?? null,
+      steps: completion.steps,
+      levelCompleted: true,
+    };
+  }
+
   const updatedStep = await prisma.roadmapStep.findUnique({
     where: {
       id: stepId,
@@ -260,7 +274,52 @@ export async function updateChecklistProgress(
   return {
     status: "updated" as const,
     step: updatedStep,
+    steps: null,
+    levelCompleted: false,
   };
+}
+
+const roadmapStepInclude = {
+  level: {
+    select: {
+      id: true,
+      mapNodeId: true,
+      title: true,
+      order: true,
+    },
+  },
+} as const;
+
+export async function fetchRoadmapForUser(userId: string) {
+  await ensureUserRoadmapProgress(userId);
+
+  const levels = await prisma.roadmapLevel.findMany({
+    orderBy: {
+      order: "asc",
+    },
+    include: {
+      steps: {
+        orderBy: {
+          order: "asc",
+        },
+        include: {
+          ...roadmapStepInclude,
+          userProgress: {
+            where: {
+              userId,
+            },
+            select: {
+              status: true,
+              completedAt: true,
+              checklistChecked: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return levels;
 }
 
 function readChecklistItems(value: unknown): string[] {
@@ -406,6 +465,14 @@ export async function completeRoadmapStep(userId: string, stepId: string) {
       order: "asc",
     },
     include: {
+      level: {
+        select: {
+          id: true,
+          mapNodeId: true,
+          title: true,
+          order: true,
+        },
+      },
       userProgress: {
         where: {
           userId,
