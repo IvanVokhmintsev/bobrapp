@@ -6,8 +6,62 @@
 }
 
 .people-search label {
-  flex: 1 1 240px;
+  flex: 1 1 200px;
   margin-bottom: 0;
+}
+
+.people-search select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+}
+
+.people-search__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.people-genres {
+  margin-bottom: 16px;
+}
+
+.people-genres__label {
+  margin: 0 0 10px;
+  color: var(--app-muted);
+  font-size: 14px;
+}
+
+.people-genres__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.people-genres__list button {
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: var(--app-muted);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.people-genres__list button.is-active {
+  border-color: rgba(255, 48, 56, 0.55);
+  color: #ffffff;
+  background: rgba(255, 48, 56, 0.12);
+}
+
+.people-list__more {
+  justify-self: start;
 }
 
 .people-filters {

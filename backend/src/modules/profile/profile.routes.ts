@@ -480,17 +480,40 @@ export async function registerProfileRoutes(app: FastifyInstance) {
       const cursor = request.query.cursor;
       const query = request.query.q?.trim();
       const profileType = request.query.type;
-      const where: Prisma.UserWhereInput = {
-        role: "musician",
-        ...(profileType
+      const city = request.query.city?.trim();
+      const level = request.query.level;
+      const roadmapStep = request.query.roadmapStep;
+      const sort = request.query.sort ?? "recent";
+      const genreFilters = request.query.genres
+        ?.split(",")
+        .map((genre) => genre.trim())
+        .filter(Boolean);
+
+      const musicianProfileFilter: Prisma.MusicianProfileWhereInput = {
+        ...(profileType ? { profileType } : {}),
+        ...(city
           ? {
-              musicianProfile: {
-                is: {
-                  profileType,
-                },
+              location: {
+                contains: city,
+                mode: "insensitive",
               },
             }
           : {}),
+        ...(level ? { level } : {}),
+        ...(genreFilters?.length
+          ? {
+              genres: {
+                hasSome: genreFilters,
+              },
+            }
+          : {}),
+      };
+
+      const where: Prisma.UserWhereInput = {
+        role: "musician",
+        musicianProfile: {
+          is: musicianProfileFilter,
+        },
         ...(query
           ? {
               name: {
@@ -499,18 +522,53 @@ export async function registerProfileRoutes(app: FastifyInstance) {
               },
             }
           : {}),
+        ...(roadmapStep
+          ? {
+              roadmapProgress: {
+                some: {
+                  status: {
+                    in: ["available", "completed"],
+                  },
+                  step: {
+                    order: roadmapStep,
+                  },
+                },
+              },
+            }
+          : {}),
       };
+
+      const orderBy: Prisma.UserOrderByWithRelationInput[] =
+        sort === "roadmap"
+          ? [
+              {
+                musicianProfile: {
+                  roadmapProgress: "desc",
+                },
+              },
+              { id: "asc" },
+            ]
+          : sort === "level"
+            ? [
+                {
+                  musicianProfile: {
+                    points: "desc",
+                  },
+                },
+                { id: "asc" },
+              ]
+            : [
+                {
+                  createdAt: "desc",
+                },
+                {
+                  id: "asc",
+                },
+              ];
 
       const users = await prisma.user.findMany({
         where,
-        orderBy: [
-          {
-            createdAt: "desc",
-          },
-          {
-            id: "asc",
-          },
-        ],
+        orderBy,
         ...(cursor
           ? {
               cursor: { id: cursor },

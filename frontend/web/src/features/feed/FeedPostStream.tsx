@@ -38,6 +38,11 @@ export function FeedPostStream(props: FeedPostStreamProps) {
           comments={props.feed.commentsByPost[post.id]}
           commentText={props.feed.commentTextByPost[post.id] ?? ""}
           onLike={() => void props.feed.likePost(post.id)}
+          onRepost={
+            props.currentUser.role === "musician" && post.author.id !== props.currentUser.id
+              ? () => void props.feed.repostPost(post.id)
+              : undefined
+          }
           onFavorite={() => void props.feed.favoritePost(post.id)}
           onSavePost={
             post.author.id === props.currentUser.id

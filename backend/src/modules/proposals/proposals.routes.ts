@@ -2,12 +2,10 @@ import type { FastifyInstance } from "fastify";
 
 import { prisma } from "../../lib/prisma.js";
 import { authenticate } from "../auth/auth.middleware.js";
-import { requireRole } from "../roles/role.middleware.js";
 import {
+  toInboxConversation,
   toProposalThread,
-  toPublicProposal,
   toPublicProposalMessage,
-  toSentProposal,
 } from "./proposals.presenter.js";
 import {
   proposalParamsSchema,
@@ -22,7 +20,7 @@ import type {
   SendProposalMessageBody,
 } from "./proposals.types.js";
 
-const proposalSenderInclude = {
+const proposalConversationInclude = {
   sender: {
     select: {
       id: true,
@@ -33,15 +31,23 @@ const proposalSenderInclude = {
           companyName: true,
         },
       },
+      musicianProfile: {
+        select: {
+          avatarUrl: true,
+        },
+      },
     },
   },
-} as const;
-
-const proposalRecipientInclude = {
   recipient: {
     select: {
       id: true,
       name: true,
+      role: true,
+      labelProfile: {
+        select: {
+          companyName: true,
+        },
+      },
       musicianProfile: {
         select: {
           avatarUrl: true,
@@ -93,6 +99,12 @@ const proposalThreadInclude = {
     select: {
       id: true,
       name: true,
+      role: true,
+      labelProfile: {
+        select: {
+          companyName: true,
+        },
+      },
       musicianProfile: {
         select: {
           avatarUrl: true,
@@ -216,14 +228,14 @@ export async function registerProposalRoutes(app: FastifyInstance) {
               },
             },
           },
-          include: proposalSenderInclude,
+          include: proposalConversationInclude,
         });
 
         return created;
       });
 
       return {
-        proposal: toPublicProposal(proposal, request.user.userId),
+        proposal: toInboxConversation(proposal, request.user.userId),
       };
     },
   );
@@ -263,22 +275,25 @@ export async function registerProposalRoutes(app: FastifyInstance) {
   app.get(
     "/profile/me/proposals",
     {
-      preHandler: [authenticate, requireRole("musician")],
+      preHandler: authenticate,
     },
     async (request) => {
       const proposals = await prisma.collaborationProposal.findMany({
         where: {
-          recipientId: request.user.userId,
+          OR: [
+            { recipientId: request.user.userId },
+            { senderId: request.user.userId },
+          ],
         },
-        include: proposalSenderInclude,
+        include: proposalConversationInclude,
         orderBy: {
-          createdAt: "desc",
+          lastMessageAt: "desc",
         },
       });
 
       return {
         proposals: proposals.map((proposal) =>
-          toPublicProposal(proposal, request.user.userId),
+          toInboxConversation(proposal, request.user.userId),
         ),
       };
     },
@@ -294,15 +309,15 @@ export async function registerProposalRoutes(app: FastifyInstance) {
         where: {
           senderId: request.user.userId,
         },
-        include: proposalRecipientInclude,
+        include: proposalConversationInclude,
         orderBy: {
-          createdAt: "desc",
+          lastMessageAt: "desc",
         },
       });
 
       return {
         proposals: proposals.map((proposal) =>
-          toSentProposal(proposal, request.user.userId),
+          toInboxConversation(proposal, request.user.userId),
         ),
       };
     },
@@ -407,7 +422,7 @@ export async function registerProposalRoutes(app: FastifyInstance) {
   app.patch<{ Params: ProposalParams }>(
     "/profile/me/proposals/:proposalId",
     {
-      preHandler: [authenticate, requireRole("musician")],
+      preHandler: authenticate,
       schema: proposalParamsSchema,
     },
     async (request, reply) => {
@@ -416,7 +431,7 @@ export async function registerProposalRoutes(app: FastifyInstance) {
         request.user.userId,
       );
 
-      if (!existing || existing.recipientId !== request.user.userId) {
+      if (!existing) {
         return reply.status(404).send({
           error: "Proposal not found",
           statusCode: 404,
@@ -427,7 +442,7 @@ export async function registerProposalRoutes(app: FastifyInstance) {
 
       const proposal = await prisma.collaborationProposal.findUnique({
         where: { id: existing.id },
-        include: proposalSenderInclude,
+        include: proposalConversationInclude,
       });
 
       if (!proposal) {
@@ -438,7 +453,7 @@ export async function registerProposalRoutes(app: FastifyInstance) {
       }
 
       return {
-        proposal: toPublicProposal(proposal, request.user.userId),
+        proposal: toInboxConversation(proposal, request.user.userId),
       };
     },
   );

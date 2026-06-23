@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 
-import { api, type ApiProposal, type ApiSentProposal, type ApiUser } from "../../api";
+import { api, type ApiProposalConversation, type ApiUser } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import { ProposalThread } from "./ProposalThread";
 import "./proposals.css";
@@ -12,19 +12,11 @@ export function ProposalsScreen() {
     return null;
   }
 
-  if (user.role === "label") {
-    return <SentProposalsView user={user} />;
-  }
-
-  if (user.role === "musician") {
-    return <ReceivedProposalsView user={user} />;
-  }
-
-  return null;
+  return <ConversationsView user={user} />;
 }
 
-function ReceivedProposalsView(props: { user: ApiUser }) {
-  const [proposals, setProposals] = useState<ApiProposal[]>([]);
+function ConversationsView(props: { user: ApiUser }) {
+  const [proposals, setProposals] = useState<ApiProposalConversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -41,7 +33,7 @@ function ReceivedProposalsView(props: { user: ApiUser }) {
       setProposals(result.proposals);
       setSelectedId((current) => current ?? result.proposals[0]?.id ?? null);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Не удалось загрузить предложения");
+      setError(caught instanceof Error ? caught.message : "Не удалось загрузить переписки");
     } finally {
       setIsLoading(false);
     }
@@ -64,17 +56,17 @@ function ReceivedProposalsView(props: { user: ApiUser }) {
   return (
     <ProposalsPageShell
       title="Предложения"
-      intro="Входящие запросы и переписка с лейблами и другими пользователями платформы."
+      intro="Все ваши переписки: входящие и исходящие сообщения с артистами и лейблами."
       error={error}
       isLoading={isLoading}
       isEmpty={!isLoading && proposals.length === 0}
-      emptyHint="Пока нет входящих предложений. Они появятся, когда кто-то нажмёт «Связаться с артистом» в вашем профиле."
-      listLabel="Список предложений"
+      emptyHint="Пока нет переписок. Напишите артисту через «Связаться с артистом» в профиле или дождитесь входящего сообщения."
+      listLabel="Список переписок"
       items={proposals.map((proposal) => ({
         id: proposal.id,
         subject: proposal.subject,
-        meta: proposal.sender.companyName?.trim() || proposal.sender.name,
-        createdAt: proposal.createdAt,
+        meta: proposal.counterpart.displayName,
+        createdAt: proposal.lastMessageAt,
         isUnread: proposal.unreadByMe,
         isActive: proposal.id === selectedId,
         onSelect: () => setSelectedId(proposal.id),
@@ -87,78 +79,7 @@ function ReceivedProposalsView(props: { user: ApiUser }) {
             onThreadUpdated={markSelectedRead}
           />
         ) : (
-          <p className="proposals-page__hint">Выберите предложение из списка</p>
-        )
-      }
-    />
-  );
-}
-
-function SentProposalsView(props: { user: ApiUser }) {
-  const [proposals, setProposals] = useState<ApiSentProposal[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    void loadProposals();
-  }, []);
-
-  async function loadProposals() {
-    try {
-      setIsLoading(true);
-      setError("");
-      const result = await api.getSentProposals();
-      setProposals(result.proposals);
-      setSelectedId((current) => current ?? result.proposals[0]?.id ?? null);
-    } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Не удалось загрузить отправленные предложения",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  function markSelectedRead() {
-    if (!selectedId) {
-      return;
-    }
-
-    setProposals((current) =>
-      current.map((proposal) =>
-        proposal.id === selectedId ? { ...proposal, unreadByMe: false } : proposal,
-      ),
-    );
-  }
-
-  return (
-    <ProposalsPageShell
-      title="Отправленные предложения"
-      intro={`История запросов и переписки, которые ${props.user.labelProfile?.companyName ?? "ваш лейбл"} отправил артистам.`}
-      error={error}
-      isLoading={isLoading}
-      isEmpty={!isLoading && proposals.length === 0}
-      emptyHint="Вы ещё не отправляли предложений. Откройте профиль музыканта и нажмите «Связаться с артистом»."
-      listLabel="Отправленные предложения"
-      items={proposals.map((proposal) => ({
-        id: proposal.id,
-        subject: proposal.subject,
-        meta: proposal.recipient.name,
-        createdAt: proposal.createdAt,
-        isUnread: proposal.unreadByMe,
-        isActive: proposal.id === selectedId,
-        onSelect: () => setSelectedId(proposal.id),
-      }))}
-      detail={
-        selectedId ? (
-          <ProposalThread
-            proposalId={selectedId}
-            currentUserId={props.user.id}
-            onThreadUpdated={markSelectedRead}
-          />
-        ) : (
-          <p className="proposals-page__hint">Выберите предложение из списка</p>
+          <p className="proposals-page__hint">Выберите переписку из списка</p>
         )
       }
     />

@@ -79,6 +79,16 @@ export const followsQuerySchema = {
   },
 } as const;
 
+export const musicianLevelSchema = {
+  type: "string",
+  enum: ["nothing", "beginner", "advanced", "professional"],
+} as const;
+
+export const profileSortSchema = {
+  type: "string",
+  enum: ["recent", "roadmap", "level"],
+} as const;
+
 export const publicProfilesQuerySchema = {
   querystring: {
     type: "object",
@@ -86,6 +96,11 @@ export const publicProfilesQuerySchema = {
     properties: {
       q: { type: "string", minLength: 1, maxLength: 100 },
       type: profileTypeSchema,
+      genres: { type: "string", minLength: 1, maxLength: 500 },
+      city: { type: "string", minLength: 1, maxLength: 120 },
+      level: musicianLevelSchema,
+      roadmapStep: { type: "integer", minimum: 1, maximum: 50 },
+      sort: profileSortSchema,
       cursor: { type: "string", minLength: 1 },
       limit: { type: "integer", minimum: 1, maximum: 100 },
     },

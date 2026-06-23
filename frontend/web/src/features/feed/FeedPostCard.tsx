@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import type { ApiComment, ApiPost, ApiUser } from "../../api";
 import commentIcon from "../../assets/feed/comment-action.png";
+import shareIcon from "../../assets/feed/share-action.png";
 import { BookmarkIcon } from "../../components/BookmarkIcon";
 import { HeartIcon } from "../../components/HeartIcon";
 import defaultAvatar from "../../assets/feed/card-cover.png";
@@ -28,6 +29,7 @@ type FeedPostCardProps = FeedPostCardHandlers &
 export function FeedPostCard(props: FeedPostCardProps) {
   const isOwnPost = props.post.author.id === props.currentUser.id;
   const canFavoriteFooter = !isOwnPost;
+  const canRepost = props.currentUser.role === "musician" && !isOwnPost;
   const [editOpen, setEditOpen] = useState(false);
   const avatarSrc = resolveAvatarUrl(props.post.author.avatarUrl, defaultAvatar);
   const level = getAuthorLevel(props.post, props.currentUser);
@@ -105,6 +107,20 @@ export function FeedPostCard(props: FeedPostCardProps) {
               <img src={commentIcon} alt="" />
               <span>{props.post.commentsCount}</span>
             </button>
+            {canRepost && props.onRepost ? (
+              <button
+                type="button"
+                className={`feed-card__stat feed-card__stat--repost ${
+                  props.post.repostedByMe ? "is-active" : ""
+                }`}
+                onClick={props.onRepost}
+                aria-label={`Репосты: ${props.post.repostsCount}`}
+                aria-pressed={props.post.repostedByMe}
+              >
+                <img src={shareIcon} alt="" />
+                <span>{props.post.repostsCount}</span>
+              </button>
+            ) : null}
             {canFavoriteFooter ? (
               <button
                 type="button"

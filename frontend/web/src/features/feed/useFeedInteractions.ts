@@ -178,6 +178,25 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
     }
   }
 
+  async function repostPost(id: string) {
+    const target = posts.find((post) => post.id === id);
+    if (!target) {
+      return;
+    }
+
+    try {
+      setError("");
+      const result = target.repostedByMe
+        ? await api.unrepostPost(id)
+        : await api.repostPost(id);
+      setPosts((currentPosts) =>
+        currentPosts.map((post) => (post.id === id ? result.post : post)),
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Не удалось обновить репост");
+    }
+  }
+
   async function favoritePost(id: string) {
     const target = posts.find((post) => post.id === id);
     if (!target) {
@@ -359,6 +378,7 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
     error,
     createPost,
     likePost,
+    repostPost,
     favoritePost,
     deletePost,
     updatePost,
@@ -375,6 +395,7 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
 
 export type FeedPostCardHandlers = {
   onLike: () => void;
+  onRepost?: () => void;
   onFavorite: () => void;
   onToggleComments: () => void;
   onCommentTextChange: (value: string) => void;

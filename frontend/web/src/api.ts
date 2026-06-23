@@ -130,7 +130,7 @@ export type RoadmapLesson = RoadmapStep & {
   }>;
 };
 
-export type ApiProposal = {
+export type ApiProposalConversation = {
   id: string;
   subject: string;
   message: string;
@@ -139,31 +139,22 @@ export type ApiProposal = {
   readAt: string | null;
   createdAt: string;
   updatedAt: string;
+  lastMessageAt: string;
   unreadByMe: boolean;
-  sender: {
+  direction: "incoming" | "outgoing";
+  counterpart: {
     id: string;
     name: string;
     role: UserRole;
+    displayName: string;
+    avatarUrl: string | null;
     companyName: string | null;
   };
 };
 
-export type ApiSentProposal = {
-  id: string;
-  subject: string;
-  message: string;
-  linkUrl: string | null;
-  status: "pending" | "read" | "archived";
-  readAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  unreadByMe: boolean;
-  recipient: {
-    id: string;
-    name: string;
-    avatarUrl: string | null;
-  };
-};
+export type ApiProposal = ApiProposalConversation;
+
+export type ApiSentProposal = ApiProposalConversation;
 
 export type ApiProposalMessage = {
   id: string;
@@ -332,13 +323,39 @@ export const api = {
       `/posts${query ? `?${query}` : ""}`,
     );
   },
-  getProfiles(input: { q?: string; type?: ProfileType; cursor?: string } = {}) {
+  getProfiles(
+    input: {
+      q?: string;
+      type?: ProfileType;
+      genres?: string[];
+      city?: string;
+      level?: MusicianLevel;
+      roadmapStep?: number;
+      sort?: "recent" | "roadmap" | "level";
+      cursor?: string;
+    } = {},
+  ) {
     const params = new URLSearchParams();
     if (input.q) {
       params.set("q", input.q);
     }
     if (input.type) {
       params.set("type", input.type);
+    }
+    if (input.genres?.length) {
+      params.set("genres", input.genres.join(","));
+    }
+    if (input.city) {
+      params.set("city", input.city);
+    }
+    if (input.level) {
+      params.set("level", input.level);
+    }
+    if (input.roadmapStep) {
+      params.set("roadmapStep", String(input.roadmapStep));
+    }
+    if (input.sort) {
+      params.set("sort", input.sort);
     }
     if (input.cursor) {
       params.set("cursor", input.cursor);
@@ -601,6 +618,16 @@ export const api = {
         method: "DELETE",
       },
     );
+  },
+  repostPost(id: string) {
+    return request<{ post: ApiPost }>(`/posts/${id}/repost`, {
+      method: "POST",
+    });
+  },
+  unrepostPost(id: string) {
+    return request<{ post: ApiPost }>(`/posts/${id}/repost`, {
+      method: "DELETE",
+    });
   },
   getComments(postId: string) {
     return request<{ comments: ApiComment[] }>(

@@ -11,8 +11,18 @@ type ProposalRecord = CollaborationProposal & {
   sender: ProposalSender;
 };
 
+type ProposalParticipant = Pick<User, "id" | "name" | "role"> & {
+  labelProfile: { companyName: string } | null;
+  musicianProfile: { avatarUrl: string | null } | null;
+};
+
 type ProposalRecipient = Pick<User, "id" | "name"> & {
   musicianProfile: { avatarUrl: string | null } | null;
+};
+
+type ConversationRecord = CollaborationProposal & {
+  sender: ProposalParticipant;
+  recipient: ProposalParticipant;
 };
 
 type SentProposalRecord = CollaborationProposal & {
@@ -52,6 +62,45 @@ export function toPublicProposal(proposal: ProposalRecord, viewerId?: string) {
   };
 }
 
+function counterpartFromParticipants(
+  proposal: ConversationRecord,
+  viewerId: string,
+) {
+  const counterpart =
+    viewerId === proposal.senderId ? proposal.recipient : proposal.sender;
+
+  return {
+    id: counterpart.id,
+    name: counterpart.name,
+    role: counterpart.role,
+    avatarUrl: counterpart.musicianProfile?.avatarUrl ?? null,
+    companyName: counterpart.labelProfile?.companyName ?? null,
+    displayName:
+      counterpart.labelProfile?.companyName?.trim() || counterpart.name,
+  };
+}
+
+export function toInboxConversation(proposal: ConversationRecord, viewerId: string) {
+  return {
+    id: proposal.id,
+    subject: proposal.subject,
+    message: proposal.message,
+    linkUrl: proposal.linkUrl,
+    status: proposal.status,
+    readAt: proposal.readAt?.toISOString() ?? null,
+    createdAt: proposal.createdAt.toISOString(),
+    updatedAt: proposal.updatedAt.toISOString(),
+    lastMessageAt:
+      proposal.lastMessageAt?.toISOString() ?? proposal.createdAt.toISOString(),
+    unreadByMe: isUnreadForUser(proposal, viewerId),
+    direction:
+      viewerId === proposal.senderId
+        ? ("outgoing" as const)
+        : ("incoming" as const),
+    counterpart: counterpartFromParticipants(proposal, viewerId),
+  };
+}
+
 export function toSentProposal(proposal: SentProposalRecord, viewerId?: string) {
   return {
     id: proposal.id,
@@ -84,27 +133,13 @@ export function toPublicProposalMessage(message: MessageRecord) {
 
 type ProposalThreadRecord = CollaborationProposal & {
   sender: MessageAuthor;
-  recipient: Pick<User, "id" | "name"> & {
-    musicianProfile: { avatarUrl: string | null } | null;
-  };
+  recipient: MessageAuthor;
   messages: MessageRecord[];
 };
 
 export function toProposalThread(proposal: ProposalThreadRecord, viewerId: string) {
   const counterpart =
-    viewerId === proposal.senderId
-      ? {
-          id: proposal.recipient.id,
-          name: proposal.recipient.name,
-          avatarUrl: proposal.recipient.musicianProfile?.avatarUrl ?? null,
-          companyName: null as string | null,
-        }
-      : {
-          id: proposal.sender.id,
-          name: proposal.sender.name,
-          avatarUrl: proposal.sender.musicianProfile?.avatarUrl ?? null,
-          companyName: proposal.sender.labelProfile?.companyName ?? null,
-        };
+    viewerId === proposal.senderId ? proposal.recipient : proposal.sender;
 
   return {
     id: proposal.id,
@@ -113,8 +148,12 @@ export function toProposalThread(proposal: ProposalThreadRecord, viewerId: strin
     status: proposal.status,
     unreadByMe: isUnreadForUser(proposal, viewerId),
     counterpart: {
-      ...counterpart,
-      displayName: counterpart.companyName?.trim() || counterpart.name,
+      id: counterpart.id,
+      name: counterpart.name,
+      avatarUrl: counterpart.musicianProfile?.avatarUrl ?? null,
+      companyName: counterpart.labelProfile?.companyName ?? null,
+      displayName:
+        counterpart.labelProfile?.companyName?.trim() || counterpart.name,
     },
     messages: proposal.messages.map(toPublicProposalMessage),
   };

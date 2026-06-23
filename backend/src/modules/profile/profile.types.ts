@@ -1,5 +1,13 @@
 export type ProfileType = "solo" | "band";
 
+export type MusicianLevelFilter =
+  | "nothing"
+  | "beginner"
+  | "advanced"
+  | "professional";
+
+export type ProfileSort = "recent" | "roadmap" | "level";
+
 export type ProfileMember = {
   name: string;
   role: string;
@@ -33,6 +41,11 @@ export type FollowsQuery = {
 export type PublicProfilesQuery = {
   q?: string;
   type?: ProfileType;
+  genres?: string;
+  city?: string;
+  level?: MusicianLevelFilter;
+  roadmapStep?: number;
+  sort?: ProfileSort;
   cursor?: string;
   limit?: number;
 };
