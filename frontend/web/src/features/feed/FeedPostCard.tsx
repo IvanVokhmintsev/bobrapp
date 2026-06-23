@@ -12,6 +12,8 @@ import { getMusicianLevel } from "../../lib/musicianLevel";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
 import { getProfilePath } from "../../lib/profilePath";
 import { ProfileTypeBadge } from "../profile/ProfileTypeBadge";
+import { FeedPostEditSheet } from "./FeedPostEditSheet";
+import { FeedPostMenu } from "./FeedPostMenu";
 import { getPostDisplayMode } from "./feedPostMedia";
 import { resolveUploadUrl } from "../../lib/mediaUrl";
 import type { FeedPostCardHandlers, FeedPostCardState } from "./useFeedInteractions";
@@ -24,8 +26,9 @@ type FeedPostCardProps = FeedPostCardHandlers &
   };
 
 export function FeedPostCard(props: FeedPostCardProps) {
-  const canDelete = props.post.author.id === props.currentUser.id;
-  const canFavorite = props.post.author.id !== props.currentUser.id && props.onFavorite;
+  const isOwnPost = props.post.author.id === props.currentUser.id;
+  const canFavoriteFooter = !isOwnPost;
+  const [editOpen, setEditOpen] = useState(false);
   const avatarSrc = resolveAvatarUrl(props.post.author.avatarUrl, defaultAvatar);
   const level = getAuthorLevel(props.post, props.currentUser);
   const displayMode = getPostDisplayMode(props.post);
@@ -33,113 +36,113 @@ export function FeedPostCard(props: FeedPostCardProps) {
   const authorProfilePath = getProfilePath(props.post.author.id, props.currentUser.id);
 
   return (
-    <article className="feed-card" data-post-type={props.post.type}>
-      <header className="feed-card__header">
-        <Link className="feed-card__author" to={authorProfilePath}>
-          <div className="feed-card__avatar-stack" aria-hidden="true">
-            <span className="feed-card__avatar-ring feed-card__avatar-ring--dark" />
-            <span className="feed-card__avatar-ring feed-card__avatar-ring--muted" />
-            <img className="feed-card__avatar" src={avatarSrc} alt="" />
-          </div>
-          <div className="feed-card__meta">
-            <div className="feed-card__name-row">
-              <span className="feed-card__name">{props.post.author.name}</span>
-              <ProfileTypeBadge profileType={props.post.author.profileType ?? "solo"} />
-              {props.post.author.role === "musician" ? (
-                <span className="feed-card__level" aria-label={`Уровень ${level}`}>
-                  <img src={levelFlagIcon} alt="" />
-                  <strong>{level}</strong>
-                </span>
-              ) : null}
-              <time className="feed-card__time" dateTime={props.post.createdAt}>
-                {formatPostTime(props.post.createdAt)}
-              </time>
+    <>
+      <article className="feed-card" data-post-type={props.post.type} id={`post-${props.post.id}`}>
+        <header className="feed-card__header">
+          <Link className="feed-card__author" to={authorProfilePath}>
+            <div className="feed-card__avatar-stack" aria-hidden="true">
+              <span className="feed-card__avatar-ring feed-card__avatar-ring--dark" />
+              <span className="feed-card__avatar-ring feed-card__avatar-ring--muted" />
+              <img className="feed-card__avatar" src={avatarSrc} alt="" />
             </div>
-          </div>
-        </Link>
-        <div className="feed-card__menu">
-          {canDelete ? (
-            <button
-              type="button"
-              className="feed-card__menu-btn"
-              onClick={props.onDeletePost}
-              aria-label="Удалить пост"
-            >
-              ×
-            </button>
+            <div className="feed-card__meta">
+              <div className="feed-card__name-row">
+                <span className="feed-card__name">{props.post.author.name}</span>
+                <ProfileTypeBadge profileType={props.post.author.profileType ?? "solo"} />
+                {props.post.author.role === "musician" ? (
+                  <span className="feed-card__level" aria-label={`Уровень ${level}`}>
+                    <img src={levelFlagIcon} alt="" />
+                    <strong>{level}</strong>
+                  </span>
+                ) : null}
+                <time className="feed-card__time" dateTime={props.post.createdAt}>
+                  {formatPostTime(props.post.createdAt)}
+                </time>
+              </div>
+            </div>
+          </Link>
+          <FeedPostMenu
+            post={props.post}
+            currentUserId={props.currentUser.id}
+            isOwnPost={isOwnPost}
+            onFavorite={props.onFavorite}
+            onEdit={isOwnPost && props.onSavePost ? () => setEditOpen(true) : undefined}
+            onDelete={isOwnPost && props.onDeletePost ? props.onDeletePost : undefined}
+          />
+        </header>
+
+        <div className="feed-card__panel">
+          {displayMode === "roadmap" ? (
+            <RoadmapBody post={props.post} coverSrc={avatarSrc} />
+          ) : displayMode === "demo" ? (
+            <DemoBody post={props.post} caption={caption} />
           ) : (
-            <button type="button" className="feed-card__menu-dots" aria-label="Меню поста">
-              <span />
-              <span />
-              <span />
-            </button>
+            <p className="feed-card__caption feed-card__caption--solo">{caption}</p>
           )}
         </div>
-      </header>
 
-      <div className="feed-card__panel">
-        {displayMode === "roadmap" ? (
-          <RoadmapBody post={props.post} coverSrc={avatarSrc} />
-        ) : displayMode === "demo" ? (
-          <DemoBody post={props.post} caption={caption} />
-        ) : (
-          <p className="feed-card__caption feed-card__caption--solo">{caption}</p>
-        )}
-      </div>
-
-      <footer className="feed-card__footer">
-        <div className="feed-card__stats">
-          <button
-            type="button"
-            className={`feed-card__stat feed-card__stat--like ${
-              props.post.likedByMe ? "is-active" : ""
-            }`}
-            onClick={props.onLike}
-            aria-label={`Лайки: ${props.post.likesCount}`}
-            aria-pressed={props.post.likedByMe}
-          >
-            <HeartIcon filled={props.post.likedByMe} size={26} />
-            <span>{props.post.likesCount}</span>
-          </button>
-          <button
-            type="button"
-            className={`feed-card__stat ${props.commentsOpen ? "is-active" : ""}`}
-            onClick={props.onToggleComments}
-            aria-expanded={props.commentsOpen}
-            aria-label={`Комментарии: ${props.post.commentsCount}`}
-          >
-            <img src={commentIcon} alt="" />
-            <span>{props.post.commentsCount}</span>
-          </button>
-          {canFavorite ? (
+        <footer className="feed-card__footer">
+          <div className="feed-card__stats">
             <button
               type="button"
-              className={`feed-card__stat feed-card__stat--favorite ${
-                props.post.favoritedByMe ? "is-active" : ""
+              className={`feed-card__stat feed-card__stat--like ${
+                props.post.likedByMe ? "is-active" : ""
               }`}
-              onClick={props.onFavorite}
-              aria-label={props.post.favoritedByMe ? "Убрать из избранного" : "В избранное"}
-              aria-pressed={props.post.favoritedByMe}
+              onClick={props.onLike}
+              aria-label={`Лайки: ${props.post.likesCount}`}
+              aria-pressed={props.post.likedByMe}
             >
-              <BookmarkIcon filled={props.post.favoritedByMe} size={26} />
+              <HeartIcon filled={props.post.likedByMe} size={26} />
+              <span>{props.post.likesCount}</span>
             </button>
-          ) : null}
-        </div>
-      </footer>
+            <button
+              type="button"
+              className={`feed-card__stat ${props.commentsOpen ? "is-active" : ""}`}
+              onClick={props.onToggleComments}
+              aria-expanded={props.commentsOpen}
+              aria-label={`Комментарии: ${props.post.commentsCount}`}
+            >
+              <img src={commentIcon} alt="" />
+              <span>{props.post.commentsCount}</span>
+            </button>
+            {canFavoriteFooter ? (
+              <button
+                type="button"
+                className={`feed-card__stat feed-card__stat--favorite ${
+                  props.post.favoritedByMe ? "is-active" : ""
+                }`}
+                onClick={props.onFavorite}
+                aria-label={props.post.favoritedByMe ? "Убрать из избранного" : "В избранное"}
+                aria-pressed={props.post.favoritedByMe}
+              >
+                <BookmarkIcon filled={props.post.favoritedByMe} size={26} />
+              </button>
+            ) : null}
+          </div>
+        </footer>
 
-      {props.commentsOpen ? (
-        <CommentsBlock
+        {props.commentsOpen ? (
+          <CommentsBlock
+            post={props.post}
+            currentUser={props.currentUser}
+            comments={props.comments ?? []}
+            loading={props.commentsLoading}
+            commentText={props.commentText}
+            onTextChange={props.onCommentTextChange}
+            onCreate={props.onCreateComment}
+            onDelete={props.onDeleteComment}
+          />
+        ) : null}
+      </article>
+
+      {editOpen && props.onSavePost ? (
+        <FeedPostEditSheet
           post={props.post}
-          currentUser={props.currentUser}
-          comments={props.comments ?? []}
-          loading={props.commentsLoading}
-          commentText={props.commentText}
-          onTextChange={props.onCommentTextChange}
-          onCreate={props.onCreateComment}
-          onDelete={props.onDeleteComment}
+          onClose={() => setEditOpen(false)}
+          onSave={props.onSavePost}
         />
       ) : null}
-    </article>
+    </>
   );
 }
 

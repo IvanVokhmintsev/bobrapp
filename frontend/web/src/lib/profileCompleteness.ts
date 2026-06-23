@@ -48,7 +48,7 @@ export function getProfileBlockStatuses(
     blocks.push({
       id: "members",
       label: "Состав группы",
-      filled: (profile?.memberNames.length ?? 0) > 0,
+      filled: (profile?.members.length ?? profile?.memberNames.length ?? 0) > 0,
     });
   } else {
     blocks.push({

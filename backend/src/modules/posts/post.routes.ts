@@ -18,12 +18,14 @@ import {
   feedQuerySchema,
   likePostSchema,
   postIdParamsSchema,
+  updatePostSchema,
 } from "./post.schemas.js";
 import type {
   CommentParams,
   CreateCommentBody,
   FeedQuery,
   PostIdParams,
+  UpdatePostBody,
 } from "./post.types.js";
 
 const postInclude = {
@@ -209,6 +211,49 @@ export async function registerPostRoutes(app: FastifyInstance) {
       });
 
       return reply.status(204).send();
+    },
+  );
+
+  app.patch<{ Params: PostIdParams; Body: UpdatePostBody }>(
+    "/posts/:id",
+    {
+      preHandler: [authenticate, requireRole("musician")],
+      schema: updatePostSchema,
+    },
+    async (request, reply) => {
+      const post = await prisma.post.findUnique({
+        where: { id: request.params.id },
+        select: {
+          id: true,
+          authorId: true,
+        },
+      });
+
+      if (!post) {
+        return reply.status(404).send({
+          error: "Post not found",
+          statusCode: 404,
+        });
+      }
+
+      if (post.authorId !== request.user.userId) {
+        return reply.status(403).send({
+          error: "Only the post author can edit this post",
+          statusCode: 403,
+        });
+      }
+
+      const updatedPost = await prisma.post.update({
+        where: { id: post.id },
+        data: {
+          text: request.body.text.trim(),
+        },
+        include: postInclude,
+      });
+
+      return {
+        post: toPublicPost(updatedPost, request.user.userId),
+      };
     },
   );
 

@@ -229,6 +229,20 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
     }
   }
 
+  async function updatePost(id: string, text: string) {
+    try {
+      setError("");
+      const result = await api.updatePost(id, { text });
+      setPosts((currentPosts) =>
+        currentPosts.map((post) => (post.id === id ? result.post : post)),
+      );
+      return result.post;
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Не удалось сохранить пост");
+      throw caught;
+    }
+  }
+
   async function toggleComments(postId: string) {
     if (expandedCommentPostIds.has(postId)) {
       setExpandedCommentPostIds((current) => toggleInSet(current, postId));
@@ -347,6 +361,7 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
     likePost,
     favoritePost,
     deletePost,
+    updatePost,
     toggleComments,
     createComment,
     deleteComment,
@@ -360,12 +375,13 @@ export function useFeedInteractions(options?: UseFeedInteractionsOptions) {
 
 export type FeedPostCardHandlers = {
   onLike: () => void;
-  onFavorite?: () => void;
-  onDeletePost: () => void;
+  onFavorite: () => void;
   onToggleComments: () => void;
   onCommentTextChange: (value: string) => void;
   onCreateComment: () => void;
   onDeleteComment: (commentId: string) => void;
+  onSavePost?: (text: string) => Promise<void>;
+  onDeletePost?: () => void;
 };
 
 export type FeedPostCardState = {

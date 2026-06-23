@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 
 import { api, type MusicianLevel, type ProfileType } from "../../api";
 import { useAuth } from "../../context/AuthContext";
+import { createEmptyMember, normalizeMembers } from "../../lib/profileMembers";
+import { ProfileMembersEditor } from "../profile/edit/ProfileMembersEditor";
+import "../profile/profile-edit-form.css";
 import "./onboarding.css";
 
 const levels: Array<{ value: MusicianLevel; label: string }> = [
@@ -17,7 +20,7 @@ export function MusicianOnboardingScreen() {
   const { setUser } = useAuth();
   const [step, setStep] = useState<"type" | "level">("type");
   const [profileType, setProfileType] = useState<ProfileType>("solo");
-  const [memberNames, setMemberNames] = useState("");
+  const [members, setMembers] = useState([createEmptyMember()]);
   const [error, setError] = useState("");
 
   async function chooseLevel(level: MusicianLevel) {
@@ -26,13 +29,7 @@ export function MusicianOnboardingScreen() {
       const result = await api.onboardMusician({
         level,
         profileType,
-        memberNames:
-          profileType === "band"
-            ? memberNames
-                .split(",")
-                .map((item) => item.trim())
-                .filter(Boolean)
-            : [],
+        members: profileType === "band" ? normalizeMembers(members) : [],
       });
       setUser(result.user);
       navigate("/feed", { replace: true });
@@ -69,14 +66,9 @@ export function MusicianOnboardingScreen() {
               </button>
             </div>
             {profileType === "band" ? (
-              <label className="onboarding-members">
-                Состав (через запятую)
-                <input
-                  value={memberNames}
-                  onChange={(event) => setMemberNames(event.target.value)}
-                  placeholder="Аня — вокал, Макс — гитара"
-                />
-              </label>
+              <div className="onboarding-members-panel">
+                <ProfileMembersEditor value={members} onChange={setMembers} />
+              </div>
             ) : null}
             <div className="app-page__actions">
               <button

@@ -4,6 +4,11 @@ import { prisma } from "../../lib/prisma.js";
 import { authenticate } from "../auth/auth.middleware.js";
 import { requireRole } from "../roles/role.middleware.js";
 import { toPublicUser } from "../users/user.presenter.js";
+import {
+  membersToNames,
+  normalizeMembers,
+  parseMemberLabel,
+} from "../profile/profileMembers.js";
 import { musicianOnboardingSchema, labelOnboardingSchema } from "./onboarding.schemas.js";
 import type { LabelOnboardingBody, MusicianOnboardingBody } from "./onboarding.types.js";
 
@@ -16,11 +21,12 @@ export async function registerOnboardingRoutes(app: FastifyInstance) {
     },
     async (request) => {
       const profileType = request.body.profileType ?? "solo";
-      const memberNames = [...new Set(
-        (request.body.memberNames ?? [])
-          .map((value) => value.trim())
-          .filter(Boolean),
-      )];
+      const normalizedMembers =
+        request.body.members !== undefined
+          ? normalizeMembers(request.body.members)
+          : normalizeMembers((request.body.memberNames ?? []).map((label) => parseMemberLabel(label)));
+      const memberNames = profileType === "band" ? membersToNames(normalizedMembers) : [];
+      const membersPayload = profileType === "band" ? normalizedMembers : [];
 
       const user = await prisma.user.update({
         where: { id: request.user.userId },
@@ -30,12 +36,14 @@ export async function registerOnboardingRoutes(app: FastifyInstance) {
               create: {
                 level: request.body.level,
                 profileType,
-                memberNames: profileType === "band" ? memberNames : [],
+                memberNames,
+                members: membersPayload,
               },
               update: {
                 level: request.body.level,
                 profileType,
-                memberNames: profileType === "band" ? memberNames : [],
+                memberNames,
+                members: membersPayload,
               },
             },
           },

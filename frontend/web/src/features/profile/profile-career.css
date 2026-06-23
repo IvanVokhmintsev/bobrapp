@@ -1,8 +1,6 @@
 .profile-career {
   display: grid;
   gap: 16px;
-  padding: 24px 0 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .profile-career__head {

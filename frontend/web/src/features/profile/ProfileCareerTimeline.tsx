@@ -26,7 +26,7 @@ export function ProfileCareerTimeline(props: ProfileCareerTimelineProps) {
 
   if (entries.length === 0) {
     return (
-      <section className="profile-career" aria-labelledby="profile-career-title">
+      <section className="profile-career profile-section" aria-labelledby="profile-career-title">
         <h2 id="profile-career-title">Карьерный путь</h2>
         <p className="profile-career__empty">
           Здесь появятся достижения и этапы roadmap по мере прохождения пути.
@@ -36,7 +36,7 @@ export function ProfileCareerTimeline(props: ProfileCareerTimelineProps) {
   }
 
   return (
-    <section className="profile-career" aria-labelledby="profile-career-title">
+    <section className="profile-career profile-section" aria-labelledby="profile-career-title">
       <div className="profile-career__head">
         <h2 id="profile-career-title">Карьерный путь</h2>
         <p className="profile-career__note">

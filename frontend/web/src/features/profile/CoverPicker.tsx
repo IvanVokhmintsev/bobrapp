@@ -4,10 +4,8 @@ import { resolveCoverUrl } from "../../lib/coverUrl";
 
 type CoverPickerProps = {
   label: string;
-  coverUrl: string;
-  fallback: string;
+  coverUrl?: string | null;
   pendingFile: File | null;
-  onCoverUrlChange: (value: string) => void;
   onPendingFileChange: (file: File | null) => void;
 };
 
@@ -30,7 +28,9 @@ export function CoverPicker(props: CoverPickerProps) {
     };
   }, [props.pendingFile]);
 
-  const imageSrc = previewUrl || resolveCoverUrl(props.coverUrl, props.fallback);
+  const imageSrc =
+    previewUrl ||
+    (props.coverUrl?.trim() ? resolveCoverUrl(props.coverUrl, "") : null);
 
   function selectFile(file: File | null) {
     if (!file) {
@@ -60,7 +60,7 @@ export function CoverPicker(props: CoverPickerProps) {
     <div className="cover-picker">
       <span className="cover-picker__label">{props.label}</span>
       <div className="cover-picker__preview">
-        <img src={imageSrc} alt="" />
+        {imageSrc ? <img src={imageSrc} alt="" /> : <div className="cover-picker__placeholder" />}
       </div>
       <div className="cover-picker__actions">
         <button type="button" onClick={() => inputRef.current?.click()}>
@@ -72,18 +72,6 @@ export function CoverPicker(props: CoverPickerProps) {
           </button>
         ) : null}
       </div>
-      <label className="cover-picker__url">
-        Или ссылка на изображение
-        <input
-          value={props.coverUrl}
-          onChange={(event) => {
-            props.onPendingFileChange(null);
-            props.onCoverUrlChange(event.target.value);
-          }}
-          placeholder="https://..."
-          disabled={Boolean(props.pendingFile)}
-        />
-      </label>
       {props.pendingFile ? (
         <p className="cover-picker__hint">Фото загрузится после сохранения</p>
       ) : null}

@@ -82,6 +82,24 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  justify-content: flex-end;
+}
+
+.profile-content-edit__delete {
+  margin-right: auto;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 120, 120, 0.35);
+  border-radius: 10px;
+  color: #ffb4b4;
+  background: rgba(255, 80, 80, 0.08);
+  font: inherit;
+  cursor: pointer;
+}
+
+.profile-content-edit__delete:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .profile-content-edit__form-actions button {
@@ -168,6 +186,14 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+.cover-picker__placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .cover-picker__actions {
   display: flex;
   flex-wrap: wrap;
@@ -184,26 +210,6 @@
   font: inherit;
   font-size: 13px;
   cursor: pointer;
-}
-
-.cover-picker__url {
-  display: grid;
-  gap: 6px;
-  font-size: 14px;
-}
-
-.cover-picker__url input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  color: #ffffff;
-  background: #171717;
-  font: inherit;
-}
-
-.cover-picker__url input:disabled {
-  opacity: 0.55;
 }
 
 .cover-picker__hint {

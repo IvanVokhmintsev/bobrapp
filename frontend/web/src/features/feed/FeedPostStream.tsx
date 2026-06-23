@@ -39,7 +39,18 @@ export function FeedPostStream(props: FeedPostStreamProps) {
           commentText={props.feed.commentTextByPost[post.id] ?? ""}
           onLike={() => void props.feed.likePost(post.id)}
           onFavorite={() => void props.feed.favoritePost(post.id)}
-          onDeletePost={() => void props.feed.deletePost(post.id)}
+          onSavePost={
+            post.author.id === props.currentUser.id
+              ? async (text) => {
+                  await props.feed.updatePost(post.id, text);
+                }
+              : undefined
+          }
+          onDeletePost={
+            post.author.id === props.currentUser.id
+              ? () => void props.feed.deletePost(post.id)
+              : undefined
+          }
           onToggleComments={() => void props.feed.toggleComments(post.id)}
           onCommentTextChange={(value) => props.feed.setCommentText(post.id, value)}
           onCreateComment={() => void props.feed.createComment(post.id)}

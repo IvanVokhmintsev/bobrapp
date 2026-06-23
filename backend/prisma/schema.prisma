@@ -114,6 +114,7 @@ model MusicianProfile {
   instruments     String[]       @default([])
   daw             String[]       @default([])
   memberNames     String[]       @default([])
+  members         Json           @default("[]")
   socialLinks     Json           @default("{}")
   acceptsProposals Boolean       @default(true)
   points          Int            @default(0)

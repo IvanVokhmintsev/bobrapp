@@ -1,4 +1,8 @@
-type PublicMusicianProfile = {
+import type { Prisma } from "@prisma/client";
+
+import { parseMembersJson } from "../profile/profileMembers.js";
+
+type DbMusicianProfile = {
   id: string;
   profileType: "solo" | "band";
   level: "nothing" | "beginner" | "advanced" | "professional" | null;
@@ -9,6 +13,7 @@ type PublicMusicianProfile = {
   instruments?: string[];
   daw?: string[];
   memberNames?: string[];
+  members?: Prisma.JsonValue;
   socialLinks?: unknown;
   acceptsProposals?: boolean;
   points: number;
@@ -38,7 +43,7 @@ type UserWithProfile = {
   role: "musician" | "label";
   createdAt: Date;
   updatedAt: Date;
-  musicianProfile?: PublicMusicianProfile | null;
+  musicianProfile?: DbMusicianProfile | null;
   labelProfile?: PublicLabelProfile | null;
   achievements?: PublicAchievement[];
 };
@@ -61,6 +66,10 @@ export function toPublicUser(user: UserWithProfile) {
           instruments: user.musicianProfile.instruments ?? [],
           daw: user.musicianProfile.daw ?? [],
           memberNames: user.musicianProfile.memberNames ?? [],
+          members: parseMembersJson(
+            user.musicianProfile.members,
+            user.musicianProfile.memberNames ?? [],
+          ),
           socialLinks: user.musicianProfile.socialLinks ?? {},
           acceptsProposals: user.musicianProfile.acceptsProposals ?? true,
           points: user.musicianProfile.points,

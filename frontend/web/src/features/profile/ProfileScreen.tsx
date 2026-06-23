@@ -5,7 +5,6 @@ import { api, type ApiProfileAlbum, type ApiProfileConcert, type ApiUser } from 
 import defaultAvatar from "../../assets/feed/card-cover.png";
 import albumCover from "../../assets/profile/album-cover.png";
 import concertPhoto from "../../assets/profile/concert-photo.png";
-import concertStadiumIcon from "../../assets/profile/concert-stadium.svg";
 import memberAvatarRing from "../../assets/profile/member-avatar-ring.svg";
 import verifiedBadgeIcon from "../../assets/profile/verified-badge.svg";
 import { useAuth } from "../../context/AuthContext";
@@ -15,7 +14,8 @@ import { getProfileBlockStatuses } from "../../lib/profileCompleteness";
 import { getProfileType, isBandProfile } from "../../lib/profileType";
 import { resolveCoverUrl, formatProfileDate } from "../../lib/coverUrl";
 import { ProfileCompleteness } from "./ProfileCompleteness";
-import { ProfileContentEditSheet } from "./ProfileContentEditSheet";
+import { ProfileContentEditSheet, type ProfileContentEditKind } from "./ProfileContentEditSheet";
+import { ProfileEditableTrigger } from "./ProfileEditableTrigger";
 import { ProfileEditSheet } from "./ProfileEditSheet";
 import { AvatarPicker } from "./AvatarPicker";
 import { useFeedInteractions } from "../feed/useFeedInteractions";
@@ -24,6 +24,8 @@ import { ProfileCareerTimeline } from "./ProfileCareerTimeline";
 import { LabelProfileScreen } from "./LabelProfileScreen";
 import { ContactProposalSheet } from "../proposals/ContactProposalSheet";
 import { ProfileTypeBadge } from "./ProfileTypeBadge";
+import { getSocialPlatformLabel, normalizeExternalUrl } from "../../lib/socialPlatforms";
+import { resolveProfileMembers } from "../../lib/profileMembers";
 import "./profile.css";
 import "./profile-completeness.css";
 import "./profile-career.css";
@@ -36,7 +38,10 @@ export function ProfileScreen() {
   const isOwnProfile = !routeUserId || routeUserId === authUser?.id;
   const [user, setLocalUser] = useState<ApiUser | null>(isOwnProfile ? authUser : null);
   const [editOpen, setEditOpen] = useState(false);
-  const [contentEditOpen, setContentEditOpen] = useState(false);
+  const [contentEdit, setContentEdit] = useState<{
+    kind: ProfileContentEditKind;
+    itemId: string | null;
+  } | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const [albums, setAlbums] = useState<ApiProfileAlbum[]>([]);
   const [concerts, setConcerts] = useState<ApiProfileConcert[]>([]);
@@ -239,7 +244,12 @@ export function ProfileScreen() {
               canOpenRoadmap={isOwnProfile && authUser?.role === "musician"}
               viewerRole={authUser?.role}
               onEdit={() => setEditOpen(true)}
-              onManageContent={() => setContentEditOpen(true)}
+              onAddAlbum={() => setContentEdit({ kind: "albums", itemId: null })}
+              onAddConcert={() => setContentEdit({ kind: "concerts", itemId: null })}
+              onEditAlbum={(album) => setContentEdit({ kind: "albums", itemId: album.id })}
+              onEditConcert={(concert) =>
+                setContentEdit({ kind: "concerts", itemId: concert.id })
+              }
               onAvatarUpdated={handleProfileSaved}
               onToggleFollow={() => void toggleFollow()}
               onContact={handleContact}
@@ -264,15 +274,30 @@ export function ProfileScreen() {
         />
       ) : null}
 
-      {contentEditOpen && isOwnProfile ? (
+      {contentEdit && isOwnProfile ? (
         <ProfileContentEditSheet
+          kind={contentEdit.kind}
+          itemId={contentEdit.itemId}
           albums={albums}
           concerts={concerts}
-          onClose={() => setContentEditOpen(false)}
-          onChanged={({ albums: nextAlbums, concerts: nextConcerts }) => {
+          onClose={() => setContentEdit(null)}
+          onChanged={({ albums: nextAlbums, concerts: nextConcerts }, action) => {
             setAlbums(nextAlbums);
             setConcerts(nextConcerts);
-            setNotice("Альбомы и концерты обновлены");
+            const isAlbums = contentEdit.kind === "albums";
+            setNotice(
+              action === "delete"
+                ? isAlbums
+                  ? "Альбом удалён"
+                  : "Концерт удалён"
+                : action === "update"
+                  ? isAlbums
+                    ? "Альбом обновлён"
+                    : "Концерт обновлён"
+                  : isAlbums
+                    ? "Альбом добавлен"
+                    : "Концерт добавлен",
+            );
           }}
         />
       ) : null}
@@ -302,7 +327,10 @@ function ProfileSummary(props: {
   canOpenRoadmap: boolean;
   viewerRole?: ApiUser["role"];
   onEdit: () => void;
-  onManageContent: () => void;
+  onAddAlbum: () => void;
+  onAddConcert: () => void;
+  onEditAlbum: (album: ApiProfileAlbum) => void;
+  onEditConcert: (concert: ApiProfileConcert) => void;
   onAvatarUpdated: (user: ApiUser) => void;
   onToggleFollow: () => void;
   onContact: () => void;
@@ -389,17 +417,6 @@ function ProfileSummary(props: {
                 </>
               )}
             </div>
-            {socialLinks.length ? (
-              <div className="profile-social-links">
-                {socialLinks.map(([label, url]) => (
-                  <a key={label} href={url} target="_blank" rel="noreferrer noopener">
-                    {label}
-                  </a>
-                ))}
-              </div>
-            ) : props.isOwnProfile ? (
-              <p className="profile-members__empty">Ссылки на музыку пока не добавлены</p>
-            ) : null}
           </div>
           </div>
           {props.isOwnProfile ? (
@@ -419,7 +436,12 @@ function ProfileSummary(props: {
               props.members.map((member) => (
                 <article key={member.id}>
                   <img src={member.avatarUrl} alt="" />
-                  <span>{member.name}</span>
+                  <div className="profile-member__text">
+                    <span className="profile-member__name">{member.name}</span>
+                    {member.role ? (
+                      <span className="profile-member__role">{member.role}</span>
+                    ) : null}
+                  </div>
                 </article>
               ))
             ) : (
@@ -428,6 +450,28 @@ function ProfileSummary(props: {
           </section>
         ) : null}
       </section>
+
+      {socialLinks.length || props.isOwnProfile ? (
+        <section className="profile-block profile-section">
+          <h2>Ссылки</h2>
+          {socialLinks.length ? (
+            <div className="profile-social-links">
+              {socialLinks.map(([platform, url]) => (
+                <a
+                  key={platform}
+                  href={normalizeExternalUrl(url)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {getSocialPlatformLabel(platform)}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="profile-members__empty">Добавьте ссылки в редактировании профиля</p>
+          )}
+        </section>
+      ) : null}
 
       <section className="profile-block profile-section">
         <h2>{bandProfile ? "О нас" : "О себе"}</h2>
@@ -445,8 +489,8 @@ function ProfileSummary(props: {
         <div className="profile-block__heading">
           <h2>Альбомы</h2>
           {props.isOwnProfile ? (
-            <button type="button" className="profile-header-action" onClick={props.onManageContent}>
-              Управлять
+            <button type="button" className="profile-header-action" onClick={props.onAddAlbum}>
+              Добавить
             </button>
           ) : null}
         </div>
@@ -454,10 +498,23 @@ function ProfileSummary(props: {
           <div className="profile-albums">
             {props.albums.map((album) => (
               <article className="profile-album" key={album.id}>
-                <img
-                  src={resolveCoverUrl(album.coverUrl, albumCover)}
-                  alt=""
-                />
+                {props.isOwnProfile ? (
+                  <ProfileEditableTrigger
+                    className="profile-editable-trigger--album"
+                    label={`Редактировать альбом «${album.title}»`}
+                    onEdit={() => props.onEditAlbum(album)}
+                  >
+                    <img
+                      src={resolveCoverUrl(album.coverUrl, albumCover)}
+                      alt=""
+                    />
+                  </ProfileEditableTrigger>
+                ) : (
+                  <img
+                    src={resolveCoverUrl(album.coverUrl, albumCover)}
+                    alt=""
+                  />
+                )}
                 <strong>{album.title}</strong>
                 <span>{formatProfileDate(album.releaseDate)}</span>
               </article>
@@ -465,59 +522,49 @@ function ProfileSummary(props: {
           </div>
         ) : (
           <p className="profile-members__empty">
-            {props.isOwnProfile
-              ? "Добавьте альбомы через «Управлять»"
-              : "Альбомов пока нет"}
+            {props.isOwnProfile ? "Добавьте первый альбом" : "Альбомов пока нет"}
           </p>
         )}
       </section>
 
-      <section className="profile-block profile-section">
+      <section className="profile-block profile-block--albums profile-section">
         <div className="profile-block__heading">
           <h2>Концерты</h2>
           {props.isOwnProfile ? (
-            <button type="button" className="profile-header-action" onClick={props.onManageContent}>
-              Управлять
+            <button type="button" className="profile-header-action" onClick={props.onAddConcert}>
+              Добавить
             </button>
           ) : null}
         </div>
         {props.concerts.length ? (
-          <div className="profile-concerts">
-            {props.concerts.map((concert, index) => {
-              const hasPhoto = Boolean(concert.coverUrl?.trim());
-
-              return hasPhoto ? (
-                <article className="profile-concert profile-concert--photo" key={concert.id}>
-                  <div className="profile-concert__media">
+          <div className="profile-albums">
+            {props.concerts.map((concert) => (
+              <article className="profile-album" key={concert.id}>
+                {props.isOwnProfile ? (
+                  <ProfileEditableTrigger
+                    className="profile-editable-trigger--album"
+                    label={`Редактировать концерт «${concert.venue}»`}
+                    onEdit={() => props.onEditConcert(concert)}
+                  >
                     <img
-                      className="profile-concert__photo"
                       src={resolveCoverUrl(concert.coverUrl, concertPhoto)}
                       alt=""
                     />
-                  </div>
-                  <div className="profile-concert__caption">
-                    <strong>{concert.venue}</strong>
-                    <span>{formatProfileDate(concert.eventDate)}</span>
-                  </div>
-                </article>
-              ) : (
-                <article
-                  className={`profile-concert profile-concert--dark ${index % 2 === 1 ? "profile-concert--alt" : ""}`}
-                  key={concert.id}
-                >
-                  <img src={concertStadiumIcon} alt="" />
-                  <strong>
-                    {concert.venue} {formatProfileDate(concert.eventDate)}
-                  </strong>
-                </article>
-              );
-            })}
+                  </ProfileEditableTrigger>
+                ) : (
+                  <img
+                    src={resolveCoverUrl(concert.coverUrl, concertPhoto)}
+                    alt=""
+                  />
+                )}
+                <strong>{concert.venue}</strong>
+                <span>{formatProfileDate(concert.eventDate)}</span>
+              </article>
+            ))}
           </div>
         ) : (
           <p className="profile-members__empty">
-            {props.isOwnProfile
-              ? "Добавьте концерты через «Управлять»"
-              : "Концертов пока нет"}
+            {props.isOwnProfile ? "Добавьте первый концерт" : "Концертов пока нет"}
           </p>
         )}
       </section>
@@ -528,6 +575,7 @@ function ProfileSummary(props: {
 type ProfileMember = {
   id: string;
   name: string;
+  role: string;
   avatarUrl: string;
 };
 
@@ -538,9 +586,13 @@ type ProfileTag = {
 };
 
 function buildMembers(user: ApiUser): ProfileMember[] {
-  return (user.musicianProfile?.memberNames ?? []).map((name, index) => ({
+  return resolveProfileMembers(
+    user.musicianProfile?.members,
+    user.musicianProfile?.memberNames,
+  ).map((member, index) => ({
     id: `member-${index}`,
-    name,
+    name: member.name,
+    role: member.role,
     avatarUrl: memberAvatarRing,
   }));
 }

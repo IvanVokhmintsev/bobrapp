@@ -19,6 +19,7 @@ export type ApiUser = {
     instruments: string[];
     daw: string[];
     memberNames: string[];
+    members: Array<{ name: string; role: string }>;
     socialLinks: Record<string, string>;
     acceptsProposals: boolean;
     points: number;
@@ -253,6 +254,7 @@ export const api = {
     level: MusicianLevel;
     profileType?: ProfileType;
     memberNames?: string[];
+    members?: Array<{ name: string; role: string }>;
   }) {
     return request<{ user: ApiUser }>(
       "/onboarding/musician",
@@ -287,6 +289,7 @@ export const api = {
       instruments?: string[];
       daw?: string[];
       memberNames?: string[];
+      members?: Array<{ name: string; role: string }>;
       socialLinks?: Record<string, string>;
       acceptsProposals?: boolean;
     },
@@ -576,6 +579,12 @@ export const api = {
         method: "DELETE",
       },
     );
+  },
+  updatePost(id: string, input: { text: string }) {
+    return request<{ post: ApiPost }>(`/posts/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
   },
   likePost(id: string) {
     return request<{ post: ApiPost }>(

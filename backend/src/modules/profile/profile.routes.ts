@@ -23,6 +23,11 @@ import { prisma } from "../../lib/prisma.js";
 import { authenticate } from "../auth/auth.middleware.js";
 import { toPublicPost } from "../posts/post.presenter.js";
 import {
+  membersToNames,
+  normalizeMembers,
+  parseMemberLabel,
+} from "./profileMembers.js";
+import {
   profileInclude,
   toProfileResponse,
 } from "./profile.presenter.js";
@@ -170,9 +175,19 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         instruments,
         daw,
         memberNames,
+        members,
         socialLinks,
         acceptsProposals,
       } = request.body;
+
+      const normalizedMembers =
+        members !== undefined
+          ? normalizeMembers(members)
+          : memberNames !== undefined
+            ? normalizeMembers(memberNames.map((label) => parseMemberLabel(label)))
+            : undefined;
+      const syncedMemberNames =
+        normalizedMembers !== undefined ? membersToNames(normalizedMembers) : undefined;
 
       if (
         name === undefined &&
@@ -185,6 +200,7 @@ export async function registerProfileRoutes(app: FastifyInstance) {
         instruments === undefined &&
         daw === undefined &&
         memberNames === undefined &&
+        members === undefined &&
         socialLinks === undefined &&
         acceptsProposals === undefined
       ) {
@@ -270,6 +286,7 @@ export async function registerProfileRoutes(app: FastifyInstance) {
             instruments !== undefined ||
             daw !== undefined ||
             memberNames !== undefined ||
+            members !== undefined ||
             socialLinks !== undefined ||
             acceptsProposals !== undefined
               ? {
@@ -282,7 +299,8 @@ export async function registerProfileRoutes(app: FastifyInstance) {
                       genres: cleanStringArray(genres) ?? [],
                       instruments: cleanStringArray(instruments) ?? [],
                       daw: cleanStringArray(daw) ?? [],
-                      memberNames: cleanStringArray(memberNames) ?? [],
+                      memberNames: syncedMemberNames ?? [],
+                      members: (normalizedMembers ?? []) as Prisma.InputJsonValue,
                       socialLinks: (socialLinks ?? {}) as Prisma.InputJsonValue,
                       acceptsProposals: acceptsProposals ?? true,
                     },
@@ -298,7 +316,11 @@ export async function registerProfileRoutes(app: FastifyInstance) {
                       genres: cleanStringArray(genres),
                       instruments: cleanStringArray(instruments),
                       daw: cleanStringArray(daw),
-                      memberNames: cleanStringArray(memberNames),
+                      memberNames: syncedMemberNames,
+                      members:
+                        normalizedMembers !== undefined
+                          ? (normalizedMembers as Prisma.InputJsonValue)
+                          : undefined,
                       socialLinks:
                         socialLinks !== undefined
                           ? (socialLinks as Prisma.InputJsonValue)

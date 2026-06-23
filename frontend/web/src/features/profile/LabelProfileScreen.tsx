@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { api, type ApiUser } from "../../api";
+import { normalizeGenres } from "../../lib/musicGenres";
+import { ProfileGenrePicker } from "./edit/ProfileGenrePicker";
 import "./label-profile.css";
+import "./profile-edit-form.css";
 
 type LabelProfileScreenProps = {
   user: ApiUser;
@@ -12,7 +15,7 @@ type LabelProfileScreenProps = {
 export function LabelProfileScreen(props: LabelProfileScreenProps) {
   const [companyName, setCompanyName] = useState(props.user.labelProfile?.companyName ?? "");
   const [description, setDescription] = useState(props.user.labelProfile?.description ?? "");
-  const [genres, setGenres] = useState((props.user.labelProfile?.genres ?? []).join(", "));
+  const [genres, setGenres] = useState(props.user.labelProfile?.genres ?? []);
   const [contactName, setContactName] = useState(props.user.name);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -26,10 +29,7 @@ export function LabelProfileScreen(props: LabelProfileScreenProps) {
         name: contactName.trim(),
         companyName: companyName.trim(),
         bio: description.trim(),
-        genres: genres
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean),
+        genres: normalizeGenres(genres),
       });
       props.onSaved(result.user);
       setNotice("Профиль лейбла обновлён");
@@ -50,26 +50,24 @@ export function LabelProfileScreen(props: LabelProfileScreenProps) {
       </p>
 
       <section className="label-profile-page__panel app-page__panel">
-        <label className="label-profile-page__field">
-          Контактное имя
+        <label className="label-profile-page__field profile-form-field">
+          <span className="profile-form-field__label">Контактное имя</span>
           <input value={contactName} onChange={(event) => setContactName(event.target.value)} />
         </label>
-        <label className="label-profile-page__field">
-          Название компании
+        <label className="label-profile-page__field profile-form-field">
+          <span className="profile-form-field__label">Название компании</span>
           <input value={companyName} onChange={(event) => setCompanyName(event.target.value)} />
         </label>
-        <label className="label-profile-page__field">
-          Описание
+        <label className="label-profile-page__field profile-form-field">
+          <span className="profile-form-field__label">Описание</span>
           <textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             rows={4}
           />
         </label>
-        <label className="label-profile-page__field">
-          Жанры (через запятую)
-          <input value={genres} onChange={(event) => setGenres(event.target.value)} />
-        </label>
+
+        <ProfileGenrePicker value={genres} onChange={setGenres} label="Жанры лейбла" />
 
         {error ? <p className="app-page__error">{error}</p> : null}
         {notice ? <p className="app-page__hint">{notice}</p> : null}

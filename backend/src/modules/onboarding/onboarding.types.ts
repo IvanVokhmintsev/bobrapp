@@ -10,6 +10,7 @@ export type MusicianOnboardingBody = {
   level: MusicianLevel;
   profileType?: ProfileType;
   memberNames?: string[];
+  members?: Array<{ name: string; role: string }>;
 };
 
 export type LabelOnboardingBody = {

@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 
 import { api } from "../../api";
 import { useAuth } from "../../context/AuthContext";
+import { normalizeGenres } from "../../lib/musicGenres";
+import { ProfileGenrePicker } from "../profile/edit/ProfileGenrePicker";
+import "../profile/profile-edit-form.css";
 import "./onboarding.css";
 
 export function LabelOnboardingScreen() {
@@ -10,7 +13,7 @@ export function LabelOnboardingScreen() {
   const { setUser } = useAuth();
   const [companyName, setCompanyName] = useState("");
   const [description, setDescription] = useState("");
-  const [genres, setGenres] = useState("");
+  const [genres, setGenres] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   async function submit() {
@@ -24,10 +27,7 @@ export function LabelOnboardingScreen() {
       const result = await api.onboardLabel({
         companyName: companyName.trim(),
         description: description.trim() || undefined,
-        genres: genres
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean),
+        genres: normalizeGenres(genres),
       });
       setUser(result.user);
       navigate("/feed", { replace: true });
@@ -44,8 +44,8 @@ export function LabelOnboardingScreen() {
           Расскажите о себе — после этого откроются лента и каталог музыкантов для оценки артистов.
         </p>
 
-        <label className="onboarding-members">
-          Название компании
+        <label className="onboarding-members profile-form-field">
+          <span className="profile-form-field__label">Название компании</span>
           <input
             value={companyName}
             onChange={(event) => setCompanyName(event.target.value)}
@@ -53,24 +53,17 @@ export function LabelOnboardingScreen() {
           />
         </label>
 
-        <label className="onboarding-members">
-          Описание и фокус
+        <label className="onboarding-members profile-form-field">
+          <span className="profile-form-field__label">Описание и фокус</span>
           <textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="Жанры, формат сотрудничества, что ищете в артистах"
+            placeholder="Формат сотрудничества, что ищете в артистах"
             rows={4}
           />
         </label>
 
-        <label className="onboarding-members">
-          Интересующие жанры (через запятую)
-          <input
-            value={genres}
-            onChange={(event) => setGenres(event.target.value)}
-            placeholder="indie, electronic, hip-hop"
-          />
-        </label>
+        <ProfileGenrePicker value={genres} onChange={setGenres} label="Интересующие жанры" />
 
         {error ? <p className="app-page__error">{error}</p> : null}
 

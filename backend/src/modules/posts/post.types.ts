@@ -23,3 +23,7 @@ export type FeedQuery = {
   limit?: number;
   type?: PostType;
 };
+
+export type UpdatePostBody = {
+  text: string;
+};

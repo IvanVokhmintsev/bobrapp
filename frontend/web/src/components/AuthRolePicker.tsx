@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, Mic2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import type { UserRole } from "../api";
 
@@ -11,56 +11,83 @@ const roleOptions: Array<{
   value: UserRole;
   title: string;
   description: string;
-  icon: typeof Mic2;
 }> = [
   {
     value: "musician",
     title: "Музыкант",
     description: "Соло или группа, roadmap и публикации",
-    icon: Mic2,
   },
   {
     value: "label",
     title: "Лейбл",
     description: "Поиск артистов и оценка активности",
-    icon: BriefcaseBusiness,
   },
 ];
 
 export function AuthRolePicker(props: AuthRolePickerProps) {
-  return (
-    <div className="auth-role-picker" role="radiogroup" aria-label="Тип аккаунта">
-      <span className="auth-role-picker__label" id="auth-role-picker-label">
-        Тип аккаунта
-      </span>
-      <div className="auth-role-picker__options">
-        {roleOptions.map((option) => {
-          const isSelected = props.value === option.value;
-          const Icon = option.icon;
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const selected =
+    roleOptions.find((option) => option.value === props.value) ?? roleOptions[0];
 
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={isSelected}
-              aria-labelledby={`auth-role-${option.value}-title`}
-              aria-describedby={`auth-role-${option.value}-desc`}
-              className={`auth-role-picker__option ${isSelected ? "is-selected" : ""}`}
-              onClick={() => props.onChange(option.value)}
-            >
-              <span className="auth-role-picker__icon" aria-hidden="true">
-                <Icon size={20} strokeWidth={1.75} />
-              </span>
-              <span className="auth-role-picker__copy">
-                <strong id={`auth-role-${option.value}-title`}>{option.title}</strong>
-                <span id={`auth-role-${option.value}-desc`}>{option.description}</span>
-              </span>
-              <span className="auth-role-picker__indicator" aria-hidden="true" />
-            </button>
-          );
-        })}
-      </div>
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
+  function chooseRole(role: UserRole) {
+    props.onChange(role);
+    setOpen(false);
+  }
+
+  return (
+    <div
+      ref={rootRef}
+      className={`auth-field auth-role-dropdown ${open ? "is-open" : ""}`}
+    >
+      <span className="auth-role-dropdown__label">Тип аккаунта</span>
+      <button
+        type="button"
+        className="auth-role-dropdown__trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span className="auth-role-dropdown__value">{selected.title}</span>
+        <span className="auth-role-dropdown__chevron" aria-hidden="true" />
+      </button>
+
+      {open ? (
+        <div className="auth-role-dropdown__menu" role="listbox" aria-label="Тип аккаунта">
+          {roleOptions.map((option) => {
+            const isSelected = option.value === props.value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                className={`auth-role-dropdown__option ${isSelected ? "is-selected" : ""}`}
+                onClick={() => chooseRole(option.value)}
+              >
+                <strong>{option.title}</strong>
+                <span>{option.description}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,5 +1,10 @@
 export type ProfileType = "solo" | "band";
 
+export type ProfileMember = {
+  name: string;
+  role: string;
+};
+
 export type UpdateProfileBody = {
   name?: string;
   companyName?: string;
@@ -11,6 +16,7 @@ export type UpdateProfileBody = {
   instruments?: string[];
   daw?: string[];
   memberNames?: string[];
+  members?: ProfileMember[];
   socialLinks?: Record<string, string>;
   acceptsProposals?: boolean;
 };

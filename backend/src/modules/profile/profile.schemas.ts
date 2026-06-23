@@ -34,6 +34,19 @@ export const updateProfileSchema = {
         maxItems: 20,
         items: { type: "string", minLength: 1, maxLength: 80 },
       },
+      members: {
+        type: "array",
+        maxItems: 20,
+        items: {
+          type: "object",
+          required: ["name"],
+          additionalProperties: false,
+          properties: {
+            name: { type: "string", minLength: 1, maxLength: 60 },
+            role: { type: "string", maxLength: 60 },
+          },
+        },
+      },
       socialLinks: {
         type: "object",
         additionalProperties: { type: "string", minLength: 1, maxLength: 500 },

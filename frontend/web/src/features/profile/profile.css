@@ -18,7 +18,6 @@
 
 .profile-page button {
   margin: 0;
-  padding: 0;
   border: 0;
   font: inherit;
   cursor: pointer;
@@ -184,15 +183,46 @@
   display: flex;
   gap: 13px;
   margin-top: 19px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  align-items: flex-start;
 }
 
 .profile-members article {
-  display: grid;
-  flex: 0 0 78px;
-  gap: 10px;
-  justify-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  width: 104px;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-member__text {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.profile-member__name {
+  min-height: 1.2em;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.2;
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-member__role {
+  color: var(--profile-muted);
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  word-break: break-word;
 }
 
 .profile-members img {
@@ -210,10 +240,14 @@
   font-size: 14px;
 }
 
-.profile-members span {
+.profile-members .profile-member__name {
+  color: #ffffff;
+}
+
+.profile-members .profile-member__role {
   color: var(--profile-muted);
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 11px;
+  font-weight: 400;
 }
 
 .profile-block {
@@ -320,6 +354,63 @@
   letter-spacing: 0.1px;
 }
 
+.profile-editable-trigger {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.profile-editable-trigger__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.52);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.profile-editable-trigger:hover .profile-editable-trigger__overlay,
+.profile-editable-trigger:focus-visible .profile-editable-trigger__overlay {
+  opacity: 1;
+}
+
+.profile-editable-trigger__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #ffffff;
+  background: rgba(255, 48, 56, 0.9);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+}
+
+.profile-editable-trigger--album {
+  width: 126px;
+  height: 126px;
+  border-radius: 22px;
+}
+
+.profile-editable-trigger--album img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 22px;
+  object-fit: cover;
+}
+
+.profile-editable-trigger--album .profile-editable-trigger__overlay {
+  border-radius: 22px;
+}
+
 .profile-tag--purple,
 .profile-tag--orange,
 .profile-tag--muted {
@@ -344,91 +435,6 @@
 
 .profile-empty span {
   font-size: 13px;
-}
-
-.profile-concerts {
-  display: flex;
-  gap: 23px;
-}
-
-.profile-concert {
-  position: relative;
-  display: grid;
-  width: 153px;
-  min-height: 84px;
-  place-items: center;
-  overflow: hidden;
-  padding: 18px 10px;
-  border-radius: 22px;
-  background: var(--profile-panel-2);
-  text-align: center;
-}
-
-.profile-concert--photo {
-  display: flex;
-  flex-direction: column;
-  min-height: auto;
-  padding: 0;
-  gap: 0;
-}
-
-.profile-concert--photo .profile-concert__media {
-  width: 100%;
-  height: 96px;
-  overflow: hidden;
-}
-
-.profile-concert--photo .profile-concert__photo {
-  position: static;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.profile-concert--photo .profile-concert__caption {
-  display: grid;
-  gap: 4px;
-  width: 100%;
-  padding: 10px 8px 12px;
-}
-
-.profile-concert--photo strong {
-  position: static;
-  font-size: 11px;
-  font-weight: 650;
-  line-height: 1.25;
-  letter-spacing: 0.11px;
-  color: #ffffff;
-}
-
-.profile-concert--photo span {
-  display: block;
-  color: var(--profile-muted);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.1px;
-}
-
-.profile-concert span {
-  display: none;
-}
-
-.profile-concert img {
-  position: relative;
-  z-index: 1;
-  display: block;
-}
-
-.profile-concert--dark img {
-  width: 66px;
-  height: 38px;
-  object-fit: contain;
-}
-
-.profile-concert strong {
-  position: relative;
-  z-index: 1;
-  font-size: 11px;
 }
 
 .profile-roadmap {

@@ -11,6 +11,10 @@ const allowedHosts = [
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: "node",
+    include: ["src/**/*.test.ts"],
+  },
   server: {
     port: 5173,
     host: true,

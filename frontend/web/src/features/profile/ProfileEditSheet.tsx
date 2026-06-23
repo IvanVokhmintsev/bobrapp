@@ -1,7 +1,18 @@
 import { useState } from "react";
 
 import { api, type ApiUser, type ProfileType } from "../../api";
+import { normalizeGenres } from "../../lib/musicGenres";
+import { normalizeMembers, resolveProfileMembers } from "../../lib/profileMembers";
+import {
+  socialLinksFromRecord,
+  socialLinksToRecord,
+} from "../../lib/socialPlatforms";
 import { AvatarPicker } from "./AvatarPicker";
+import { ProfileGenrePicker } from "./edit/ProfileGenrePicker";
+import { ProfileSegmentedControl, ProfileToggle } from "./edit/ProfileFormControls";
+import { ProfileMembersEditor } from "./edit/ProfileMembersEditor";
+import { ProfileSocialLinksEditor } from "./edit/ProfileSocialLinksEditor";
+import "./profile-edit-form.css";
 
 type ProfileEditSheetProps = {
   user: ApiUser;
@@ -16,14 +27,14 @@ export function ProfileEditSheet(props: ProfileEditSheetProps) {
   const [profileType, setProfileType] = useState<ProfileType>(profile?.profileType ?? "solo");
   const [bio, setBio] = useState(profile?.bio ?? "");
   const [location, setLocation] = useState(profile?.location ?? "");
-  const [genres, setGenres] = useState(profile?.genres.join(", ") ?? "");
+  const [genres, setGenres] = useState(profile?.genres ?? []);
   const [instruments, setInstruments] = useState(profile?.instruments.join(", ") ?? "");
   const [daw, setDaw] = useState(profile?.daw.join(", ") ?? "");
-  const [memberNames, setMemberNames] = useState(profile?.memberNames.join(", ") ?? "");
-  const [socialLinks, setSocialLinks] = useState(
-    Object.entries(profile?.socialLinks ?? {})
-      .map(([key, value]) => `${key}: ${value}`)
-      .join("\n"),
+  const [members, setMembers] = useState(() =>
+    resolveProfileMembers(profile?.members, profile?.memberNames),
+  );
+  const [socialEntries, setSocialEntries] = useState(() =>
+    socialLinksFromRecord(profile?.socialLinks ?? {}),
   );
   const [acceptsProposals, setAcceptsProposals] = useState(
     profile?.acceptsProposals ?? true,
@@ -38,16 +49,18 @@ export function ProfileEditSheet(props: ProfileEditSheetProps) {
   async function save() {
     try {
       setError("");
+      const normalizedMembers = profileType === "band" ? normalizeMembers(members) : [];
+
       const result = await api.updateProfile({
         name,
         profileType,
         bio,
         location,
-        genres: splitList(genres),
+        genres: normalizeGenres(genres),
         instruments: profileType === "solo" ? splitList(instruments) : [],
         daw: profileType === "solo" ? splitList(daw) : [],
-        memberNames: profileType === "band" ? splitList(memberNames) : [],
-        socialLinks: parseSocialLinks(socialLinks),
+        members: normalizedMembers,
+        socialLinks: socialLinksToRecord(socialEntries),
         acceptsProposals,
       });
       props.onSaved(result.user);
@@ -69,88 +82,75 @@ export function ProfileEditSheet(props: ProfileEditSheetProps) {
         </div>
         <div className="profile-edit__body">
           <AvatarPicker user={user} showActions onUpdated={handleAvatarUpdated} />
-          <fieldset className="profile-edit__type">
-            <legend>Тип профиля</legend>
-            <label>
-              <input
-                type="radio"
-                name="profileType"
-                value="solo"
-                checked={profileType === "solo"}
-                onChange={() => setProfileType("solo")}
-              />
-              Соло-музыкант
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="profileType"
-                value="band"
-                checked={profileType === "band"}
-                onChange={() => setProfileType("band")}
-              />
-              Группа
-            </label>
-          </fieldset>
-          <label>
-            {profileType === "band" ? "Название группы" : "Имя"}
+
+          <ProfileSegmentedControl
+            label="Тип профиля"
+            value={profileType}
+            onChange={setProfileType}
+            options={[
+              {
+                value: "solo",
+                label: "Соло-музыкант",
+                description: "Один артист и свой roadmap",
+              },
+              {
+                value: "band",
+                label: "Группа",
+                description: "Коллектив с составом",
+              },
+            ]}
+          />
+
+          <label className="profile-form-field">
+            <span className="profile-form-field__label">
+              {profileType === "band" ? "Название группы" : "Имя"}
+            </span>
             <input value={name} onChange={(event) => setName(event.target.value)} />
           </label>
-          <label>
-            {profileType === "band" ? "О группе" : "О себе"}
+
+          <label className="profile-form-field">
+            <span className="profile-form-field__label">
+              {profileType === "band" ? "О группе" : "О себе"}
+            </span>
             <textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} />
           </label>
-          <label>
-            Локация
+
+          <label className="profile-form-field">
+            <span className="profile-form-field__label">Локация</span>
             <input
               value={location}
               onChange={(event) => setLocation(event.target.value)}
             />
           </label>
-          <label>
-            Жанры (через запятую)
-            <input value={genres} onChange={(event) => setGenres(event.target.value)} />
-          </label>
+
+          <ProfileGenrePicker value={genres} onChange={setGenres} />
+
           {profileType === "solo" ? (
             <>
-              <label>
-                Инструменты (через запятую)
+              <label className="profile-form-field">
+                <span className="profile-form-field__label">Инструменты (через запятую)</span>
                 <input
                   value={instruments}
                   onChange={(event) => setInstruments(event.target.value)}
                 />
               </label>
-              <label>
-                DAW (через запятую)
+              <label className="profile-form-field">
+                <span className="profile-form-field__label">DAW (через запятую)</span>
                 <input value={daw} onChange={(event) => setDaw(event.target.value)} />
               </label>
             </>
           ) : (
-            <label>
-              Состав (через запятую)
-              <input
-                value={memberNames}
-                onChange={(event) => setMemberNames(event.target.value)}
-                placeholder="Аня — вокал, Макс — гитара"
-              />
-            </label>
+            <ProfileMembersEditor value={members} onChange={setMembers} />
           )}
-          <label>
-            Соцсети (ключ: ссылка)
-            <textarea
-              value={socialLinks}
-              onChange={(event) => setSocialLinks(event.target.value)}
-              rows={3}
-            />
-          </label>
-          <label className="profile-edit__checkbox">
-            <input
-              type="checkbox"
-              checked={acceptsProposals}
-              onChange={(event) => setAcceptsProposals(event.target.checked)}
-            />
-            Принимать предложения о сотрудничестве через платформу
-          </label>
+
+          <ProfileSocialLinksEditor value={socialEntries} onChange={setSocialEntries} />
+
+          <ProfileToggle
+            label="Принимать предложения о сотрудничестве через платформу"
+            checked={acceptsProposals}
+            onChange={setAcceptsProposals}
+          />
+
           {error ? <p className="profile-edit__error">{error}</p> : null}
         </div>
         <footer className="profile-edit__footer">
@@ -168,19 +168,4 @@ function splitList(value: string) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
-}
-
-function parseSocialLinks(value: string) {
-  return value
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .reduce<Record<string, string>>((links, item) => {
-      const [key, ...rest] = item.split(":");
-      const link = rest.join(":").trim();
-      if (key && link) {
-        links[key.trim()] = link;
-      }
-      return links;
-    }, {});
 }

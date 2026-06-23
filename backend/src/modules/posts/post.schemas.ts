@@ -79,3 +79,15 @@ export const feedQuerySchema = {
     },
   },
 } as const;
+
+export const updatePostSchema = {
+  params: postIdParamsSchema.params,
+  body: {
+    type: "object",
+    required: ["text"],
+    additionalProperties: false,
+    properties: {
+      text: { type: "string", minLength: 1, maxLength: 2000 },
+    },
+  },
+} as const;

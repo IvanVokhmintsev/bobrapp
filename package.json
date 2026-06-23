@@ -8,6 +8,7 @@
     "start:frontend": "pnpm --filter bobrapp-web start",
     "dev": "pnpm --parallel --filter bobrapp-backend --filter bobrapp-web dev",
     "dev:backend": "pnpm --filter bobrapp-backend dev",
-    "dev:frontend": "pnpm --filter bobrapp-web dev"
+    "dev:frontend": "pnpm --filter bobrapp-web dev",
+    "test": "pnpm --filter bobrapp-web test && pnpm --filter bobrapp-backend test"
   }
 }
