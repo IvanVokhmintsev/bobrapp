@@ -246,7 +246,12 @@ function RoadmapLevelPanel(props: {
                       }
                       onChange={() => props.onToggleCheckpoint(milestone, checkpoint.index)}
                     />
-                    <span className={checkpoint.completed ? "is-done" : undefined}>
+                    <span className="roadmap-checkpoint__box" aria-hidden="true" />
+                    <span
+                      className={`roadmap-checkpoint__text ${
+                        checkpoint.completed ? "is-done" : ""
+                      }`}
+                    >
                       {checkpoint.label}
                     </span>
                   </label>

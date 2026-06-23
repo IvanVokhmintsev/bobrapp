@@ -669,8 +669,8 @@
     min-height: calc(100vh - 44px);
   }
 
-  .profile-roadmap-figma__viewport {
-    transform: none;
+  .roadmap-map {
+    padding-top: 20px;
   }
 }
 
@@ -682,8 +682,8 @@
     border-radius: 0;
   }
 
-  .profile-roadmap-figma,
-  .profile-roadmap-figma--compact {
+  .roadmap-map,
+  .roadmap-map--compact {
     width: 100%;
   }
 }
@@ -702,8 +702,9 @@
     font-size: 23px;
   }
 
-  .profile-roadmap-figma--compact .profile-roadmap-figma__viewport {
-    max-height: 520px;
+  .roadmap-map--compact {
+    padding-top: 8px;
+    padding-bottom: 12px;
   }
 
   .profile-roadmap-detail {

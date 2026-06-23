@@ -47,17 +47,20 @@
   min-height: calc(100vh - 180px);
 }
 
-.roadmap-workspace__map-panel,
-.roadmap-workspace__detail-panel {
-  min-height: 720px;
-  overflow: hidden;
+.roadmap-workspace__map-panel {
+  min-height: 520px;
+  overflow: auto;
   border-radius: 22px;
   background: #171717;
 }
 
 .roadmap-workspace__detail-panel {
+  min-height: 520px;
   padding: 24px;
+  overflow: hidden;
   overflow-y: auto;
+  border-radius: 22px;
+  background: #171717;
 }
 
 .roadmap-workspace__placeholder {
@@ -137,9 +140,12 @@
 }
 
 .roadmap-milestone h3.is-done,
-.roadmap-checkpoint .is-done {
+.roadmap-checkpoint__text.is-done {
+  color: rgba(255, 180, 180, 0.62);
+}
+
+.roadmap-milestone h3.is-done {
   text-decoration: line-through;
-  color: rgba(255, 255, 255, 0.55);
 }
 
 .roadmap-milestone p {
@@ -159,16 +165,99 @@
 
 .roadmap-checkpoint {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: flex-start;
   color: #ffffff;
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.45;
   cursor: pointer;
 }
 
 .roadmap-checkpoint input {
-  margin-top: 2px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.roadmap-checkpoint__box {
+  position: relative;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  margin-top: 1px;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.04);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.roadmap-checkpoint__box::after {
+  content: "";
+  width: 10px;
+  height: 6px;
+  border-left: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  transform: rotate(-45deg) scale(0.6);
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.roadmap-checkpoint input:checked + .roadmap-checkpoint__box {
+  border-color: #ff7a7a;
+  background: rgba(255, 90, 90, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 120, 120, 0.18);
+}
+
+.roadmap-checkpoint input:checked + .roadmap-checkpoint__box::after {
+  border-color: #ffd0d0;
+  opacity: 1;
+  transform: rotate(-45deg) scale(1);
+}
+
+.roadmap-checkpoint input:focus-visible + .roadmap-checkpoint__box {
+  box-shadow:
+    0 0 0 2px #171717,
+    0 0 0 4px rgba(255, 120, 120, 0.45);
+}
+
+.roadmap-checkpoint input:disabled + .roadmap-checkpoint__box {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.roadmap-checkpoint input:disabled:checked + .roadmap-checkpoint__box {
+  border-color: rgba(255, 120, 120, 0.28);
+  background: rgba(255, 90, 90, 0.1);
+}
+
+.roadmap-checkpoint input:disabled:checked + .roadmap-checkpoint__box::after {
+  border-color: rgba(255, 180, 180, 0.55);
+}
+
+.roadmap-checkpoint:has(input:disabled) {
+  cursor: not-allowed;
+}
+
+.roadmap-checkpoint.is-completed {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.roadmap-checkpoint__text {
+  flex: 1;
+  min-width: 0;
 }
 
 .roadmap-milestone__locked {
@@ -241,6 +330,6 @@
   }
 
   .roadmap-workspace__map-panel {
-    min-height: 640px;
+    min-height: 0;
   }
 }
