@@ -6,13 +6,15 @@ import defaultAvatar from "../../assets/feed/card-cover.png";
 import albumCover from "../../assets/profile/album-cover.png";
 import concertPhoto from "../../assets/profile/concert-photo.png";
 import memberAvatarRing from "../../assets/profile/member-avatar-ring.svg";
-import verifiedBadgeIcon from "../../assets/profile/verified-badge.svg";
+import { LevelBadge } from "../../components/LevelBadge";
 import { useAuth } from "../../context/AuthContext";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
+import { getMusicianLevelFromUser } from "../../lib/musicianLevel";
 import type { ProfileBlockStatus } from "../../lib/profileCompleteness";
 import { getProfileBlockStatuses } from "../../lib/profileCompleteness";
 import { getProfileType, isBandProfile } from "../../lib/profileType";
 import { resolveCoverUrl, formatProfileDate } from "../../lib/coverUrl";
+import { ProfileCardMenu } from "./ProfileCardMenu";
 import { ProfileCompleteness } from "./ProfileCompleteness";
 import { ProfileContentEditSheet, type ProfileContentEditKind } from "./ProfileContentEditSheet";
 import { ProfileEditableTrigger } from "./ProfileEditableTrigger";
@@ -243,6 +245,7 @@ export function ProfileScreen() {
               isOwnProfile={isOwnProfile}
               canOpenRoadmap={isOwnProfile && authUser?.role === "musician"}
               viewerRole={authUser?.role}
+              currentUserId={authUser?.id ?? ""}
               onEdit={() => setEditOpen(true)}
               onAddAlbum={() => setContentEdit({ kind: "albums", itemId: null })}
               onAddConcert={() => setContentEdit({ kind: "concerts", itemId: null })}
@@ -326,6 +329,7 @@ function ProfileSummary(props: {
   isOwnProfile: boolean;
   canOpenRoadmap: boolean;
   viewerRole?: ApiUser["role"];
+  currentUserId: string;
   onEdit: () => void;
   onAddAlbum: () => void;
   onAddConcert: () => void;
@@ -364,7 +368,9 @@ function ProfileSummary(props: {
               <div className="profile-card__name-row">
                 <h1>{props.user.name}</h1>
                 <ProfileTypeBadge profileType={props.profileType} />
-                <img className="profile-card__verified" src={verifiedBadgeIcon} alt="" />
+                {props.user.role === "musician" ? (
+                  <LevelBadge level={getMusicianLevelFromUser(props.user)} />
+                ) : null}
               </div>
               {props.viewerRole === "label" && props.user.musicianProfile ? (
                 <p className="profile-card__label-note">
@@ -400,15 +406,6 @@ function ProfileSummary(props: {
                   )}
                   <button
                     type="button"
-                    className={`profile-header-action ${
-                      props.user.favoritedByMe ? "profile-header-action--active" : ""
-                    }`}
-                    onClick={props.onFavorite}
-                  >
-                    {props.user.favoritedByMe ? "В избранном" : "В избранное"}
-                  </button>
-                  <button
-                    type="button"
                     className="profile-header-action profile-header-action--primary"
                     onClick={props.onToggleFollow}
                   >
@@ -419,15 +416,13 @@ function ProfileSummary(props: {
             </div>
           </div>
           </div>
-          {props.isOwnProfile ? (
-            <button
-              type="button"
-              className="profile-card__edit-btn"
-              onClick={props.onEdit}
-            >
-              Редактировать
-            </button>
-          ) : null}
+          <ProfileCardMenu
+            profileUser={props.user}
+            currentUserId={props.currentUserId}
+            isOwnProfile={props.isOwnProfile}
+            onFavorite={props.isOwnProfile ? undefined : props.onFavorite}
+            onEdit={props.isOwnProfile ? props.onEdit : undefined}
+          />
         </div>
 
         {bandProfile ? (
