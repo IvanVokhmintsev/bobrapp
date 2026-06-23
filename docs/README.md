@@ -87,6 +87,37 @@ pnpm dev
 
 Backend: `http://localhost:3000`, frontend: `http://localhost:5173`.
 
+### Railway (два сервиса)
+
+Настройки задаются **в UI каждого сервиса**, без `railway.toml` в корне (иначе одна конфигурация перезаписывает оба).
+
+**Backend** — root: `backend` (или корень + filter):
+
+```bash
+pnpm install
+pnpm --filter bobrapp-backend build
+pnpm --filter bobrapp-backend start
+```
+
+**Frontend** — root: `frontend/web` или корень монорепо:
+
+```bash
+pnpm install
+pnpm --filter bobrapp-web build
+pnpm --filter bobrapp-web start   # vite preview; нужен env VITE_API_URL=https://your-api.railway.app
+```
+
+Либо один сервис из корня: `pnpm build` + `pnpm start` (backend отдаёт и API, и SPA).
+
+Команды фронтенда из корня (локально):
+
+```bash
+pnpm dev:frontend    # dev-сервер Vite (:5173)
+pnpm --filter bobrapp-web build && pnpm start:frontend   # preview собранного dist (:4173)
+```
+
+`pnpm start` в корне — **только backend** (production). В `frontend/web` нет отдельного `server.js`; для dev используйте `pnpm dev`, для preview — сначала `pnpm build`, затем `pnpm start`.
+
 ### Production / Railway (один сервис)
 
 Из корня репозитория:
