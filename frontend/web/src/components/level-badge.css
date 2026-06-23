@@ -1,0 +1,38 @@
+.level-badge {
+  position: relative;
+  display: inline-flex;
+  width: 14px;
+  height: 15px;
+  flex: 0 0 14px;
+  flex-shrink: 0;
+  vertical-align: middle;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.level-badge img {
+  display: block;
+  width: 14px;
+  height: 15px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.level-badge strong {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0;
+  color: #ffffff;
+  background: transparent;
+  box-shadow: none;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}

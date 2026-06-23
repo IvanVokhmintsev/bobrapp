@@ -8,7 +8,7 @@ import { BookmarkIcon } from "../../components/BookmarkIcon";
 import { HeartIcon } from "../../components/HeartIcon";
 import defaultAvatar from "../../assets/feed/card-cover.png";
 import playIcon from "../../assets/feed/play-button.png";
-import levelFlagIcon from "../../assets/profile/level-flag.svg";
+import { LevelBadge } from "../../components/LevelBadge";
 import { getMusicianLevel } from "../../lib/musicianLevel";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
 import { getProfilePath } from "../../lib/profilePath";
@@ -32,7 +32,6 @@ export function FeedPostCard(props: FeedPostCardProps) {
   const canRepost = props.currentUser.role === "musician" && !isOwnPost;
   const [editOpen, setEditOpen] = useState(false);
   const avatarSrc = resolveAvatarUrl(props.post.author.avatarUrl, defaultAvatar);
-  const level = getAuthorLevel(props.post, props.currentUser);
   const displayMode = getPostDisplayMode(props.post);
   const caption = getPostCaption(props.post, displayMode);
   const authorProfilePath = getProfilePath(props.post.author.id, props.currentUser.id);
@@ -52,10 +51,7 @@ export function FeedPostCard(props: FeedPostCardProps) {
                 <span className="feed-card__name">{props.post.author.name}</span>
                 <ProfileTypeBadge profileType={props.post.author.profileType ?? "solo"} />
                 {props.post.author.role === "musician" ? (
-                  <span className="feed-card__level" aria-label={`Уровень ${level}`}>
-                    <img src={levelFlagIcon} alt="" />
-                    <strong>{level}</strong>
-                  </span>
+                  <LevelBadge level={getAuthorLevel(props.post, props.currentUser)} />
                 ) : null}
                 <time className="feed-card__time" dateTime={props.post.createdAt}>
                   {formatPostTime(props.post.createdAt)}
@@ -309,6 +305,14 @@ function getPostCaption(post: ApiPost, displayMode: "demo" | "text" | "roadmap")
 }
 
 function getAuthorLevel(post: ApiPost, currentUser: ApiUser) {
+  if (post.author.role !== "musician") {
+    return 1;
+  }
+
+  if (post.author.points != null) {
+    return getMusicianLevel(post.author.points);
+  }
+
   if (post.author.id === currentUser.id) {
     return getMusicianLevel(currentUser.musicianProfile?.points);
   }

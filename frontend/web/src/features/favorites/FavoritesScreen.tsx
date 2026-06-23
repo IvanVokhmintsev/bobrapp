@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 import { api, type ApiUser } from "../../api";
 import defaultAvatar from "../../assets/feed/card-cover.png";
-import levelFlagIcon from "../../assets/profile/level-flag.svg";
+import { LevelBadge } from "../../components/LevelBadge";
 import { useAuth } from "../../context/AuthContext";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
 import { getMusicianLevelFromUser } from "../../lib/musicianLevel";
@@ -118,10 +118,7 @@ export function FavoritesScreen() {
                       {artist.musicianProfile?.bio?.trim() || "Биография пока пустая"}
                     </span>
                   </span>
-                  <span className="favorites-artist__level" aria-label={`Уровень ${level}`}>
-                    <img src={levelFlagIcon} alt="" />
-                    <strong>{level}</strong>
-                  </span>
+                  <LevelBadge level={level} />
                 </Link>
                 <button type="button" onClick={() => void removeArtist(artist.id)}>
                   Убрать

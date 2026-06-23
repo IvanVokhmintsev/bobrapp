@@ -68,36 +68,6 @@
   white-space: nowrap;
 }
 
-.feed-user strong,
-.feed-card__level {
-  position: relative;
-  display: inline-grid;
-  width: 12px;
-  height: 12px;
-  flex: 0 0 12px;
-  place-items: center;
-}
-
-.feed-card__level img {
-  width: 9px;
-  height: 10px;
-}
-
-.feed-card__level strong {
-  position: absolute;
-  top: 2px;
-  left: 3px;
-  display: block;
-  width: auto;
-  height: auto;
-  border-radius: 0;
-  color: #ffffff;
-  background: transparent;
-  font-size: 5px;
-  font-weight: 700;
-  line-height: 1;
-}
-
 .feed-user--short {
   margin-top: 0;
 }

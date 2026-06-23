@@ -75,8 +75,7 @@
 }
 
 .favorites-artist__level {
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
 }
 
 .favorites-artist > button {

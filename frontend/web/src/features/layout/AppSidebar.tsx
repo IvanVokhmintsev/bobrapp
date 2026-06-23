@@ -3,8 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 
 import { api, type ApiUser } from "../../api";
 import defaultAvatar from "../../assets/feed/card-cover.png";
-import levelFlagIcon from "../../assets/profile/level-flag.svg";
 import { BookmarkIcon } from "../../components/BookmarkIcon";
+import { LevelBadge } from "../../components/LevelBadge";
 import navBookingIcon from "../../assets/profile/nav-booking.svg";
 import navEventsIcon from "../../assets/profile/nav-events.svg";
 import navFeedIcon from "../../assets/profile/nav-feed.svg";
@@ -79,23 +79,22 @@ export function AppSidebar(props: AppSidebarProps) {
 
   return (
     <aside className="app-sidebar" aria-label="Навигация">
-      <div className="app-brand">
+      <Link to="/feed" className="app-brand">
         <span className="app-brand__mark">A</span>
         <span>MTC Artist</span>
-      </div>
+      </Link>
 
-      <div className="app-sidebar__user">
+      <Link to="/profile" className="app-sidebar__user">
         <img src={avatarSrc} alt="" />
-        <span>{props.user.name}</span>
-        {isLabel ? (
-          <span className="app-sidebar__badge">Лейбл</span>
-        ) : (
-          <span className="app-sidebar__level" aria-label={`Уровень ${level}`}>
-            <img src={levelFlagIcon} alt="" />
-            <strong>{level}</strong>
-          </span>
-        )}
-      </div>
+        <span className="app-sidebar__user-label">
+          <span className="app-sidebar__user-name">{props.user.name}</span>
+          {isLabel ? (
+            <span className="app-sidebar__badge">Лейбл</span>
+          ) : (
+            <LevelBadge level={level} />
+          )}
+        </span>
+      </Link>
 
       <nav className="app-sidebar__nav">
         {navItems.map((item) => {

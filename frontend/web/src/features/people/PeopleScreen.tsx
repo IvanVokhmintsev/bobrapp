@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 import { api, type ApiUser, type MusicianLevel, type ProfileType } from "../../api";
 import defaultAvatar from "../../assets/feed/card-cover.png";
-import levelFlagIcon from "../../assets/profile/level-flag.svg";
+import { LevelBadge } from "../../components/LevelBadge";
 import { useAuth } from "../../context/AuthContext";
 import { resolveAvatarUrl } from "../../lib/avatarUrl";
 import { MUSIC_GENRES } from "../../lib/musicGenres";
@@ -362,8 +362,7 @@ export function PeopleScreen() {
                   </span>
                 </span>
                 <span className="people-card__level" aria-label={`Уровень ${level}`}>
-                  <img src={levelFlagIcon} alt="" />
-                  <strong>{level}</strong>
+                  <LevelBadge level={level} />
                 </span>
               </Link>
               {profile.id !== user.id ? (

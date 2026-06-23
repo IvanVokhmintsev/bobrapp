@@ -148,12 +148,6 @@
 .people-card__level {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-}
-
-.people-card__level img {
-  width: 16px;
-  height: 16px;
 }
 
 .people-card__actions {
