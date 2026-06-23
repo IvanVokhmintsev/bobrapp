@@ -16,6 +16,7 @@ type PostWithAuthor = {
     musicianProfile?: {
       avatarUrl: string | null;
       profileType?: "solo" | "band";
+      points?: number;
     } | null;
   };
   postLikes?: Array<{
@@ -63,6 +64,7 @@ export function toPublicPost(post: PostWithAuthor, currentUserId?: string) {
       role: post.author.role,
       avatarUrl: post.author.musicianProfile?.avatarUrl ?? null,
       profileType: post.author.musicianProfile?.profileType ?? "solo",
+      points: post.author.musicianProfile?.points ?? null,
     },
   };
 }

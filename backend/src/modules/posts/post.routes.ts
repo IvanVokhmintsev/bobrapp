@@ -38,6 +38,7 @@ const postInclude = {
         select: {
           avatarUrl: true,
           profileType: true,
+          points: true,
         },
       },
     },

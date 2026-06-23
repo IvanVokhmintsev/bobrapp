@@ -65,6 +65,7 @@ export type ApiPost = {
     role: UserRole;
     avatarUrl: string | null;
     profileType: ProfileType;
+    points: number | null;
   };
 };
 
