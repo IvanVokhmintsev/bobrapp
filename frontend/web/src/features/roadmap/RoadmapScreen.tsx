@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { api, type RoadmapLesson, type RoadmapLevel, type RoadmapMilestone } from "../../api";
 import { useAuth } from "../../context/AuthContext";
-import { getCurrentLevel, getLevelByMapNode, isLevelSelectable } from "../../lib/roadmapLevels";
+import { getCurrentLevel, getLevelByOrder, isLevelSelectable } from "../../lib/roadmapLevels";
 import { ProfileRoadmapMap } from "../profile/ProfileRoadmapMap";
 import "../profile/profile-roadmap.css";
 import "./roadmap.css";
@@ -12,7 +12,7 @@ export function RoadmapScreen() {
   const [searchParams] = useSearchParams();
   const { user, refreshUser } = useAuth();
   const [levels, setLevels] = useState<RoadmapLevel[]>([]);
-  const [selectedMapNodeId, setSelectedMapNodeId] = useState<number | null>(null);
+  const [selectedLevelOrder, setSelectedLevelOrder] = useState<number | null>(null);
   const [openMaterial, setOpenMaterial] = useState<RoadmapLesson | null>(null);
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
@@ -22,8 +22,8 @@ export function RoadmapScreen() {
   const [savingMilestoneId, setSavingMilestoneId] = useState<string | null>(null);
 
   const selectedLevel = useMemo(
-    () => (selectedMapNodeId == null ? null : getLevelByMapNode(levels, selectedMapNodeId)),
-    [levels, selectedMapNodeId],
+    () => (selectedLevelOrder == null ? null : getLevelByOrder(levels, selectedLevelOrder)),
+    [levels, selectedLevelOrder],
   );
   const currentLevel = useMemo(() => getCurrentLevel(levels), [levels]);
   const roadmapProgress = user?.musicianProfile?.roadmapProgress ?? 0;
@@ -52,20 +52,20 @@ export function RoadmapScreen() {
   useEffect(() => {
     void loadRoadmap().then((loadedLevels) => {
       const levelParam = searchParams.get("level");
-      const mapNodeId = levelParam ? Number(levelParam) : Number.NaN;
-      const levelFromQuery = Number.isInteger(mapNodeId)
-        ? getLevelByMapNode(loadedLevels, mapNodeId)
+      const levelOrder = levelParam ? Number(levelParam) : Number.NaN;
+      const levelFromQuery = Number.isInteger(levelOrder)
+        ? getLevelByOrder(loadedLevels, levelOrder)
         : null;
 
       if (levelFromQuery && isLevelSelectable(levelFromQuery)) {
-        setSelectedMapNodeId(levelFromQuery.mapNodeId);
+        setSelectedLevelOrder(levelFromQuery.order);
         return;
       }
 
       const current = getCurrentLevel(loadedLevels);
 
       if (current) {
-        setSelectedMapNodeId(current.mapNodeId);
+        setSelectedLevelOrder(current.order);
       }
     });
   }, [searchParams]);
@@ -122,7 +122,7 @@ export function RoadmapScreen() {
         const nextCurrent = getCurrentLevel(result.levels);
 
         if (nextCurrent) {
-          setSelectedMapNodeId(nextCurrent.mapNodeId);
+          setSelectedLevelOrder(nextCurrent.order);
         }
       }
     } catch (caught) {
@@ -134,8 +134,8 @@ export function RoadmapScreen() {
     }
   }
 
-  function handleSelectLevel(mapNodeId: number) {
-    setSelectedMapNodeId(mapNodeId);
+  function handleSelectLevel(levelOrder: number) {
+    setSelectedLevelOrder(levelOrder);
     setOpenMaterial(null);
     setNotice("");
   }
@@ -167,7 +167,7 @@ export function RoadmapScreen() {
           <section className="roadmap-workspace__map-panel" aria-label="Карта уровней">
             <ProfileRoadmapMap
               levels={levels}
-              selectedLevel={selectedMapNodeId}
+              selectedLevelOrder={selectedLevelOrder}
               onSelectLevel={handleSelectLevel}
             />
           </section>
@@ -209,7 +209,7 @@ function RoadmapLevelPanel(props: {
   return (
     <div className="roadmap-level-panel">
       <div className="roadmap-level-panel__head">
-        <h2>Уровень {props.level.mapNodeId}</h2>
+        <h2>Уровень {props.level.order}</h2>
         <p>{props.level.title}</p>
         <span className={`roadmap-level-panel__status roadmap-level-panel__status--${props.level.status}`}>
           {levelStatusLabel(props.level.status)}

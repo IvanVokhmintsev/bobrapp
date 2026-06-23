@@ -1,9 +1,4 @@
-import {
-  ROADMAP_CANVAS,
-  roadmapLevelNodes,
-  roadmapMilestones,
-  roadmapPaths,
-} from "./roadmapLayout";
+import { ROADMAP_CANVAS, roadmapLevelNodes, roadmapPaths } from "./roadmapLayout";
 import {
   getLevelByMapNode,
   isLevelSelectable,
@@ -14,19 +9,19 @@ import "./profile-roadmap.css";
 
 type ProfileRoadmapMapProps = {
   levels: RoadmapLevel[];
-  selectedLevel?: number | null;
+  /** Selected level order (1…n), not map node id. */
+  selectedLevelOrder?: number | null;
   compact?: boolean;
-  onSelectLevel: (mapNodeId: number) => void;
+  onSelectLevel: (levelOrder: number) => void;
 };
 
 export function ProfileRoadmapMap(props: ProfileRoadmapMapProps) {
   const scale = props.compact ? 390 / ROADMAP_CANVAS.width : 1;
 
-  function levelClassName(mapNodeId: number) {
+  function levelClassName(level: RoadmapLevel | null, levelOrder: number | null) {
     const classes = ["profile-roadmap-figma__level"];
-    const level = getLevelByMapNode(props.levels, mapNodeId);
 
-    if (props.selectedLevel === mapNodeId) {
+    if (levelOrder != null && props.selectedLevelOrder === levelOrder) {
       classes.push("is-selected");
     }
 
@@ -69,61 +64,36 @@ export function ProfileRoadmapMap(props: ProfileRoadmapMapProps) {
             />
           ))}
 
-          {roadmapMilestones.map((milestone) => (
-            <div
-              key={milestone.id}
-              className="profile-roadmap-figma__milestone"
-              style={{
-                left: milestone.left,
-                top: milestone.top,
-                width: milestone.size,
-                height: milestone.size,
-              }}
-            >
-              <img className="profile-roadmap-figma__milestone-ring" src={milestone.ring} alt="" />
-              {hasMilestoneIcon(milestone) ? (
-                <img
-                  className="profile-roadmap-figma__milestone-icon"
-                  src={milestone.icon}
-                  alt=""
-                  style={{
-                    left: milestone.iconLeft - milestone.left,
-                    top: milestone.iconTop - milestone.top,
-                    width: milestone.iconWidth,
-                    height: milestone.iconHeight,
-                  }}
-                />
-              ) : null}
-              {"label" in milestone && milestone.label ? (
-                <span className="profile-roadmap-figma__milestone-label">{milestone.label}</span>
-              ) : null}
-            </div>
-          ))}
-
           {roadmapLevelNodes.map((node) => {
-            const level = getLevelByMapNode(props.levels, node.level);
+            const level = getLevelByMapNode(props.levels, node.mapNodeId);
+            const levelOrder = level?.order ?? null;
             const selectable = level ? isLevelSelectable(level) : false;
 
             return (
               <button
                 type="button"
-                key={node.level}
-                className={levelClassName(node.level)}
+                key={node.mapNodeId}
+                className={levelClassName(level, levelOrder)}
                 style={{
                   left: node.left,
                   top: node.top,
                   width: node.width,
                   height: node.height,
                 }}
-                disabled={!selectable}
+                disabled={!selectable || levelOrder == null}
                 onClick={() => {
-                  if (selectable) {
-                    props.onSelectLevel(node.level);
+                  if (selectable && levelOrder != null) {
+                    props.onSelectLevel(levelOrder);
                   }
                 }}
-                aria-label={`Уровень ${node.level}`}
+                aria-label={levelOrder != null ? `Уровень ${levelOrder}` : "Уровень"}
               >
-                <img src={node.src} alt="" />
+                <img className="profile-roadmap-figma__level-art" src={node.src} alt="" />
+                {levelOrder != null ? (
+                  <span className="profile-roadmap-figma__level-digit" aria-hidden="true">
+                    {levelOrder}
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -131,18 +101,6 @@ export function ProfileRoadmapMap(props: ProfileRoadmapMapProps) {
       </div>
     </section>
   );
-}
-
-function hasMilestoneIcon(
-  milestone: (typeof roadmapMilestones)[number],
-): milestone is (typeof roadmapMilestones)[number] & {
-  icon: string;
-  iconLeft: number;
-  iconTop: number;
-  iconWidth: number;
-  iconHeight: number;
-} {
-  return "icon" in milestone;
 }
 
 function levelStatusClass(status: RoadmapLevelStatus) {

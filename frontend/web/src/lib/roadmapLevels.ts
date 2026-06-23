@@ -39,6 +39,10 @@ export function getCurrentMilestone(levels: RoadmapLevel[]): RoadmapMilestone | 
   return null;
 }
 
+export function getLevelByOrder(levels: RoadmapLevel[], order: number): RoadmapLevel | null {
+  return levels.find((level) => level.order === order) ?? null;
+}
+
 export function getLevelByMapNode(
   levels: RoadmapLevel[],
   mapNodeId: number,

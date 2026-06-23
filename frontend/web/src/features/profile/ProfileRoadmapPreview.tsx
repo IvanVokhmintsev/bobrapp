@@ -65,8 +65,8 @@ export function ProfileRoadmapPreview(props: ProfileRoadmapPreviewProps) {
           <ProfileRoadmapMap
             compact
             levels={levels}
-            selectedLevel={currentLevel?.mapNodeId ?? null}
-            onSelectLevel={(mapNodeId) => navigate(`/roadmap?level=${mapNodeId}`)}
+            selectedLevelOrder={currentLevel?.order ?? null}
+            onSelectLevel={(levelOrder) => navigate(`/roadmap?level=${levelOrder}`)}
           />
         </div>
       ) : null}
